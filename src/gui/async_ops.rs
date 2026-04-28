@@ -132,9 +132,16 @@ pub fn spawn_background_worker(
 
                             for action in actions {
                                 match action {
-                                    Action::Create(t) | Action::Update(t) => {
+                                    Action::Create(t) => {
                                         if t.calendar_href.starts_with("local://") {
                                             local_actions.push(Action::Create(t));
+                                        } else {
+                                            remote_actions.push(Action::Create(t));
+                                        }
+                                    }
+                                    Action::Update(t) => {
+                                        if t.calendar_href.starts_with("local://") {
+                                            local_actions.push(Action::Update(t));
                                         } else {
                                             remote_actions.push(Action::Update(t));
                                         }
