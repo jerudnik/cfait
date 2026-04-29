@@ -315,7 +315,7 @@ fun TaskDetailScreen(
                         ) {
                             NfIcon(NfIcons.BLOCKED, 12.sp, androidx.compose.ui.graphics.Color.Gray)
                             Spacer(Modifier.width(4.dp))
-                            Text(name, fontSize = 14.sp)
+                            DynamicTaskName(api, name, blockerUid)
                         }
                     }
                 }
@@ -373,7 +373,7 @@ fun TaskDetailScreen(
                             // Use Down Arrow to indicate successor flow
                             NfIcon(NfIcons.HAND_STOP, 12.sp, androidx.compose.ui.graphics.Color.Gray)
                             Spacer(Modifier.width(4.dp))
-                            Text(name, fontSize = 14.sp)
+                            DynamicTaskName(api, name, blockedUid)
                         }
                     }
                 }
@@ -432,7 +432,7 @@ fun TaskDetailScreen(
                                 androidx.compose.ui.graphics.Color.Gray
                             )
                             Spacer(Modifier.width(4.dp))
-                            Text(name, fontSize = 14.sp)
+                            DynamicTaskName(api, name, relatedUid)
                         }
                     }
                 }
@@ -651,7 +651,7 @@ fun TaskDetailScreen(
                                 androidx.compose.ui.graphics.Color.Gray
                             )
                             Spacer(Modifier.width(4.dp))
-                            Text(relatedTask.summary, fontSize = 14.sp)
+                            DynamicTaskName(api, relatedTask.summary, relatedTask.uid)
                         }
                     }
                 }
@@ -669,4 +669,25 @@ fun TaskDetailScreen(
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+@Composable
+fun DynamicTaskName(api: CfaitMobile, defaultName: String, uid: String) {
+    var displayName by remember(uid) { mutableStateOf(defaultName) }
+
+    LaunchedEffect(uid) {
+        try {
+            val t = api.getTaskByUid(uid)
+            if (t != null && t.isDone) {
+                val dateStr = t.completedDateIso?.let { formatIsoToLocal(it) }
+                displayName = if (dateStr != null) "${t.summary} (✓ $dateStr)" else "${t.summary} (✓)"
+            } else if (t != null) {
+                displayName = t.summary
+            }
+        } catch (e: Exception) {
+            // Ignore, keep default
+        }
+    }
+
+    Text(displayName, fontSize = 14.sp)
 }

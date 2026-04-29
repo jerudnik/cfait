@@ -1292,10 +1292,19 @@ pub fn view_task_row<'a>(
                             .color(Color::from_rgb(0.6, 0.6, 0.8)),
                     );
                     for related_uid in &task.related_to {
-                        let name = app
-                            .store
-                            .get_summary(related_uid)
-                            .unwrap_or_else(|| rust_i18n::t!("unknown_task").to_string());
+                        let mut name = rust_i18n::t!("unknown_task").to_string();
+                        if let Some(rel_task) = app.store.get_task_ref(related_uid) {
+                            name = rel_task.summary.clone();
+                            if rel_task.status.is_done() {
+                                if let Some(comp_date) = rel_task.completion_date() {
+                                    let local = comp_date.with_timezone(&chrono::Local);
+                                    name =
+                                        format!("{} (✓ {})", name, local.format("%Y-%m-%d %H:%M"));
+                                } else {
+                                    name = format!("{} (✓)", name);
+                                }
+                            }
+                        }
                         let remove_related_btn = button(icon::icon(icon::CROSS).size(10))
                             .style(button::danger)
                             .padding(2)
@@ -1378,7 +1387,20 @@ pub fn view_task_row<'a>(
                             .size(12)
                             .color(Color::from_rgb(0.8, 0.6, 0.8)),
                     );
-                    for (related_uid, related_name) in incoming_related {
+                    for (related_uid, mut related_name) in incoming_related {
+                        if let Some(rel_task) = app.store.get_task_ref(&related_uid)
+                            && rel_task.status.is_done() {
+                                if let Some(comp_date) = rel_task.completion_date() {
+                                    let local = comp_date.with_timezone(&chrono::Local);
+                                    related_name = format!(
+                                        "{} (✓ {})",
+                                        related_name,
+                                        local.format("%Y-%m-%d %H:%M")
+                                    );
+                                } else {
+                                    related_name = format!("{} (✓)", related_name);
+                                }
+                            }
                         let remove_related_btn = button(icon::icon(icon::CROSS).size(10))
                             .style(button::danger)
                             .padding(2)

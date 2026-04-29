@@ -694,10 +694,18 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         if !task.related_to.is_empty() {
             details_md.push_str("### Related To\n");
             for related_uid in &task.related_to {
-                let name = state
-                    .store
-                    .get_summary(related_uid)
-                    .unwrap_or_else(|| "Unknown".to_string());
+                let mut name = "Unknown".to_string();
+                if let Some(rel_task) = state.store.get_task_ref(related_uid) {
+                    name = rel_task.summary.clone();
+                    if rel_task.status.is_done() {
+                        if let Some(comp_date) = rel_task.completion_date() {
+                            let local = comp_date.with_timezone(&chrono::Local);
+                            name = format!("{} (✓ {})", name, local.format("%Y-%m-%d %H:%M"));
+                        } else {
+                            name = format!("{} (✓)", name);
+                        }
+                    }
+                }
                 details_md.push_str(&format!("- {}\n", name));
             }
             details_md.push('\n');
@@ -706,7 +714,17 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         let incoming_related = state.store.get_tasks_related_to(&task.uid);
         if !incoming_related.is_empty() {
             details_md.push_str("### Related From\n");
-            for (_related_uid, related_name) in incoming_related {
+            for (related_uid, mut related_name) in incoming_related {
+                if let Some(rel_task) = state.store.get_task_ref(&related_uid)
+                    && rel_task.status.is_done() {
+                        if let Some(comp_date) = rel_task.completion_date() {
+                            let local = comp_date.with_timezone(&chrono::Local);
+                            related_name =
+                                format!("{} (✓ {})", related_name, local.format("%Y-%m-%d %H:%M"));
+                        } else {
+                            related_name = format!("{} (✓)", related_name);
+                        }
+                    }
                 details_md.push_str(&format!("- {}\n", related_name));
             }
             details_md.push('\n');

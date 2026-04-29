@@ -1027,6 +1027,14 @@ impl Task {
             history.rrule = None; // History is a non-recurring snapshot
             history.alarms.clear(); // History does not ring
             history.create_event = None; // Do not attempt to create a calendar event for history
+
+            // Mark explicitly as history to avoid heuristics
+            history.unmapped_properties.push(RawProperty {
+                key: "X-CFAIT-HISTORY-OF".to_string(),
+                value: base_task.uid.clone(),
+                params: vec![],
+            });
+
             history.related_to.push(base_task.uid.clone()); // Link history back to master
 
             // Stamp COMPLETED (or CANCELLED) date for the history item.

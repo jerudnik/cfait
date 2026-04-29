@@ -449,23 +449,25 @@ impl TaskStore {
                 && let Some(parent) = new_map.get(p_uid)
                 && parent.rrule.is_some()
             {
-                let mut is_history_snapshot = false;
+                let mut is_history_snapshot = task.unmapped_properties.iter().any(|p| p.key == "X-CFAIT-HISTORY-OF");
 
-                // Heuristic 1 (most reliable): Check for matching CREATED timestamp.
-                let task_created = task.unmapped_properties.iter().find(|p| p.key == "CREATED");
-                let parent_created = parent
-                    .unmapped_properties
-                    .iter()
-                    .find(|p| p.key == "CREATED");
+                if !is_history_snapshot {
+                    // Heuristic 1 (most reliable): Check for matching CREATED timestamp.
+                    let task_created = task.unmapped_properties.iter().find(|p| p.key == "CREATED");
+                    let parent_created = parent
+                        .unmapped_properties
+                        .iter()
+                        .find(|p| p.key == "CREATED");
 
-                if let (Some(tc), Some(pc)) = (task_created, parent_created)
-                    && tc.value == pc.value {
+                    if let (Some(tc), Some(pc)) = (task_created, parent_created)
+                        && tc.value == pc.value {
+                            is_history_snapshot = true;
+                        }
+
+                    // Heuristic 2 (fallback): Check for matching summary.
+                    if !is_history_snapshot && parent.summary == task.summary {
                         is_history_snapshot = true;
                     }
-
-                // Heuristic 2 (fallback): Check for matching summary.
-                if !is_history_snapshot && parent.summary == task.summary {
-                    is_history_snapshot = true;
                 }
 
                 if is_history_snapshot {
