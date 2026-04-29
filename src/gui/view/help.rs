@@ -100,16 +100,8 @@ pub fn view_help<'a>(tab: HelpTab, app: &'a GuiApp) -> Element<'a, Message> {
         .on_press(Message::WindowDragged);
 
     // --- 1. Sticky Top Tabs ---
-    let support_icons = [
-        '\u{f0a52}',
-        '\u{f185c}',
-        '\u{f188f}',
-        '\u{f118}',
-        '\u{eda9}',
-        '\u{eeed}',
-        '\u{f0b79}',
-    ];
-    let support_icon = support_icons[(icon_choice as usize) % support_icons.len()];
+    let support_icon =
+        crate::help::SUPPORT_ICONS[(icon_choice as usize) % crate::help::SUPPORT_ICONS.len()];
 
     let tabs_row = row![
         tab_btn(
@@ -227,25 +219,35 @@ pub fn view_help<'a>(tab: HelpTab, app: &'a GuiApp) -> Element<'a, Message> {
                     .style(|_: &Theme| text::Style {
                         color: Some(COL_MUTED)
                     }),
-                text(rust_i18n::t!("about_version", version = env!("CARGO_PKG_VERSION")).to_string())
-                    .size(14)
-                    .style(|_: &Theme| text::Style {
-                        color: Some(COL_MUTED)
-                    }),
+                text(
+                    rust_i18n::t!("about_version", version = env!("CARGO_PKG_VERSION")).to_string()
+                )
+                .size(14)
+                .style(|_: &Theme| text::Style {
+                    color: Some(COL_MUTED)
+                }),
                 text(rust_i18n::t!("about_license").to_string())
                     .size(14)
                     .style(|_: &Theme| text::Style {
                         color: Some(COL_MUTED)
                     }),
-                button(text(rust_i18n::t!("about_repository", url = "https://codeberg.org/trougnouf/cfait").to_string()).size(14).style(
-                    |theme: &Theme| text::Style {
+                button(
+                    text(
+                        rust_i18n::t!(
+                            "about_repository",
+                            url = "https://codeberg.org/trougnouf/cfait"
+                        )
+                        .to_string()
+                    )
+                    .size(14)
+                    .style(|theme: &Theme| text::Style {
                         color: Some(if theme.extended_palette().is_dark {
                             COL_ACCENT
                         } else {
                             theme.extended_palette().primary.base.color
                         })
-                    }
-                ))
+                    })
+                )
                 .padding(0)
                 .style(iced::widget::button::text)
                 .on_press(Message::OpenUrl(

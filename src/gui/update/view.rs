@@ -441,7 +441,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::OpenHelp(tab) => {
             let icon_choice = match app.state {
                 AppState::Help(_, choice) => choice,
-                _ => fastrand::u8(0..3),
+                _ => fastrand::u8(0..crate::help::SUPPORT_ICONS.len() as u8),
             };
             app.state = AppState::Help(tab, icon_choice);
             Task::none()

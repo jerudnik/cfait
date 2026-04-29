@@ -2,6 +2,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Dynamic, localized help sections with progressive disclosure.
 
+pub const SUPPORT_ICONS: &[char] = &[
+    '\u{f0a52}', // nf-md-hand_peache_variant
+    '\u{f185c}', // nf-md-cash_fast
+    '\u{f188f}', // nf-md-hand_coin
+    '\u{f118}',  // nf-fa-face_smile
+    '\u{eda9}',  // nf-fa-face_smile_wink
+    '\u{eeed}',  // nf-fa-cat
+    '\u{f0b79}', // nf-md-chat
+];
+
 #[cfg_attr(feature = "mobile", derive(uniffi::Enum))]
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, Default)]
 pub enum HelpTab {
