@@ -334,25 +334,6 @@ impl CfaitMobile {
                     .collect(),
             },
             MobileHelpCategoryData {
-                category: HelpTab::Shortcuts,
-                title: rust_i18n::t!("keyboard_shortcuts").to_string(),
-                sections: crate::help::get_shortcuts_help()
-                    .into_iter()
-                    .map(|s| MobileHelpSection {
-                        title: s.title,
-                        items: s
-                            .items
-                            .into_iter()
-                            .map(|i| MobileHelpItem {
-                                keys: i.keys,
-                                desc: i.desc,
-                                example: i.example,
-                            })
-                            .collect(),
-                    })
-                    .collect(),
-            },
-            MobileHelpCategoryData {
                 category: HelpTab::About,
                 title: rust_i18n::t!("help_about").to_string(),
                 sections: vec![],
