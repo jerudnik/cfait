@@ -596,34 +596,38 @@ impl RustyClient {
         }
 
         // 2. DELETE obsolete static events (variants we swapped away from)
-        let static_suffixes = ["", "-start", "-due"];
-        for suffix in static_suffixes {
-            if !target_suffixes.contains(suffix) {
-                let event_filename = format!("{}{}.ics", base_uid, suffix);
-                let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
-                match client.request(Delete::new(&event_path).force()).await {
-                    Ok(_) => {}
-                    Err(WebDavError::BadStatusCode(http::StatusCode::NOT_FOUND)) => {}
-                    Err(_) => success = false,
+        if !task.href.is_empty() {
+            let static_suffixes = ["", "-start", "-due"];
+            for suffix in static_suffixes {
+                if !target_suffixes.contains(suffix) {
+                    let event_filename = format!("{}{}.ics", base_uid, suffix);
+                    let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
+                    match client.request(Delete::new(&event_path).force()).await {
+                        Ok(_) => {}
+                        Err(WebDavError::BadStatusCode(http::StatusCode::NOT_FOUND)) => {}
+                        Err(_) => success = false,
+                    }
                 }
             }
         }
 
         // 3. DELETE obsolete/trailing session events
-        let mut session_idx = if should_delete {
-            0
-        } else {
-            task.sessions.len()
-        };
-        let max_delete = session_idx + 5; // Delete at most 5 beyond known to handle slight desyncs/deletions
+        if !task.href.is_empty() {
+            let mut session_idx = if should_delete {
+                0
+            } else {
+                task.sessions.len()
+            };
+            let max_delete = session_idx + 5; // Delete at most 5 beyond known to handle slight desyncs/deletions
 
-        while session_idx < max_delete {
-            let session_suffix = format!("-session-{}", session_idx);
-            let event_filename = format!("{}{}.ics", base_uid, session_suffix);
-            let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
+            while session_idx < max_delete {
+                let session_suffix = format!("-session-{}", session_idx);
+                let event_filename = format!("{}{}.ics", base_uid, session_suffix);
+                let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
 
-            let _ = client.request(Delete::new(&event_path).force()).await;
-            session_idx += 1;
+                let _ = client.request(Delete::new(&event_path).force()).await;
+                session_idx += 1;
+            }
         }
 
         success
@@ -833,10 +837,7 @@ impl RustyClient {
 
                 // --- FIX 1: Ignore VEVENT companions during Task sync to stop Multiget spam ---
                 let filename = res_href_stripped.split('/').next_back().unwrap_or("");
-                if filename.starts_with("evt-")
-                    && filename.ends_with(".ics")
-                    && filename.len() >= 44
-                {
+                if filename.starts_with("evt-") && filename.len() >= 40 {
                     continue;
                 }
                 // ------------------------------------------------------------------------------
@@ -881,40 +882,54 @@ impl RustyClient {
             }
 
             if !to_fetch.is_empty() {
-                // Chunk requests to prevent exceeding server body size limits (e.g. Nginx 8k/16k buffer)
-                // 150 tasks per chunk translates to ~10-15KB of XML.
-                let chunks: Vec<Vec<String>> = to_fetch.chunks(150).map(|c| c.to_vec()).collect();
+                // Attempt Fast Path first (Concurrency 4, Chunk 100)
+                // If it fails, fallback to Safe Path (Concurrency 1, Chunk 50)
+                let mut success = false;
+                let fetch_attempts = vec![(4, 100), (1, 50)];
 
-                let futures = chunks.into_iter().map(|chunk| {
-                    let c = client.clone();
-                    let p = path_href.clone();
-                    async move {
-                        c.request(GetCalendarResources::new(&p).with_hrefs(chunk))
-                            .await
-                    }
-                });
+                for (concurrency, chunk_size) in fetch_attempts {
+                    let chunks: Vec<Vec<String>> = to_fetch.chunks(chunk_size).map(|c| c.to_vec()).collect();
+                    let futures = chunks.into_iter().map(|chunk| {
+                        let c = client.clone();
+                        let p = path_href.clone();
+                        async move { c.request(GetCalendarResources::new(&p).with_hrefs(chunk)).await }
+                    });
 
-                // Fetch up to 4 chunks concurrently to saturate bandwidth safely
-                let mut stream = stream::iter(futures).buffer_unordered(4);
+                    let mut stream = stream::iter(futures).buffer_unordered(concurrency);
+                    let mut batch_results = Vec::new();
+                    let mut batch_error = false;
 
-                while let Some(res) = stream.next().await {
-                    let fetched_resp = res.map_err(|e| anyhow::anyhow!("MULTIGET: {:?}", e))?;
-
-                    for item in fetched_resp.resources {
-                        if let Ok(content) = item.content
-                            && let Ok(task) = IcsAdapter::from_ics(
-                                &content.data,
-                                content.etag,
-                                item.href,
-                                calendar_href.to_string(),
-                            )
-                        {
-                            if apply_journal && pending_deletions.contains(&task.uid) {
-                                continue;
-                            }
-                            final_tasks.push(task);
+                    while let Some(res) = stream.next().await {
+                        match res {
+                            Ok(fetched_resp) => batch_results.push(fetched_resp),
+                            Err(_) => { batch_error = true; break; }
                         }
                     }
+
+                    if !batch_error {
+                        for fetched_resp in batch_results {
+                            for item in fetched_resp.resources {
+                                if let Ok(content) = item.content
+                                    && let Ok(task) = IcsAdapter::from_ics(
+                                        &content.data,
+                                        content.etag,
+                                        item.href,
+                                        calendar_href.to_string(),
+                                    )
+                                {
+                                    if apply_journal && pending_deletions.contains(&task.uid) { continue; }
+                                    final_tasks.push(task);
+                                }
+                            }
+                        }
+                        success = true;
+                        break; // Fast path worked, exit loop
+                    }
+                    // If batch_error is true, the loop continues to the next (safer) attempt
+                }
+
+                if !success {
+                    return Err(anyhow::anyhow!("Server failed to process task requests."));
                 }
             }
 
@@ -939,10 +954,20 @@ impl RustyClient {
     // persistence/journaling/network steps.
 
     pub async fn get_tasks(&self, calendar_href: &str) -> anyhow::Result<Vec<Task>> {
-        // Best-effort: ensure pending journal processed first
-        let _ = self.sync_journal().await;
-        self.fetch_calendar_tasks_internal(calendar_href, true)
-            .await
+        // If sync fails, don't proceed to a full fetch. Fall back to cache + journal.
+        if self.sync_journal().await.is_err() {
+            if calendar_href.starts_with("local://") {
+                let mut tasks = crate::storage::LocalStorage::load_for_href(self.ctx.as_ref(), calendar_href)?;
+                crate::journal::Journal::apply_to_tasks(self.ctx.as_ref(), &mut tasks, calendar_href);
+                return Ok(tasks);
+            } else {
+                let (mut tasks, _) = crate::cache::Cache::load(self.ctx.as_ref(), calendar_href)?;
+                crate::journal::Journal::apply_to_tasks(self.ctx.as_ref(), &mut tasks, calendar_href);
+                return Ok(tasks);
+            }
+        }
+        // If sync succeeded (or was a no-op), proceed with the network fetch.
+        self.fetch_calendar_tasks_internal(calendar_href, true).await
     }
 
     pub async fn get_all_tasks(

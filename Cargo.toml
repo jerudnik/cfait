@@ -78,6 +78,7 @@ uniffi_meta = "0.31"
 # --- LOGGING ---
 log = "0.4"
 simplelog = "0.12"
+percent-encoding = "2.3"
 
 
 # --- TUI ONLY (Optional) ---

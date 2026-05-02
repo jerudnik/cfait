@@ -12,6 +12,7 @@ use http::{Request, StatusCode};
 use libdav::caldav::CalDavClient;
 use libdav::dav::WebDavError;
 use libdav::dav::{Delete, PutResource};
+use percent_encoding::{AsciiSet, CONTROLS};
 use std::sync::OnceLock;
 use tokio::sync::Mutex as AsyncMutex;
 
@@ -19,6 +20,18 @@ use tokio::sync::Mutex as AsyncMutex;
 use crate::client::core::test_hooks::TEST_FORCE_SYNC_ERROR;
 
 static SYNC_LOCK: OnceLock<AsyncMutex<()>> = OnceLock::new();
+
+// This set encodes spaces and unsafe characters, but leaves '.' and other safe symbols alone.
+const PATH_ENCODE_SET: &AsciiSet = &CONTROLS
+    .add(b' ')
+    .add(b'"')
+    .add(b'#')
+    .add(b'<')
+    .add(b'>')
+    .add(b'?')
+    .add(b'`')
+    .add(b'{')
+    .add(b'}');
 
 // --- Internal Sync Outcome Types ---
 enum StepOutcome {
@@ -77,34 +90,27 @@ fn fix_and_encode_path(
 
     let base_path = client.base_url().path();
 
-    // Proxy fixup: Reconstruct missing base paths (the Android bug fix)
+    // Proxy fixup: Reconstruct missing base paths
     if !path.starts_with(base_path) && base_path != "/" {
         let mut fixed = base_path.to_string();
-        if !fixed.ends_with('/') {
-            fixed.push('/');
-        }
-        if !path.starts_with("/calendars/")
-            && !path.starts_with("calendars/")
-            && !fixed.ends_with("calendars/")
-            && !fixed.contains("/calendars/")
-        {
-            fixed.push_str("calendars/");
-        }
+        if !fixed.ends_with('/') { fixed.push('/'); }
+        // FIXED: Removed the hardcoded "calendars/" injection
         fixed.push_str(path.trim_start_matches('/'));
         path = fixed;
     }
 
     if let Some(fname) = filename {
-        if !path.ends_with('/') {
-            path.push('/');
-        }
+        if !path.ends_with('/') { path.push('/'); }
         path.push_str(fname);
     }
 
-    // Encode spaces and brackets, but leave '@' as-is.
-    path.replace(" ", "%20")
-        .replace("(", "%28")
-        .replace(")", "%29")
+    // Robust Encoding for Polish and special characters
+    path.split('/')
+        .map(|segment| {
+            percent_encoding::utf8_percent_encode(segment, PATH_ENCODE_SET).to_string()
+        })
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 impl RustyClient {
@@ -120,11 +126,24 @@ impl RustyClient {
         );
         let ics_string = IcsAdapter::to_ics(task);
 
+        let config = crate::config::Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let events_enabled = config.create_events_for_tasks;
+        let delete_on_completion = config.delete_events_on_completion;
+
         match client
             .request(PutResource::new(&path).create(ics_string, "text/calendar; charset=utf-8"))
             .await
         {
             Ok(resp) => {
+                // Sync companion event AFTER the main task succeeds
+                self.sync_companion_event(
+                    task,
+                    events_enabled,
+                    delete_on_completion,
+                    false,
+                )
+                .await;
+
                 let href = if task.calendar_href.ends_with('/') {
                     format!("{}{}.ics", task.calendar_href, task.uid)
                 } else {
@@ -177,6 +196,10 @@ impl RustyClient {
         client: &CalDavClient<HttpsClient>,
         task: &Task,
     ) -> Result<StepResult, String> {
+        let config = crate::config::Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let events_enabled = config.create_events_for_tasks;
+        let delete_on_completion = config.delete_events_on_completion;
+
         let path = if task.href.is_empty() {
             fix_and_encode_path(
                 client,
@@ -203,6 +226,15 @@ impl RustyClient {
             .await
         {
             Ok(resp) => {
+                // Sync companion event AFTER the main task succeeds
+                self.sync_companion_event(
+                    task,
+                    events_enabled,
+                    delete_on_completion,
+                    false,
+                )
+                .await;
+
                 let new_href = if task.href.is_empty() {
                     if task.calendar_href.ends_with('/') {
                         Some(format!("{}{}.ics", task.calendar_href, task.uid))
@@ -286,6 +318,10 @@ impl RustyClient {
         client: &CalDavClient<HttpsClient>,
         task: &Task,
     ) -> Result<StepResult, String> {
+        let config = crate::config::Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let events_enabled = config.create_events_for_tasks;
+        let delete_on_completion = config.delete_events_on_completion;
+
         if task.href.is_empty() {
             return Ok(StepResult::new(StepOutcome::Discard));
         }
@@ -300,11 +336,22 @@ impl RustyClient {
         };
 
         match resp {
-            Ok(_) => Ok(StepResult::new(StepOutcome::Success {
-                etag: None,
-                href: None,
-                refresh_path: None,
-            })),
+            Ok(_) => {
+                // Sync companion event AFTER the main task succeeds
+                self.sync_companion_event(
+                    task,
+                    events_enabled,
+                    delete_on_completion,
+                    true,
+                )
+                .await;
+
+                Ok(StepResult::new(StepOutcome::Success {
+                    etag: None,
+                    href: None,
+                    refresh_path: None,
+                }))
+            }
             Err(WebDavError::BadStatusCode(StatusCode::NOT_FOUND)) => {
                 Ok(StepResult::new(StepOutcome::Discard))
             }
@@ -337,6 +384,10 @@ impl RustyClient {
     }
 
     async fn handle_move(&self, task: &Task, new_cal: &str) -> Result<StepResult, String> {
+        let config = crate::config::Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let events_enabled = config.create_events_for_tasks;
+        let delete_on_completion = config.delete_events_on_completion;
+
         let mut move_res = self.execute_move(task, new_cal, false).await;
 
         if let Err(ref e) = move_res
@@ -347,12 +398,38 @@ impl RustyClient {
 
         match move_res {
             Ok(_) => {
+                // Sync companion event for the original task (delete)
+                let _ = self
+                    .sync_companion_event(
+                        task,
+                        events_enabled,
+                        delete_on_completion,
+                        true,
+                    )
+                    .await;
+
                 let filename = format!("{}.ics", task.uid);
                 let new_href = if new_cal.ends_with('/') {
                     format!("{}{}", new_cal, filename)
                 } else {
                     format!("{}/{}", new_cal, filename)
                 };
+
+                // Sync companion event for the moved task (create)
+                if events_enabled || task.create_event.is_some() {
+                    let mut moved_task = task.clone();
+                    moved_task.calendar_href = new_cal.to_string();
+                    moved_task.href = new_href.clone();
+                    let _ = self
+                        .sync_companion_event(
+                            &moved_task,
+                            events_enabled,
+                            delete_on_completion,
+                            false,
+                        )
+                        .await;
+                }
+
                 Ok(StepResult::new(StepOutcome::Success {
                     etag: None,
                     href: Some(new_href.clone()),
@@ -386,10 +463,6 @@ impl RustyClient {
         let client = self.client.as_ref().ok_or("Offline")?;
         let mut warnings = Vec::new();
         let mut synced_tasks: Vec<Task> = Vec::new();
-
-        let config = crate::config::Config::load(self.ctx.as_ref()).unwrap_or_default();
-        let events_enabled = config.create_events_for_tasks;
-        let delete_on_completion = config.delete_events_on_completion;
 
         let mut recovery_cal_created_this_cycle = false;
 
@@ -468,53 +541,6 @@ impl RustyClient {
                             href,
                             refresh_path,
                         } => {
-                            match &next_action {
-                                Action::Move(t, new_cal) => {
-                                    let _ = self
-                                        .sync_companion_event(
-                                            t,
-                                            events_enabled,
-                                            delete_on_completion,
-                                            true,
-                                        )
-                                        .await;
-
-                                    if (events_enabled || t.create_event.is_some())
-                                        && let Some(new_h) = &href
-                                    {
-                                        let mut moved_task = t.clone();
-                                        moved_task.calendar_href = new_cal.clone();
-                                        moved_task.href = new_h.clone();
-                                        let _ = self
-                                            .sync_companion_event(
-                                                &moved_task,
-                                                events_enabled,
-                                                delete_on_completion,
-                                                false,
-                                            )
-                                            .await;
-                                    }
-                                }
-                                Action::Create(t) | Action::Update(t) => {
-                                    self.sync_companion_event(
-                                        t,
-                                        events_enabled,
-                                        delete_on_completion,
-                                        false,
-                                    )
-                                    .await;
-                                }
-                                Action::Delete(t) => {
-                                    self.sync_companion_event(
-                                        t,
-                                        events_enabled,
-                                        delete_on_completion,
-                                        true,
-                                    )
-                                    .await;
-                                }
-                            }
-
                             new_etag_to_propagate = etag;
                             path_for_refresh = refresh_path;
                             if let Some(h) = href {
@@ -529,32 +555,11 @@ impl RustyClient {
                         }
                         StepOutcome::RetryWith(act) => {
                             conflict_resolved_action = Some(*act);
-                            if let Action::Create(t) | Action::Update(t) =
-                                &conflict_resolved_action.as_ref().unwrap()
-                            {
-                                self.sync_companion_event(
-                                    t,
-                                    events_enabled,
-                                    delete_on_completion,
-                                    false,
-                                )
-                                .await;
-                            }
                         }
                         StepOutcome::ReplaceWith(acts) => {
                             replaced_actions = Some(acts);
                         }
-                        StepOutcome::Discard => {
-                            if let Action::Delete(t) = &next_action {
-                                self.sync_companion_event(
-                                    t,
-                                    events_enabled,
-                                    delete_on_completion,
-                                    true,
-                                )
-                                .await;
-                            }
-                        }
+                        StepOutcome::Discard => {}
                         StepOutcome::RecoveryNeeded(msg) => {
                             let recovered_task = match &next_action {
                                 Action::Create(t) => Some(t.clone()),

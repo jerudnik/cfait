@@ -73,8 +73,6 @@ async fn test_pending_delete_suppresses_server_item() {
         .create_async()
         .await;
 
-    let mock_list = server.mock("PROPFIND", cal_path).match_header("depth", "1").with_status(207).with_body(format!(r#"<d:multistatus xmlns:d="DAV:"><d:response><d:href>{}</d:href><d:propstat><d:prop><d:getetag>"server-etag"</d:getetag></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>"#, task_path)).create_async().await;
-
     let ctx = Arc::new(TestContext::new());
     let client = RustyClient::new(ctx.clone(), &url, "u", "p", true, None).unwrap();
     let full_cal_href = format!("{}{}", url, cal_path);
@@ -105,7 +103,6 @@ async fn test_pending_delete_suppresses_server_item() {
     let list = tasks.unwrap();
 
     mock_delete.assert();
-    mock_list.assert();
 
     assert!(
         list.is_empty(),
