@@ -78,7 +78,7 @@ pub async fn async_fetch_wrapper(
     client: RustyClient,
     href: String,
 ) -> anyhow::Result<(String, Vec<TodoTask>)> {
-    match tokio::time::timeout(std::time::Duration::from_secs(30), client.get_tasks(&href)).await {
+    match tokio::time::timeout(std::time::Duration::from_secs(60), client.get_tasks(&href)).await {
         Ok(res) => {
             let tasks = res?;
             Ok((href, tasks))
