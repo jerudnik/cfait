@@ -151,13 +151,14 @@ pub fn init_keyring() {
 
     #[cfg(target_os = "linux")]
     {
-        // Try D-Bus Secret Service first (standard for Desktop Linux)
-        if let Ok(store) = dbus_secret_service_keyring_store::Store::new() {
-            set_default_store(store);
-            log::info!("Initialized Linux Secret Service.");
-        }
-        // Fallback to Kernel Keyutils (for headless servers / pure TUI environments)
-        else if let Ok(store) = linux_keyutils_keyring_store::Store::new() {
+        // 1. Probe if we have D-Bus / Portal access
+        let oo7_works = block_on_async(async { oo7::Keyring::new().await.is_ok() });
+
+        // 2. Set the store dynamically based on the environment
+        if oo7_works {
+            set_default_store(Oo7Store::new());
+            log::info!("Initialized Linux Secret Portal (oo7 wrapper).");
+        } else if let Ok(store) = linux_keyutils_keyring_store::Store::new() {
             set_default_store(store);
             log::info!("Initialized Linux Keyutils (headless fallback).");
         } else {
@@ -171,6 +172,170 @@ pub fn init_keyring() {
             set_default_store(store);
             log::info!("Initialized Android Native Keystore.");
         }
+    }
+}
+
+// --- LINUX OO7 WRAPPER & ASYNC HELPER ---
+
+#[cfg(target_os = "linux")]
+/// Safely runs an async block whether we are currently inside a Tokio runtime or not.
+fn block_on_async<F: std::future::Future>(future: F) -> F::Output {
+    if let Ok(handle) = tokio::runtime::Handle::try_current() {
+        // We are inside a Tokio runtime (e.g., TUI or background thread)
+        tokio::task::block_in_place(|| handle.block_on(future))
+    } else {
+        // No runtime exists yet (e.g., GUI startup), spin up a temporary one
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(future)
+    }
+}
+
+#[cfg(target_os = "linux")]
+struct Oo7Store;
+
+#[cfg(target_os = "linux")]
+impl Oo7Store {
+    pub fn new() -> std::sync::Arc<Self> {
+        std::sync::Arc::new(Oo7Store)
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl keyring_core::api::CredentialStoreApi for Oo7Store {
+    fn vendor(&self) -> String {
+        "oo7 Secret Portal store".to_string()
+    }
+
+    fn id(&self) -> String {
+        "oo7-portal".to_string()
+    }
+
+    fn build(
+        &self,
+        service: &str,
+        user: &str,
+        _modifiers: Option<&std::collections::HashMap<&str, &str>>,
+    ) -> keyring_core::Result<keyring_core::Entry> {
+        // Create the credential backend for this specific entry
+        let cred = Oo7Cred::new(service.to_string(), user.to_string());
+        // Return a keyring Entry wrapped around our custom credential API
+        Ok(keyring_core::Entry::new_with_credential(cred))
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+#[cfg(target_os = "linux")]
+struct Oo7Cred {
+    service: String,
+    user: String,
+}
+
+#[cfg(target_os = "linux")]
+impl Oo7Cred {
+    fn new(service: String, user: String) -> std::sync::Arc<Self> {
+        std::sync::Arc::new(Oo7Cred { service, user })
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl keyring_core::api::CredentialApi for Oo7Cred {
+    fn set_secret(&self, secret: &[u8]) -> keyring_core::Result<()> {
+        block_on_async(async {
+            let keyring = oo7::Keyring::new().await.map_err(|e| {
+                keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
+            })?;
+
+            keyring
+                .create_item(
+                    &format!("{} ({})", self.service, self.user),
+                    &std::collections::HashMap::from([
+                        ("service", self.service.as_str()),
+                        ("user", self.user.as_str()),
+                    ]),
+                    secret,
+                    true,
+                )
+                .await
+                .map_err(|e| {
+                    keyring_core::Error::PlatformFailure(format!("oo7 create: {}", e).into())
+                })?;
+
+            Ok(())
+        })
+    }
+
+    fn get_secret(&self) -> keyring_core::Result<Vec<u8>> {
+        block_on_async(async {
+            let keyring = oo7::Keyring::new().await.map_err(|e| {
+                keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
+            })?;
+
+            let items = keyring
+                .search_items(&std::collections::HashMap::from([
+                    ("service", self.service.as_str()),
+                    ("user", self.user.as_str()),
+                ]))
+                .await
+                .map_err(|e| {
+                    keyring_core::Error::PlatformFailure(format!("oo7 search: {}", e).into())
+                })?;
+
+            if let Some(item) = items.first() {
+                let secret = item.secret().await.map_err(|e| {
+                    keyring_core::Error::PlatformFailure(format!("oo7 secret: {}", e).into())
+                })?;
+                Ok(secret.as_bytes().to_vec())
+            } else {
+                Err(keyring_core::Error::NoEntry)
+            }
+        })
+    }
+
+    fn delete_credential(&self) -> keyring_core::Result<()> {
+        block_on_async(async {
+            let keyring = oo7::Keyring::new().await.map_err(|e| {
+                keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
+            })?;
+
+            let items = keyring
+                .search_items(&std::collections::HashMap::from([
+                    ("service", self.service.as_str()),
+                    ("user", self.user.as_str()),
+                ]))
+                .await
+                .map_err(|e| {
+                    keyring_core::Error::PlatformFailure(format!("oo7 search: {}", e).into())
+                })?;
+
+            for item in items {
+                item.delete().await.map_err(|e| {
+                    keyring_core::Error::PlatformFailure(format!("oo7 delete: {}", e).into())
+                })?;
+            }
+            Ok(())
+        })
+    }
+
+    fn get_credential(
+        &self,
+    ) -> keyring_core::Result<Option<std::sync::Arc<keyring_core::Credential>>> {
+        // Return None to signal that we don't have a pre-cached full credential object.
+        // The keyring crate will then fall back to calling `get_secret()`.
+        Ok(None)
+    }
+
+    fn get_specifiers(&self) -> Option<(String, String)> {
+        Some((self.service.clone(), self.user.clone()))
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
