@@ -322,9 +322,8 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
                     let type_key_with_colon = parts[0];
                     let expected_ts = parts[1];
 
-                    let config = crate::config::Config::load(app.ctx.as_ref()).unwrap_or_default();
                     let default_time =
-                        chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M")
+                        chrono::NaiveTime::parse_from_str(&app.default_reminder_time, "%H:%M")
                             .unwrap_or_else(|_| chrono::NaiveTime::from_hms_opt(9, 0, 0).unwrap());
 
                     let mut current_ts = None;

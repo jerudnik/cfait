@@ -118,11 +118,8 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             column![]
         };
 
-        let (s1, s2) = if let Ok(cfg) = crate::config::Config::load(app.ctx.as_ref()) {
-            (cfg.snooze_short_mins, cfg.snooze_long_mins)
-        } else {
-            (15, 60)
-        };
+        let s1 = app.snooze_short_mins;
+        let s2 = app.snooze_long_mins;
 
         let snooze_btn = |mins: u32| {
             let label = if mins >= 60 {
