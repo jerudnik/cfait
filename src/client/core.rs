@@ -888,11 +888,15 @@ impl RustyClient {
                 let fetch_attempts = vec![(4, 100), (1, 50)];
 
                 for (concurrency, chunk_size) in fetch_attempts {
-                    let chunks: Vec<Vec<String>> = to_fetch.chunks(chunk_size).map(|c| c.to_vec()).collect();
+                    let chunks: Vec<Vec<String>> =
+                        to_fetch.chunks(chunk_size).map(|c| c.to_vec()).collect();
                     let futures = chunks.into_iter().map(|chunk| {
                         let c = client.clone();
                         let p = path_href.clone();
-                        async move { c.request(GetCalendarResources::new(&p).with_hrefs(chunk)).await }
+                        async move {
+                            c.request(GetCalendarResources::new(&p).with_hrefs(chunk))
+                                .await
+                        }
                     });
 
                     let mut stream = stream::iter(futures).buffer_unordered(concurrency);
@@ -902,7 +906,10 @@ impl RustyClient {
                     while let Some(res) = stream.next().await {
                         match res {
                             Ok(fetched_resp) => batch_results.push(fetched_resp),
-                            Err(_) => { batch_error = true; break; }
+                            Err(_) => {
+                                batch_error = true;
+                                break;
+                            }
                         }
                     }
 
@@ -917,7 +924,9 @@ impl RustyClient {
                                         calendar_href.to_string(),
                                     )
                                 {
-                                    if apply_journal && pending_deletions.contains(&task.uid) { continue; }
+                                    if apply_journal && pending_deletions.contains(&task.uid) {
+                                        continue;
+                                    }
                                     final_tasks.push(task);
                                 }
                             }
@@ -954,27 +963,40 @@ impl RustyClient {
     // persistence/journaling/network steps.
 
     pub async fn get_tasks(&self, calendar_href: &str) -> anyhow::Result<Vec<Task>> {
-        // If sync fails, don't proceed to a full fetch. Fall back to cache + journal.
-        if self.sync_journal().await.is_err() {
+        // If sync fails or times out, don't proceed to a full fetch. Fall back to cache + journal.
+        // A timeout ensures a slow or rate-limited server doesn't hang the UI startup.
+        let sync_res =
+            tokio::time::timeout(std::time::Duration::from_secs(10), self.sync_journal()).await;
+        if sync_res.is_err() || sync_res.unwrap().is_err() {
             if calendar_href.starts_with("local://") {
-                let mut tasks = crate::storage::LocalStorage::load_for_href(self.ctx.as_ref(), calendar_href)?;
-                crate::journal::Journal::apply_to_tasks(self.ctx.as_ref(), &mut tasks, calendar_href);
+                let mut tasks =
+                    crate::storage::LocalStorage::load_for_href(self.ctx.as_ref(), calendar_href)?;
+                crate::journal::Journal::apply_to_tasks(
+                    self.ctx.as_ref(),
+                    &mut tasks,
+                    calendar_href,
+                );
                 return Ok(tasks);
             } else {
                 let (mut tasks, _) = crate::cache::Cache::load(self.ctx.as_ref(), calendar_href)?;
-                crate::journal::Journal::apply_to_tasks(self.ctx.as_ref(), &mut tasks, calendar_href);
+                crate::journal::Journal::apply_to_tasks(
+                    self.ctx.as_ref(),
+                    &mut tasks,
+                    calendar_href,
+                );
                 return Ok(tasks);
             }
         }
         // If sync succeeded (or was a no-op), proceed with the network fetch.
-        self.fetch_calendar_tasks_internal(calendar_href, true).await
+        self.fetch_calendar_tasks_internal(calendar_href, true)
+            .await
     }
 
     pub async fn get_all_tasks(
         &self,
         calendars: &[CalendarListEntry],
     ) -> anyhow::Result<Vec<(String, Vec<Task>)>> {
-        let _ = self.sync_journal().await;
+        let _ = tokio::time::timeout(std::time::Duration::from_secs(10), self.sync_journal()).await;
         let hrefs: Vec<String> = calendars.iter().map(|c| c.href.clone()).collect();
         let futures = hrefs.into_iter().map(|href| {
             let client = self.clone();

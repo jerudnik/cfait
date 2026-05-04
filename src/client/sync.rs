@@ -12,7 +12,7 @@ use http::{Request, StatusCode};
 use libdav::caldav::CalDavClient;
 use libdav::dav::WebDavError;
 use libdav::dav::{Delete, PutResource};
-use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::{AsciiSet, CONTROLS, utf8_percent_encode};
 use std::sync::OnceLock;
 use tokio::sync::Mutex as AsyncMutex;
 
@@ -146,13 +146,8 @@ impl RustyClient {
         {
             Ok(resp) => {
                 // Sync companion event AFTER the main task succeeds
-                self.sync_companion_event(
-                    task,
-                    events_enabled,
-                    delete_on_completion,
-                    false,
-                )
-                .await;
+                self.sync_companion_event(task, events_enabled, delete_on_completion, false)
+                    .await;
 
                 let href = if task.calendar_href.ends_with('/') {
                     format!("{}{}.ics", task.calendar_href, task.uid)
@@ -181,12 +176,12 @@ impl RustyClient {
             }
             Err(e) => {
                 let msg = format!("{:?}", e);
-                if msg.contains("403")
-                    || msg.contains("400")
-                    || msg.contains("415")
-                    || msg.contains("404")
+                if msg.contains("403 Forbidden")
+                    || msg.contains("400 Bad Request")
+                    || msg.contains("415 Unsupported Media Type")
+                    || msg.contains("404 Not Found")
                     || msg.contains("NotFound")
-                    || msg.contains("409")
+                    || msg.contains("409 Conflict")
                     || msg.contains("Conflict")
                     || msg.contains("InvalidInput")
                     || msg.contains("invalid uri character")
@@ -237,13 +232,8 @@ impl RustyClient {
         {
             Ok(resp) => {
                 // Sync companion event AFTER the main task succeeds
-                self.sync_companion_event(
-                    task,
-                    events_enabled,
-                    delete_on_completion,
-                    false,
-                )
-                .await;
+                self.sync_companion_event(task, events_enabled, delete_on_completion, false)
+                    .await;
 
                 let new_href = if task.href.is_empty() {
                     if task.calendar_href.ends_with('/') {
@@ -305,10 +295,10 @@ impl RustyClient {
                             task.summary
                         )),
                     )
-                } else if msg.contains("403")
-                    || msg.contains("400")
-                    || msg.contains("415")
-                    || msg.contains("409")
+                } else if msg.contains("403 Forbidden")
+                    || msg.contains("400 Bad Request")
+                    || msg.contains("415 Unsupported Media Type")
+                    || msg.contains("409 Conflict")
                     || msg.contains("Conflict")
                     || msg.contains("InvalidInput")
                     || msg.contains("invalid uri character")
@@ -348,13 +338,8 @@ impl RustyClient {
         match resp {
             Ok(_) => {
                 // Sync companion event AFTER the main task succeeds
-                self.sync_companion_event(
-                    task,
-                    events_enabled,
-                    delete_on_completion,
-                    true,
-                )
-                .await;
+                self.sync_companion_event(task, events_enabled, delete_on_completion, true)
+                    .await;
 
                 Ok(StepResult::new(StepOutcome::Success {
                     etag: None,
@@ -369,18 +354,20 @@ impl RustyClient {
             | Err(WebDavError::PreconditionFailed(_)) => {
                 let mut retry_task = task.clone();
                 retry_task.etag = String::new(); // clear etag to force delete on next attempt
-                Ok(StepResult::new(StepOutcome::RetryWith(Box::new(Action::Delete(retry_task))))
-                .with_warning(format!(
-                    "Conflict on delete task '{}'. Forcing delete.",
-                    task.summary
-                )))
+                Ok(
+                    StepResult::new(StepOutcome::RetryWith(Box::new(Action::Delete(retry_task))))
+                        .with_warning(format!(
+                            "Conflict on delete task '{}'. Forcing delete.",
+                            task.summary
+                        )),
+                )
             }
             Err(e) => {
                 let msg = format!("{:?}", e);
-                if msg.contains("403")
-                    || msg.contains("400")
-                    || msg.contains("415")
-                    || msg.contains("409")
+                if msg.contains("403 Forbidden")
+                    || msg.contains("400 Bad Request")
+                    || msg.contains("415 Unsupported Media Type")
+                    || msg.contains("409 Conflict")
                     || msg.contains("Conflict")
                     || msg.contains("InvalidInput")
                     || msg.contains("invalid uri character")
@@ -410,12 +397,7 @@ impl RustyClient {
             Ok(_) => {
                 // Sync companion event for the original task (delete)
                 let _ = self
-                    .sync_companion_event(
-                        task,
-                        events_enabled,
-                        delete_on_completion,
-                        true,
-                    )
+                    .sync_companion_event(task, events_enabled, delete_on_completion, true)
                     .await;
 
                 let filename = format!("{}.ics", task.uid);

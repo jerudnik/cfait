@@ -101,6 +101,11 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
         Message::ToggleTask(index, _) => {
             if let Some(view_task) = app.get_task_at_index(index) {
+                // Prevent rapid-clicking and conflict copies while task is syncing
+                if view_task.etag == "pending_refresh" {
+                    return Task::none();
+                }
+
                 let task_uid = view_task.uid.clone();
                 app.selected_uid = Some(task_uid.clone());
 
@@ -644,7 +649,8 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         }
                         refresh_filtered_tasks(app);
                         if let Some(tx) = &app.bg_tx {
-                            let _ = tx.try_send(WorkerCommand::Batch(vec![Action::Update(updated)]));
+                            let _ =
+                                tx.try_send(WorkerCommand::Batch(vec![Action::Update(updated)]));
                         }
                     }
                     Err(e) => {
@@ -803,6 +809,9 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 && let Some(task) = app.get_task_at_index(idx)
                 && !task.status.is_done()
             {
+                if task.etag == "pending_refresh" {
+                    return Task::none();
+                }
                 return handle(app, Message::ToggleTask(idx, true));
             }
             Task::none()

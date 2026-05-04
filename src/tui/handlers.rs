@@ -914,26 +914,31 @@ pub async fn handle_key_event(
 
             KeyCode::Char(' ') => {
                 if state.active_focus == Focus::Main {
-                    if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone())
-                        && let Some((primary, secondary, children)) = state.store.toggle_task(&uid)
-                    {
-                        state.refresh_filtered_view();
-                        update_alarms(state);
-
-                        // Dispatch persistence actions computed by the store
-                        if let Some(sec) = secondary {
-                            let _ = action_tx.send(Action::CreateTask(primary)).await;
-                            let _ = action_tx.send(Action::UpdateTask(sec)).await;
-                        } else {
-                            let _ = action_tx.send(Action::UpdateTask(primary)).await;
+                    if let Some(view_task) = state.get_selected_task() {
+                        if view_task.etag == "pending_refresh" {
+                            return None;
                         }
+                        let uid = view_task.uid.clone();
+                        if let Some((primary, secondary, children)) = state.store.toggle_task(&uid)
+                        {
+                            state.refresh_filtered_view();
+                            update_alarms(state);
 
-                        for child in children {
-                            let _ = action_tx.send(Action::UpdateTask(child)).await;
+                            // Dispatch persistence actions computed by the store
+                            if let Some(sec) = secondary {
+                                let _ = action_tx.send(Action::CreateTask(primary)).await;
+                                let _ = action_tx.send(Action::UpdateTask(sec)).await;
+                            } else {
+                                let _ = action_tx.send(Action::UpdateTask(primary)).await;
+                            }
+
+                            for child in children {
+                                let _ = action_tx.send(Action::UpdateTask(child)).await;
+                            }
+
+                            // Local state already updated; no single intent to return.
+                            return None;
                         }
-
-                        // Local state already updated; no single intent to return.
-                        return None;
                     }
                 } else if state.active_focus == Focus::Sidebar
                     && state.sidebar_mode == SidebarMode::Calendars
