@@ -176,15 +176,12 @@ impl RustyClient {
             }
             Err(e) => {
                 let msg = format!("{:?}", e);
-                if msg.contains("403 Forbidden")
-                    || msg.contains("405 Method Not Allowed")
-                    || msg.contains("405")
-                    || msg.contains("400 Bad Request")
-                    || msg.contains("415 Unsupported Media Type")
-                    || msg.contains("404 Not Found")
-                    || msg.contains("NotFound")
-                    || msg.contains("409 Conflict")
-                    || msg.contains("Conflict")
+                if msg.contains("403") // Forbidden (e.g. Nextcloud trash collision)
+                    || msg.contains("405") // Method Not Allowed (e.g. Nextcloud Deck read-only)
+                    || msg.contains("400") // Bad Request
+                    || msg.contains("415") // Unsupported Media Type
+                    || msg.contains("404") || msg.contains("NotFound")
+                    || msg.contains("409") || msg.contains("Conflict")
                     || msg.contains("InvalidInput")
                     || msg.contains("invalid uri character")
                 {
@@ -297,13 +294,11 @@ impl RustyClient {
                             task.summary
                         )),
                     )
-                } else if msg.contains("403 Forbidden")
-                    || msg.contains("405 Method Not Allowed")
-                    || msg.contains("405")
-                    || msg.contains("400 Bad Request")
-                    || msg.contains("415 Unsupported Media Type")
-                    || msg.contains("409 Conflict")
-                    || msg.contains("Conflict")
+                } else if msg.contains("403") // Forbidden
+                    || msg.contains("405") // Method Not Allowed
+                    || msg.contains("400") // Bad Request
+                    || msg.contains("415") // Unsupported Media Type
+                    || msg.contains("409") || msg.contains("Conflict")
                     || msg.contains("InvalidInput")
                     || msg.contains("invalid uri character")
                 {
@@ -368,13 +363,11 @@ impl RustyClient {
             }
             Err(e) => {
                 let msg = format!("{:?}", e);
-                if msg.contains("403 Forbidden")
-                    || msg.contains("405 Method Not Allowed")
-                    || msg.contains("405")
-                    || msg.contains("400 Bad Request")
-                    || msg.contains("415 Unsupported Media Type")
-                    || msg.contains("409 Conflict")
-                    || msg.contains("Conflict")
+                if msg.contains("403") // Forbidden (Nextcloud trash collision)
+                    || msg.contains("405") // Method Not Allowed
+                    || msg.contains("400") // Bad Request
+                    || msg.contains("415") // Unsupported Media Type
+                    || msg.contains("409") || msg.contains("Conflict")
                     || msg.contains("InvalidInput")
                     || msg.contains("invalid uri character")
                 {
@@ -513,7 +506,11 @@ impl RustyClient {
 
             let step_result = if let Some(err) = test_forced_err {
                 let err_msg = err.to_string();
-                if err_msg.contains("400") || err_msg.contains("403") || err_msg.contains("405") || err_msg.contains("415") {
+                if err_msg.contains("400")
+                    || err_msg.contains("403")
+                    || err_msg.contains("405")
+                    || err_msg.contains("415")
+                {
                     Ok(StepResult::new(StepOutcome::RecoveryNeeded(err_msg)))
                 } else if err_msg.contains("413") {
                     Ok(StepResult::new(StepOutcome::Discard).with_warning(err_msg))
