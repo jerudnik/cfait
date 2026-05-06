@@ -185,6 +185,7 @@ pub fn print_help(binary_name: &str) {
         println!("    Buy cookies !1 @2025-01-16 #shopping rem:2025-01-16 8am");
         println!("    Work on report done:25% ~4h #work");
         println!("    Exercise @daily ~30m-1h #health rem:in 1h");
+        println!("    Review code ^@2026-06-06 15:00-18:30 #work");
         println!(
             "    Meeting @tomorrow 2pm ~1h +cal {}",
             rust_i18n::t!("cli_example_force_cal")

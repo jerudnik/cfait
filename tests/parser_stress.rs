@@ -124,6 +124,22 @@ fn test_next_weekday() {
     assert!(due > cfait::model::DateType::Specific(chrono::Utc::now()));
 }
 
+#[test]
+fn test_date_with_time_range() {
+    let t = parse("sometask ^@2026-06-06 15:00-18:30");
+    assert!(t.dtstart.is_some());
+    assert!(t.due.is_some());
+    
+    let start = t.dtstart.as_ref().unwrap();
+    let due = t.due.as_ref().unwrap();
+    
+    assert_eq!(start.format_smart(), "2026-06-06 15:00");
+    assert_eq!(due.format_smart(), "2026-06-06 18:30");
+    
+    let s = t.to_smart_string();
+    assert!(s.contains("^@2026-06-06 15:00-18:30"), "Smart string was: {}", s);
+}
+
 // --- METADATA TESTS ---
 
 #[test]

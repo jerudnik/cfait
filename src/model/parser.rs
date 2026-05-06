@@ -262,8 +262,15 @@ fn parse_time_string(s: &str) -> Option<NaiveTime> {
     None
 }
 
+pub fn parse_time_range(s: &str) -> Option<(NaiveTime, NaiveTime)> {
+    let (start_str, end_str) = s.split_once('-')?;
+    let start = parse_time_string(start_str)?;
+    let end = parse_time_string(end_str)?;
+    Some((start, end))
+}
+
 fn is_time_format(s: &str) -> bool {
-    parse_time_string(s).is_some()
+    parse_time_string(s).is_some() || parse_time_range(s).is_some()
 }
 
 pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxToken> {
@@ -1463,21 +1470,36 @@ fn finalize_date_token(
     stream: &[String],
     next_idx: usize,
     consumed: &mut usize,
-) -> DateType {
+) -> (DateType, Option<DateType>) {
     match d {
         DateType::AllDay(nd) => {
             // Only try to merge a time token if it's a specific day
             if next_idx < stream.len() {
                 let next_token = &stream[next_idx];
-                if let Some(t) = parse_time_string(next_token) {
+                if let Some((t1, t2)) = parse_time_range(next_token) {
                     *consumed += 1;
-                    return DateType::Specific(crate::model::item::safe_local_to_utc(nd, t));
+                    let mut end_nd = nd;
+                    if t2 < t1 {
+                        end_nd += Duration::days(1);
+                    }
+                    return (
+                        DateType::Specific(crate::model::item::safe_local_to_utc(nd, t1)),
+                        Some(DateType::Specific(crate::model::item::safe_local_to_utc(
+                            end_nd, t2,
+                        ))),
+                    );
+                } else if let Some(t) = parse_time_string(next_token) {
+                    *consumed += 1;
+                    return (
+                        DateType::Specific(crate::model::item::safe_local_to_utc(nd, t)),
+                        None,
+                    );
                 }
             }
-            DateType::AllDay(nd)
+            (DateType::AllDay(nd), None)
         }
         // Months and Years don't support specific times (14:00)
-        _ => d,
+        _ => (d, None),
     }
 }
 
@@ -1734,7 +1756,7 @@ pub fn apply_smart_input(
                 let mut temp_consumed = 1; // Base consumption for the date/weekday/month token
 
                 if let Some(d) = parse_smart_date(part) {
-                    let dt = finalize_date_token(d, &stream, i + 2, &mut temp_consumed);
+                    let (dt, _) = finalize_date_token(d, &stream, i + 2, &mut temp_consumed);
                     task.exdates.push(dt);
                     matched_any = true;
                 } else if let Some(code) = parse_weekday_code(part) {
@@ -1926,7 +1948,7 @@ pub fn apply_smart_input(
                     matched = true;
                 } else if let Some(d) = parse_smart_date(clean_val) {
                     let mut temp_consumed = 1;
-                    let dt = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
+                    let (dt, _) = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
 
                     let utc_dt = match dt {
                         DateType::Specific(t) => t,
@@ -2092,17 +2114,22 @@ pub fn apply_smart_input(
                 let next_str = &stream[i + 1];
                 if let Some(d) = parse_next_date(next_str) {
                     let mut temp_consumed = 2; // "next" + unit
-                    let dt = finalize_date_token(
+                    let (dt, dt_end) = finalize_date_token(
                         DateType::AllDay(d),
                         &stream,
                         i + temp_consumed,
                         &mut temp_consumed,
                     );
-                    if set_start {
-                        task.dtstart = Some(dt.clone());
-                    }
-                    if set_due {
-                        task.due = Some(dt);
+                    if let Some(end) = dt_end {
+                        task.dtstart = Some(dt);
+                        task.due = Some(end);
+                    } else {
+                        if set_start {
+                            task.dtstart = Some(dt.clone());
+                        }
+                        if set_due {
+                            task.due = Some(dt);
+                        }
                     }
                     consumed = temp_consumed;
                     matched_date = true;
@@ -2121,17 +2148,22 @@ pub fn apply_smart_input(
                     && let Some(d) = parse_in_date(amount, &unit)
                 {
                     let mut temp_consumed = 1 + 1 + extra;
-                    let dt = finalize_date_token(
+                    let (dt, dt_end) = finalize_date_token(
                         DateType::AllDay(d),
                         &stream,
                         i + temp_consumed,
                         &mut temp_consumed,
                     );
-                    if set_start {
-                        task.dtstart = Some(dt.clone());
-                    }
-                    if set_due {
-                        task.due = Some(dt);
+                    if let Some(end) = dt_end {
+                        task.dtstart = Some(dt);
+                        task.due = Some(end);
+                    } else {
+                        if set_start {
+                            task.dtstart = Some(dt.clone());
+                        }
+                        if set_due {
+                            task.due = Some(dt);
+                        }
                     }
                     consumed = temp_consumed;
                     matched_date = true;
@@ -2141,14 +2173,35 @@ pub fn apply_smart_input(
             if !matched_date {
                 if let Some(d) = parse_smart_date(clean) {
                     let mut temp_consumed = 1;
-                    let dt = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
-                    if set_start {
-                        task.dtstart = Some(dt.clone());
-                    }
-                    if set_due {
-                        task.due = Some(dt);
+                    let (dt, dt_end) = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
+                    if let Some(end) = dt_end {
+                        task.dtstart = Some(dt);
+                        task.due = Some(end);
+                    } else {
+                        if set_start {
+                            task.dtstart = Some(dt.clone());
+                        }
+                        if set_due {
+                            task.due = Some(dt);
+                        }
                     }
                     consumed = temp_consumed;
+                } else if let Some((t1, t2)) = parse_time_range(clean) {
+                    let now_local = Local::now();
+                    let mut target_date = now_local.date_naive();
+                    if t1 <= now_local.time() {
+                        target_date += Duration::days(1);
+                    }
+                    let dt1 = DateType::Specific(crate::model::item::safe_local_to_utc(target_date, t1));
+                    
+                    let mut target_date_end = target_date;
+                    if t2 < t1 {
+                        target_date_end += Duration::days(1);
+                    }
+                    let dt2 = DateType::Specific(crate::model::item::safe_local_to_utc(target_date_end, t2));
+                    
+                    task.dtstart = Some(dt1);
+                    task.due = Some(dt2);
                 } else if let Some(t) = parse_time_string(clean) {
                     let now_local = Local::now();
                     let mut target_date = now_local.date_naive();
@@ -2165,17 +2218,22 @@ pub fn apply_smart_input(
                     }
                 } else if let Some(d) = parse_weekday_date(clean) {
                     let mut temp_consumed = 1;
-                    let dt = finalize_date_token(
+                    let (dt, dt_end) = finalize_date_token(
                         DateType::AllDay(d),
                         &stream,
                         i + temp_consumed,
                         &mut temp_consumed,
                     );
-                    if set_start {
-                        task.dtstart = Some(dt.clone());
-                    }
-                    if set_due {
-                        task.due = Some(dt);
+                    if let Some(end) = dt_end {
+                        task.dtstart = Some(dt);
+                        task.due = Some(end);
+                    } else {
+                        if set_start {
+                            task.dtstart = Some(dt.clone());
+                        }
+                        if set_due {
+                            task.due = Some(dt);
+                        }
                     }
                     consumed = temp_consumed;
                 } else if let Some(rrule) = parse_recurrence(clean) {
@@ -2263,14 +2321,35 @@ pub fn apply_smart_input(
                 }
             } else if let Some(d) = parse_smart_date(val) {
                 let mut temp_consumed = 1;
-                let dt = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
-                if set_start {
-                    task.dtstart = Some(dt.clone());
-                }
-                if set_due {
-                    task.due = Some(dt);
+                let (dt, dt_end) = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
+                if let Some(end) = dt_end {
+                    task.dtstart = Some(dt);
+                    task.due = Some(end);
+                } else {
+                    if set_start {
+                        task.dtstart = Some(dt.clone());
+                    }
+                    if set_due {
+                        task.due = Some(dt);
+                    }
                 }
                 consumed = temp_consumed;
+            } else if let Some((t1, t2)) = parse_time_range(val) {
+                let now_local = Local::now();
+                let mut target_date = now_local.date_naive();
+                if t1 <= now_local.time() {
+                    target_date += Duration::days(1);
+                }
+                let dt1 = DateType::Specific(crate::model::item::safe_local_to_utc(target_date, t1));
+                
+                let mut target_date_end = target_date;
+                if t2 < t1 {
+                    target_date_end += Duration::days(1);
+                }
+                let dt2 = DateType::Specific(crate::model::item::safe_local_to_utc(target_date_end, t2));
+                
+                task.dtstart = Some(dt1);
+                task.due = Some(dt2);
             } else if let Some(rrule) = parse_recurrence(val) {
                 task.rrule = Some(rrule);
                 has_recurrence = true;
@@ -2290,24 +2369,45 @@ pub fn apply_smart_input(
                 }
             } else if let Some(d) = parse_weekday_date(val) {
                 let mut temp_consumed = 1;
-                let dt = finalize_date_token(
+                let (dt, dt_end) = finalize_date_token(
                     DateType::AllDay(d),
                     &stream,
                     i + temp_consumed,
                     &mut temp_consumed,
                 );
-                if set_start {
-                    task.dtstart = Some(dt.clone());
-                }
-                if set_due {
-                    task.due = Some(dt);
+                if let Some(end) = dt_end {
+                    task.dtstart = Some(dt);
+                    task.due = Some(end);
+                } else {
+                    if set_start {
+                        task.dtstart = Some(dt.clone());
+                    }
+                    if set_due {
+                        task.due = Some(dt);
+                    }
                 }
                 consumed = temp_consumed;
+            } else if let Some((t1, t2)) = parse_time_range(val) {
+                let now_local = Local::now();
+                let mut target_date = now_local.date_naive();
+                if t1 <= now_local.time() {
+                    target_date += Duration::days(1);
+                }
+                let dt1 = DateType::Specific(crate::model::item::safe_local_to_utc(target_date, t1));
+                
+                let mut target_date_end = target_date;
+                if t2 < t1 {
+                    target_date_end += Duration::days(1);
+                }
+                let dt2 = DateType::Specific(crate::model::item::safe_local_to_utc(target_date_end, t2));
+                
+                task.dtstart = Some(dt1);
+                task.due = Some(dt2);
             } else if let Some(_stripped) = token_lower.strip_prefix("due:") {
                 let real_val = &token[4..];
                 if let Some(d) = parse_smart_date(real_val) {
                     let mut temp_consumed = 1;
-                    let dt = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
+                    let (dt, _) = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
                     task.due = Some(dt);
                     consumed = temp_consumed;
                 } else {
@@ -2320,7 +2420,7 @@ pub fn apply_smart_input(
             let val = &token[4..];
             if let Some(d) = parse_smart_date(val) {
                 let mut temp_consumed = 1;
-                let dt = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
+                let (dt, _) = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
                 task.due = Some(dt);
                 consumed = temp_consumed;
             } else {
@@ -2337,12 +2437,12 @@ pub fn apply_smart_input(
             };
             if let Some(d) = parse_smart_date(clean_val) {
                 let mut temp_consumed = 1;
-                let dt = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
+                let (dt, _) = finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
                 task.dtstart = Some(dt);
                 consumed = temp_consumed;
             } else if let Some(d) = parse_weekday_date(clean_val) {
                 let mut temp_consumed = 1;
-                let dt = finalize_date_token(
+                let (dt, _) = finalize_date_token(
                     DateType::AllDay(d),
                     &stream,
                     i + temp_consumed,

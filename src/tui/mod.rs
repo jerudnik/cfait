@@ -52,7 +52,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         println!("    @@location        Add location (supports hierarchy: @@home:office)");
         println!("    @date             Set due date (@tomorrow, @2d, @next friday)");
         println!("    ^date             Set start date (^next week, ^2025-01-01)");
-        println!("    ^@date            Set both start and due dates (^@tomorrow, ^@2d)");
+        println!("    ^@date            Set both start and due dates (^@tomorrow, ^@2d, ^@2026-06-06 15:00-18:30)");
         println!("    ~duration         Set duration (~30m, ~1.5h)");
         println!("    @daily            Recurrence (@daily, @weekly, @every 3 days)");
         println!("    until <date>      End date for recurrence (@daily until 2025-12-31)");
