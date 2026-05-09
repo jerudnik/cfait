@@ -1451,7 +1451,7 @@ impl CfaitMobile {
     }
 
     pub async fn sync(&self) -> Result<String, MobileError> {
-        let config = Config::load(self.ctx.as_ref()).map_err(MobileError::from)?;
+        let config = Config::load_with_credentials(self.ctx.as_ref()).map_err(MobileError::from)?;
         self.apply_connection(config).await
     }
 
@@ -1462,7 +1462,7 @@ impl CfaitMobile {
         pass: String,
         insecure: bool,
     ) -> Result<String, MobileError> {
-        let mut config = Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let mut config = Config::load_with_credentials(self.ctx.as_ref()).unwrap_or_default();
         config.url = url;
         config.username = user;
         if !pass.is_empty() {

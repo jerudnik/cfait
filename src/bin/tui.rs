@@ -83,7 +83,7 @@ fn resolve_uid(store: &TaskStore, partial: &str) -> Option<String> {
 // Best-effort sync helper that can be called without passing a pre-loaded config
 // Delegate to `sync_background` so the shared helper is used and keeps logic centralized.
 async fn maybe_sync(ctx: Arc<dyn AppContext>) -> Result<(), String> {
-    if let Ok(config) = cfait::config::Config::load(ctx.as_ref()) {
+    if let Ok(config) = cfait::config::Config::load_with_credentials(ctx.as_ref()) {
         // Reuse the existing background sync helper which already implements a
         // timeout and client fallback. This ensures `sync_background` is referenced.
         sync_background(ctx, config).await
@@ -215,7 +215,7 @@ async fn main() -> Result<()> {
             return Ok(());
         }
         "sync" => {
-            let config = cfait::config::Config::load(ctx.as_ref()).unwrap_or_default();
+            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             if config.url.is_empty() {
                 println!("Offline mode configured; nothing to sync.");
                 return Ok(());
@@ -239,7 +239,7 @@ async fn main() -> Result<()> {
         "daemon" => {
             println!("Starting Cfait background daemon...");
             loop {
-                let config = cfait::config::Config::load(ctx.as_ref()).unwrap_or_default();
+                let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
                 let interval = config.auto_refresh_interval_mins;
                 if interval == 0 {
                     println!("Auto-refresh is disabled in config. Daemon exiting.");
@@ -273,7 +273,7 @@ async fn main() -> Result<()> {
                 std::process::exit(1);
             }
 
-            let mut config = cfait::config::Config::load(ctx.as_ref()).unwrap_or_default();
+            let mut config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             let def_time =
                 chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
 
@@ -284,7 +284,7 @@ async fn main() -> Result<()> {
                     let _ = cfait::model::validate_alias_integrity(k, v, &config.tag_aliases);
                     config.tag_aliases.insert(k.clone(), v.clone());
                 }
-                let _ = config.save(ctx.as_ref());
+                let _ = config.save_with_credentials(ctx.as_ref());
             }
 
             let mut task = Task::new(&clean_input, &config.tag_aliases, def_time);
@@ -360,7 +360,7 @@ async fn main() -> Result<()> {
                 String::new()
             };
 
-            let config = cfait::config::Config::load(ctx.as_ref()).unwrap_or_default();
+            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             let store = build_store_cli(&ctx).await;
 
             let mut hidden: HashSet<String> = HashSet::new();
@@ -471,7 +471,7 @@ async fn main() -> Result<()> {
                 None => std::process::exit(1),
             };
 
-            let config = cfait::config::Config::load(ctx.as_ref()).unwrap_or_default();
+            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             let store_arc = Arc::new(tokio::sync::Mutex::new(store));
             let client_arc = Arc::new(tokio::sync::Mutex::new(None));
             let controller =
@@ -522,7 +522,7 @@ async fn main() -> Result<()> {
                 None => std::process::exit(1),
             };
 
-            let config = cfait::config::Config::load(ctx.as_ref()).unwrap_or_default();
+            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             let store_arc = Arc::new(tokio::sync::Mutex::new(store));
             let client_arc = Arc::new(tokio::sync::Mutex::new(None));
             let controller =

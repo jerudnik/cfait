@@ -303,6 +303,8 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
 
+            let _ = keyring.unlock().await;
+
             let items = keyring
                 .search_items(&std::collections::HashMap::from([
                     ("service", self.service.as_str()),

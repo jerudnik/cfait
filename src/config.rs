@@ -432,7 +432,14 @@ impl Config {
             config.config_version = 1;
         }
 
-        // --- KEYRING MIGRATION & LOAD ---
+        Ok(config)
+    }
+
+    /// Load the configuration from disk and fetch the password from the OS keyring.
+    /// Use this ONLY during app startup, explicit syncing, or opening the settings panel.
+    pub fn load_with_credentials(ctx: &dyn AppContext) -> Result<Self> {
+        let mut config = Self::load(ctx)?;
+
         let user_key = if config.username.is_empty() {
             "default"
         } else {
@@ -444,14 +451,11 @@ impl Config {
                 // Migration: plaintext password found in config.toml!
                 // Move it securely into the OS keyring.
                 let _ = entry.set_password(&config.password);
-            } else {
+            } else if let Ok(pw) = entry.get_password() {
                 // Normal run: fetch the password from the OS keyring.
-                if let Ok(pw) = entry.get_password() {
-                    config.password = pw;
-                }
+                config.password = pw;
             }
         }
-        // --------------------------------
 
         Ok(config)
     }
@@ -480,7 +484,17 @@ impl Config {
     pub fn save(&self, ctx: &dyn AppContext) -> Result<()> {
         let path = ctx.get_config_file_path()?;
 
-        // --- KEYRING SAVE ---
+        LocalStorage::with_lock(&path, || {
+            let toml_str = toml::to_string_pretty(self)?;
+            let documented_toml = Self::inject_documentation(&toml_str);
+            LocalStorage::atomic_write(&path, documented_toml)?;
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    /// Save configuration and update the OS keyring credential.
+    pub fn save_with_credentials(&self, ctx: &dyn AppContext) -> Result<()> {
         let user_key = if self.username.is_empty() {
             "default"
         } else {
@@ -495,15 +509,8 @@ impl Config {
                 let _ = entry.delete_credential();
             }
         }
-        // --------------------
 
-        LocalStorage::with_lock(&path, || {
-            let toml_str = toml::to_string_pretty(self)?;
-            let documented_toml = Self::inject_documentation(&toml_str);
-            LocalStorage::atomic_write(&path, documented_toml)?;
-            Ok(())
-        })?;
-        Ok(())
+        self.save(ctx)
     }
 
     /// Get the path string using an explicit context.

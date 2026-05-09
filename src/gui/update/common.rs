@@ -146,7 +146,7 @@ pub fn save_config(app: &mut GuiApp) -> Config {
     let ctx_clone = app.ctx.clone();
     let cfg_clone = cfg.clone();
     std::thread::spawn(move || {
-        let _ = cfg_clone.save(ctx_clone.as_ref());
+        let _ = cfg_clone.save_with_credentials(ctx_clone.as_ref());
     });
     // ----------------------
 

@@ -107,7 +107,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         default_hook(info);
     }));
 
-    let config_result = config::Config::load(ctx.as_ref());
+    let config_result = config::Config::load_with_credentials(ctx.as_ref());
     let cfg = match config_result {
         Ok(c) => c,
         Err(e) => {
