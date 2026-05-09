@@ -122,6 +122,10 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
             println!("Welcome to Cfait (TUI). No configuration file found.");
             println!("Let's set up your task manager.\n");
 
+            if let Some(Some(warn)) = crate::system::KEYRING_WARNING.get() {
+                println!("{}\n", warn);
+            }
+
             println!("Select mode:");
             println!("  [1] Connect to CalDAV Server (Radicale, Nextcloud, etc.)");
             println!("  [2] Offline Mode (Local tasks only)");

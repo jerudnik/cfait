@@ -79,6 +79,8 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
 
     let error = if let Some(e) = &app.error_msg {
         text(e).color(Color::from_rgb(1.0, 0.0, 0.0))
+    } else if let Some(Some(warn)) = crate::system::KEYRING_WARNING.get() {
+        text(warn).color(Color::from_rgb(1.0, 0.6, 0.0))
     } else {
         text("")
     };

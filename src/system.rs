@@ -9,7 +9,10 @@ use notify_rust::Notification;
 use simplelog::*;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
+use std::sync::OnceLock;
 use tokio::sync::mpsc;
+
+pub static KEYRING_WARNING: OnceLock<Option<String>> = OnceLock::new();
 use tokio::time::{Duration, Instant, sleep_until};
 
 #[derive(Debug, Clone)]
@@ -137,6 +140,7 @@ pub fn init_keyring() {
             set_default_store(store);
             log::info!("Initialized Windows Credential Manager.");
         }
+        let _ = KEYRING_WARNING.set(None);
     }
 
     #[cfg(target_os = "macos")]
@@ -147,6 +151,7 @@ pub fn init_keyring() {
             set_default_store(store);
             log::info!("Initialized macOS Keychain.");
         }
+        let _ = KEYRING_WARNING.set(None);
     }
 
     #[cfg(target_os = "linux")]
@@ -158,11 +163,18 @@ pub fn init_keyring() {
         if oo7_works {
             set_default_store(Oo7Store::new());
             log::info!("Initialized Linux Secret Portal (oo7 wrapper).");
+            let _ = KEYRING_WARNING.set(None);
         } else if let Ok(store) = linux_keyutils_keyring_store::Store::new() {
             set_default_store(store);
-            log::info!("Initialized Linux Keyutils (headless fallback).");
+            log::warn!("Initialized Linux Keyutils (headless fallback).");
+            let _ = KEYRING_WARNING.set(Some(
+                "Warning: Using memory-only kernel keyring. Passwords will be lost on reboot. Install a Secret Service provider (e.g. gnome-keyring, kwallet) to save credentials permanently.".to_string(),
+            ));
         } else {
             log::warn!("Failed to initialize any Linux keyring backend.");
+            let _ = KEYRING_WARNING.set(Some(
+                "Warning: No keyring backend available. Passwords cannot be saved securely.".to_string(),
+            ));
         }
     }
 
@@ -172,6 +184,7 @@ pub fn init_keyring() {
             set_default_store(store);
             log::info!("Initialized Android Native Keystore.");
         }
+        let _ = KEYRING_WARNING.set(None);
     }
 }
 
