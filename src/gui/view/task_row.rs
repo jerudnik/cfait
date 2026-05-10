@@ -248,20 +248,18 @@ pub fn view_task_row<'a>(
                 }
             };
 
-            let summary_text = task.summary.clone();
-            
-            let mut content_row = row![
-                text(summary_text)
-                    .size(20)
-                    .color(title_color)
-                    .width(Length::Shrink)
-                    .wrapping(iced::widget::text::Wrapping::Word)
-            ]
-            .spacing(6)
-            .align_y(iced::Alignment::Center);
+            let summary = text(task.summary.clone())
+                .size(20)
+                .color(title_color)
+                .width(Length::Fill)
+                .wrapping(iced::widget::text::Wrapping::Word);
+
+            let mut badges = row![].spacing(6).align_y(iced::Alignment::Center);
+            let mut has_badges = false;
 
             if is_blocked {
-                content_row = content_row.push(
+                has_badges = true;
+                badges = badges.push(
                     container(
                         text(rust_i18n::t!("blocked"))
                             .size(12)
@@ -279,14 +277,16 @@ pub fn view_task_row<'a>(
                 );
             }
             if has_active_alarm {
-                content_row = content_row.push(
+                has_badges = true;
+                badges = badges.push(
                     icon::icon(icon::BELL)
                         .size(12)
                         .color(Color::from_rgb(1.0, 0.4, 0.0)),
                 );
             }
             if let Some(date_text) = date_badge {
-                content_row = content_row.push(
+                has_badges = true;
+                badges = badges.push(
                     row![
                         icon::icon(date_icon).size(12).color(date_color),
                         text(date_text).size(12).color(date_color)
@@ -296,7 +296,8 @@ pub fn view_task_row<'a>(
                 );
             }
             if let Some(dur_text) = duration_badge {
-                content_row = content_row.push(
+                has_badges = true;
+                badges = badges.push(
                     container(
                         text(dur_text)
                             .size(10)
@@ -314,7 +315,8 @@ pub fn view_task_row<'a>(
                 );
             }
             if let Some(loc) = visible_location {
-                content_row = content_row.push(
+                has_badges = true;
+                badges = badges.push(
                     button(text(format!("@{}", loc)).size(12).color(Color::WHITE))
                         .style(move |_, _| button::Style {
                             background: Some(crate::gui::view::COLOR_LOCATION.into()),
@@ -329,10 +331,11 @@ pub fn view_task_row<'a>(
                 );
             }
             for tag in visible_tags {
+                has_badges = true;
                 let (r, g, b) = crate::color_utils::generate_color(&tag);
                 let bg = Color::from_rgb(r, g, b);
                 let tc = if crate::color_utils::is_dark(r, g, b) { Color::WHITE } else { Color::BLACK };
-                content_row = content_row.push(
+                badges = badges.push(
                     button(text(format!("#{}", tag)).size(12).color(tc))
                         .style(move |_, _| button::Style {
                             background: Some(bg.into()),
@@ -346,10 +349,6 @@ pub fn view_task_row<'a>(
                         .on_press(Message::JumpToTag(tag)),
                 );
             }
-
-            let main_text_col = container(content_row.wrap().vertical_spacing(4))
-                .width(Length::Fill)
-                .height(Length::Shrink);
 
             let mut actions = row![].spacing(3).align_y(iced::Alignment::Center);
 
@@ -682,11 +681,17 @@ pub fn view_task_row<'a>(
                 }
             });
 
+            let right_side = if has_badges {
+                row![badges, actions].spacing(10).align_y(iced::Alignment::Center)
+            } else {
+                actions
+            };
+
             let row_main = row![
                 Space::new().width(Length::Fixed(indent_size as f32)),
                 status_btn,
-                main_text_col,
-                actions
+                summary,
+                right_side
             ]
             .spacing(10)
             .align_y(iced::Alignment::Center);
