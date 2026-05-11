@@ -6,10 +6,7 @@ Cfait shares one Rust core across TUI, GUI, and Android clients. To maintain con
 
 1.  **Feature Parity:** New features should be implemented across all three clients (TUI, GUI, Android). If you can't, please note it in your PR.
 2.  **Tests:** Test your changes on all three clients to ensure nothing breaks.
-3.  **Update Documentation:** If you add a feature, update both the `README.md` and the in-app help for all clients.
-    *   **TUI:** `src/tui/view.rs`
-    *   **GUI:** `src/gui/view/help.rs`
-    *   **Android:** `android/app/src/main/java/com/trougnouf/cfait/ui/HelpScreen.kt`
+3.  **Update Documentation:** If you add a feature, update both the `README.md` and the in-app help for all clients (common: `src/help.rs`, TUI: `src/tui/view.rs`, GUI: `src/gui/view/help.rs`, Android: `android/app/src/main/java/com/trougnouf/cfait/ui/HelpScreen.kt`).
 4.  **Keep it Light:** Aim for simplicity to minimize the codebase and maintenance burden and to keep the program fast.
 
 
@@ -27,7 +24,7 @@ Before submitting, please ensure your changes meet the following criteria:
 ### Local Development
 
 *   **TUI:** `cargo run`
-*   **GUI:** `cargo run --features gui --bin gui`
+*   **GUI:** `cargo run --features gui --bin cfait-gui`
 *   **Android:** See build instructions in `README.md`.
 
 ### Other ways to contribute
