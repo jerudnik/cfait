@@ -131,14 +131,15 @@ fun TaskRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalArrangement = Arrangement.spacedBy(1.dp),
                 ) {
-                    if (task.description.isNotEmpty() || task.blockingUids.isNotEmpty() || task.blockingNames.isNotEmpty()) {
+                    if (task.description.isNotEmpty() || task.hasBlockingTasks || task.blockedByUids.isNotEmpty()) {
                         NfIcon(NfIcons.INFO, size = 10.sp, color = Color.Gray, lineHeight = 10.sp)
                     }
 
-                    if (task.relatedToUids.isNotEmpty() || task.relatedToNames.isNotEmpty()) {
-                        val relatedUid = task.relatedToUids.firstOrNull() ?: ""
+                    if (task.relatedToUids.isNotEmpty() || task.hasRelatedTasks) {
+                        val relatedUid = task.relatedToUids.firstOrNull()
+                        val iconName = if (relatedUid != null) getRandomRelatedIcon(task.uid, relatedUid) else NfIcons.LINK
                         NfIcon(
-                            getRandomRelatedIcon(task.uid, relatedUid),
+                            iconName,
                             size = 10.sp,
                             color = Color.Gray,
                             lineHeight = 10.sp
@@ -314,9 +315,7 @@ fun TaskRow(
 
                         val durColor = if (task.lastStartedAt != null) Color(0xFF66BB6A) else Color.Gray
 
-                        Box(modifier = Modifier.background(durColor, RoundedCornerShape(4.dp)).padding(horizontal = 4.dp, vertical = 2.dp)) {
-                            Text(label, color = MaterialTheme.colorScheme.surface, fontSize = 10.sp, lineHeight = 10.sp)
-                        }
+                        Text(label, fontSize = 10.sp, color = durColor, lineHeight = 10.sp)
                     }
 
                     if (task.isRecurring) NfIcon(NfIcons.REPEAT, size = 10.sp, color = Color.Gray, lineHeight = 10.sp)
@@ -384,7 +383,7 @@ fun TaskRow(
                 }
             }
 
-            if (task.hasSubtasks || isCollapsed) {
+            if (task.hasVisibleSubtasks || isCollapsed) {
                 val iconChar = if (isCollapsed) {
                     NfIcons.FAMILY_TREE
                 } else {
