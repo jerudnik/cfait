@@ -181,6 +181,7 @@ pub enum Message {
     InitBackgroundWorker(mpsc::Sender<crate::gui::async_ops::WorkerCommand>),
     BackgroundSyncComplete(Vec<TodoTask>),
     BackgroundSyncFailed,
+    JournalSaved,
 
     // --- Window Management ---
     WindowDragged,

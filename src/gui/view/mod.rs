@@ -1285,7 +1285,7 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         (
             icon::SYNC_ALERT,
             Color::from_rgb(0.92, 0.0, 0.0), // Red (#EB0000)
-            rust_i18n::t!("unsynced").to_string(),
+            if app.unsynced_tooltip.is_empty() { rust_i18n::t!("unsynced").to_string() } else { app.unsynced_tooltip.clone() },
         )
     } else if app.last_sync_failed {
         (

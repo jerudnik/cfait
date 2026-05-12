@@ -39,7 +39,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
         Message::BackgroundSyncComplete(synced_tasks) => {
             app.last_sync_failed = false;
-            app.unsynced_changes = !Journal::load(app.ctx.as_ref()).is_empty();
+            crate::gui::update::common::update_journal_state(app);
 
             // The TaskController updated the shared TaskStore in the background.
             // We only need to trigger a heavy UI rebuild if a completely new task
@@ -53,7 +53,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
         Message::BackgroundSyncFailed => {
             app.last_sync_failed = true;
-            app.unsynced_changes = !Journal::load(app.ctx.as_ref()).is_empty();
+            crate::gui::update::common::update_journal_state(app);
             Task::none()
         }
         Message::Loaded(Ok((client, mut cals, mut tasks, active, warning))) => {
@@ -73,7 +73,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 app.last_sync_failed = false;
             }
 
-            app.unsynced_changes = !Journal::load(app.ctx.as_ref()).is_empty();
+            crate::gui::update::common::update_journal_state(app);
 
             let local_cals = LocalCalendarRegistry::load(app.ctx.as_ref()).unwrap_or_default();
 
@@ -183,6 +183,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             log::error!("Connection Failed: {}", e);
             app.error_msg = Some(format!("Connection Failed: {}", e));
             app.last_sync_failed = true;
+            crate::gui::update::common::update_journal_state(app);
 
             if let Some(tx) = &app.alarm_tx {
                 let _ = tx.try_send(SystemEvent::EnableAlarms);

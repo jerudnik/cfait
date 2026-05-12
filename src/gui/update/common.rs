@@ -368,3 +368,34 @@ pub fn dispatch_intent(app: &mut GuiApp, intent: AppIntent) {
         let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
     }
 }
+
+/// Reloads the journal from disk and updates the unsynced UI state & tooltip.
+pub fn update_journal_state(app: &mut GuiApp) {
+    let journal = crate::journal::Journal::load(app.ctx.as_ref());
+    app.unsynced_changes = !journal.is_empty();
+
+    if app.unsynced_changes {
+        let mut lines = vec![rust_i18n::t!("unsynced").to_string()];
+        for (i, action) in journal.queue.iter().enumerate() {
+            if i >= 10 {
+                lines.push(rust_i18n::t!("unsynced_and_more", count = journal.queue.len() - 10).to_string());
+                break;
+            }
+            let (verb, summary) = match action {
+                crate::journal::Action::Create(t) => (rust_i18n::t!("unsynced_action_create").to_string(), &t.summary),
+                crate::journal::Action::Update(t) => (rust_i18n::t!("unsynced_action_update").to_string(), &t.summary),
+                crate::journal::Action::Delete(t) => (rust_i18n::t!("unsynced_action_delete").to_string(), &t.summary),
+                crate::journal::Action::Move(t, _) => (rust_i18n::t!("unsynced_action_move").to_string(), &t.summary),
+            };
+            let trunc_summary = if summary.chars().count() > 40 {
+                format!("{}...", summary.chars().take(37).collect::<String>())
+            } else {
+                summary.clone()
+            };
+            lines.push(format!("• {}: {}", verb, trunc_summary));
+        }
+        app.unsynced_tooltip = lines.join("\n");
+    } else {
+        app.unsynced_tooltip = rust_i18n::t!("force_sync").to_string();
+    }
+}

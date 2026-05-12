@@ -34,6 +34,11 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::BackgroundSyncComplete(_)
         | Message::BackgroundSyncFailed => network::handle(app, message),
 
+        Message::JournalSaved => {
+            crate::gui::update::common::update_journal_state(app);
+            Task::none()
+        }
+
         Message::ConfigLoaded(_)
         | Message::ObUrlChanged(_)
         | Message::ObUserChanged(_)

@@ -113,6 +113,7 @@ pub struct GuiApp {
     pub expanded_tasks: HashSet<String>,
     pub help_expanded_sections: HashSet<String>,
     pub unsynced_changes: bool,
+    pub unsynced_tooltip: String,
     pub last_sync_failed: bool,
 
     // Session UI state
@@ -371,6 +372,7 @@ impl Default for GuiApp {
             expanded_tasks: HashSet::new(),
             help_expanded_sections: HashSet::new(),
             unsynced_changes: false,
+            unsynced_tooltip: String::new(),
             last_sync_failed: false,
 
             // Session UI defaults

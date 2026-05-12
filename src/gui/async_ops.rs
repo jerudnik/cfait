@@ -133,6 +133,7 @@ pub fn spawn_background_worker(
                         Some(WorkerCommand::Batch(actions)) => {
                             let _ = controller.persist_changes(actions).await;
                             sync_pending = true;
+                            let _ = ui_tx.send(crate::gui::message::Message::JournalSaved).await;
                         }
                         Some(WorkerCommand::SyncNow) => {
                             sync_pending = true;
