@@ -47,12 +47,7 @@ pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
     // Mute the noisy UI crates, but DO NOT mute rustls (needed for TLS debugging)
     let log_config = simplelog::ConfigBuilder::new()
         .add_filter_ignore_str("iced")
-        .add_filter_ignore_str("winit")
-        .add_filter_ignore_str("iced_winit")
-        .add_filter_ignore_str("iced_wgpu")
-        .add_filter_ignore_str("wgpu_core")
-        .add_filter_ignore_str("wgpu_hal")
-        .add_filter_ignore_str("calloop")
+        .add_filter_ignore_str("zbus")
         .build();
 
     // File logger: creates a fresh cfait.log for this session
@@ -118,7 +113,7 @@ pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
         // Terminal logger: only enabled when safe to do so (GUI / CLI)
         if enable_stderr {
             let term_logger = TermLogger::new(
-                LevelFilter::Warn,
+                LevelFilter::Info,
                 log_config.clone(),
                 TerminalMode::Stderr,
                 ColorChoice::Auto,
@@ -173,7 +168,8 @@ pub fn init_keyring() {
         } else {
             log::warn!("Failed to initialize any Linux keyring backend.");
             let _ = KEYRING_WARNING.set(Some(
-                "Warning: No keyring backend available. Passwords cannot be saved securely.".to_string(),
+                "Warning: No keyring backend available. Passwords cannot be saved securely."
+                    .to_string(),
             ));
         }
     }
@@ -264,9 +260,15 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
 
-            log::info!("Waiting for Linux Secret Portal keyring to unlock... (check for OS prompts)");
+            log::info!(
+                "Waiting for Linux Secret Portal keyring to unlock... (check for OS prompts)"
+            );
             let _ = keyring.unlock().await;
-            log::info!("Unlocked Linux Secret Portal keyring for {}/{}", self.service, self.user);
+            log::info!(
+                "Unlocked Linux Secret Portal keyring for {}/{}",
+                self.service,
+                self.user
+            );
 
             keyring
                 .create_item(
@@ -293,9 +295,15 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
 
-            log::info!("Waiting for Linux Secret Portal keyring to unlock... (check for OS prompts)");
+            log::info!(
+                "Waiting for Linux Secret Portal keyring to unlock... (check for OS prompts)"
+            );
             let _ = keyring.unlock().await;
-            log::info!("Unlocked Linux Secret Portal keyring for {}/{}", self.service, self.user);
+            log::info!(
+                "Unlocked Linux Secret Portal keyring for {}/{}",
+                self.service,
+                self.user
+            );
 
             let items = keyring
                 .search_items(&std::collections::HashMap::from([
