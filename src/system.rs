@@ -46,7 +46,7 @@ pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
     // Silence noisy third-party crates (like iced logging raw icon pixels)
     // Mute the noisy UI crates, but DO NOT mute rustls (needed for TLS debugging)
     let log_config = simplelog::ConfigBuilder::new()
-        .add_filter_ignore_str("iced")
+        .add_filter_ignore_str("iced_winit")
         .add_filter_ignore_str("zbus")
         .build();
 
