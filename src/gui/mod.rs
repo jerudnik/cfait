@@ -104,12 +104,22 @@ impl GuiApp {
         config::init_locale(ctx.as_ref());
         let ctx_clone = ctx.clone();
 
+        // Initialize keyring inside the Iced context so the DBus connection stays alive
+        crate::system::init_keyring();
+
         let mut tasks = vec![
             Task::perform(
                 async move {
-                    Config::load_with_credentials(ctx_clone.as_ref())
-                        .map(Box::new)
-                        .map_err(|e| e.to_string())
+                    let ctx_ref = ctx_clone.clone();
+                    match tokio::task::spawn_blocking(move || {
+                        Config::load_with_credentials(ctx_ref.as_ref())
+                    })
+                    .await
+                    {
+                        Ok(Ok(cfg)) => Ok(Box::new(cfg)),
+                        Ok(Err(e)) => Err(e.to_string()),
+                        Err(e) => Err(format!("Task panicked: {}", e)),
+                    }
                 },
                 Message::ConfigLoaded,
             ),

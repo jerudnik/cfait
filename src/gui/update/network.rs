@@ -19,8 +19,9 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.error_msg = None;
 
             if app.client.is_some()
-                && let Ok(cfg) = Config::load_with_credentials(app.ctx.as_ref())
+                && let Ok(mut cfg) = Config::load(app.ctx.as_ref())
             {
+                cfg.password = app.ob_pass.clone(); // Re-use the securely loaded password
                 return Task::perform(connect_and_fetch_wrapper(app.ctx.clone(), cfg), |res| {
                     Message::Loaded(res.map_err(|e| e.to_string()))
                 });

@@ -152,7 +152,7 @@ pub fn init_keyring() {
     #[cfg(target_os = "linux")]
     {
         // 1. Probe if we have D-Bus / Portal access
-        let oo7_works = block_on_async(async { oo7::Keyring::new().await.is_ok() });
+        let oo7_works = block_on_async(async { get_keyring().await.is_ok() });
 
         // 2. Set the store dynamically based on the environment
         if oo7_works {
@@ -187,13 +187,26 @@ pub fn init_keyring() {
 // --- LINUX OO7 WRAPPER & ASYNC HELPER ---
 
 #[cfg(target_os = "linux")]
+async fn get_keyring() -> Result<std::sync::Arc<oo7::Keyring>, oo7::Error> {
+    // Cache the DBus connection so we only negotiate with the Secret Portal once per launch
+    static KEYRING: tokio::sync::OnceCell<std::sync::Arc<oo7::Keyring>> = tokio::sync::OnceCell::const_new();
+    let keyring = KEYRING.get_or_try_init(|| async {
+        Ok::<std::sync::Arc<oo7::Keyring>, oo7::Error>(std::sync::Arc::new(oo7::Keyring::new().await?))
+    }).await?;
+    Ok(keyring.clone())
+}
+
+#[cfg(target_os = "linux")]
 /// Safely runs an async block whether we are currently inside a Tokio runtime or not.
-fn block_on_async<F: std::future::Future>(future: F) -> F::Output {
+fn block_on_async<F: std::future::Future>(future: F) -> F::Output
+where
+    F::Output: Send,
+{
     if let Ok(handle) = tokio::runtime::Handle::try_current() {
-        // We are inside a Tokio runtime (e.g., TUI or background thread)
+        // We are inside a Tokio runtime (e.g., Iced UI or TUI), safely block in place
         tokio::task::block_in_place(|| handle.block_on(future))
     } else {
-        // No runtime exists yet (e.g., GUI startup), spin up a temporary one
+        // No runtime exists yet (e.g., CLI command), spin up a temporary one
         tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -256,7 +269,7 @@ impl Oo7Cred {
 impl keyring_core::api::CredentialApi for Oo7Cred {
     fn set_secret(&self, secret: &[u8]) -> keyring_core::Result<()> {
         block_on_async(async {
-            let keyring = oo7::Keyring::new().await.map_err(|e| {
+            let keyring = get_keyring().await.map_err(|e| {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
 
@@ -291,7 +304,7 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
 
     fn get_secret(&self) -> keyring_core::Result<Vec<u8>> {
         block_on_async(async {
-            let keyring = oo7::Keyring::new().await.map_err(|e| {
+            let keyring = get_keyring().await.map_err(|e| {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
 
@@ -328,7 +341,7 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
 
     fn delete_credential(&self) -> keyring_core::Result<()> {
         block_on_async(async {
-            let keyring = oo7::Keyring::new().await.map_err(|e| {
+            let keyring = get_keyring().await.map_err(|e| {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
 

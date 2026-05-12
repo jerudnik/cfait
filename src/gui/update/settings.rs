@@ -178,10 +178,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             )
         }
         Message::OpenSettings => {
-            if let Ok(cfg) = crate::config::Config::load_with_credentials(app.ctx.as_ref()) {
+            if let Ok(cfg) = crate::config::Config::load(app.ctx.as_ref()) {
                 app.ob_url = cfg.url;
                 app.ob_user = cfg.username;
-                app.ob_pass = cfg.password;
+                // app.ob_pass is already securely held in memory from startup
 
                 let mut target_href = cfg.default_calendar;
                 if let Some(ref def) = target_href
