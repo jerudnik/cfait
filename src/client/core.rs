@@ -583,7 +583,14 @@ impl RustyClient {
             || !should_create_events;
         // -----------------------------------------------------------------------
 
-        let mut success = true;
+        // Optimization: If companion events are globally disabled and not explicitly requested
+        // for this task, we can safely assume they don't exist and skip the DELETE requests.
+        // This avoids spamming 404 DELETEs for every task update.
+        if !should_create_events && !is_delete_intent && !delete_on_completion && task.create_event.is_none() {
+            return true;
+        }
+
+        let mut futures: Vec<futures::future::BoxFuture<'_, Result<(), ()>>> = Vec::new();
 
         let generated_events = if should_delete {
             vec![]
@@ -591,31 +598,36 @@ impl RustyClient {
             IcsAdapter::to_event_ics(task)
         };
 
-        let target_suffixes: std::collections::HashSet<&str> =
-            generated_events.iter().map(|(s, _)| s.as_str()).collect();
+        let target_suffixes: std::collections::HashSet<String> =
+            generated_events.iter().map(|(s, _)| s.clone()).collect();
 
         // 1. PUT all generated events (Upsert active events)
-        for (suffix, ics_body) in &generated_events {
+        for (suffix, ics_body) in generated_events.into_iter() {
             let event_filename = format!("{}{}.ics", base_uid, suffix);
             let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
-
-            let create_req = PutResource::new(&event_path)
-                .create(ics_body.clone(), "text/calendar; charset=utf-8");
-            match client.request(create_req).await {
-                Ok(_) => {}
-                Err(WebDavError::BadStatusCode(http::StatusCode::PRECONDITION_FAILED))
-                | Err(WebDavError::PreconditionFailed(_)) => {
-                    let update_req = PutResource::new(&event_path).update(
-                        ics_body.clone(),
-                        "text/calendar; charset=utf-8",
-                        "",
-                    );
-                    if client.request(update_req).await.is_err() {
-                        success = false;
+            let c = client.clone();
+            
+            futures.push(Box::pin(async move {
+                let create_req = PutResource::new(&event_path)
+                    .create(ics_body.clone(), "text/calendar; charset=utf-8");
+                match c.request(create_req).await {
+                    Ok(_) => Ok(()),
+                    Err(WebDavError::BadStatusCode(http::StatusCode::PRECONDITION_FAILED))
+                    | Err(WebDavError::PreconditionFailed(_)) => {
+                        let update_req = PutResource::new(&event_path).update(
+                            ics_body,
+                            "text/calendar; charset=utf-8",
+                            "",
+                        );
+                        if c.request(update_req).await.is_err() {
+                            Err(())
+                        } else {
+                            Ok(())
+                        }
                     }
+                    Err(_) => Err(()),
                 }
-                Err(_) => success = false,
-            }
+            }));
         }
 
         // 2. DELETE obsolete static events (variants we swapped away from)
@@ -625,11 +637,15 @@ impl RustyClient {
                 if !target_suffixes.contains(suffix) {
                     let event_filename = format!("{}{}.ics", base_uid, suffix);
                     let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
-                    match client.request(Delete::new(&event_path).force()).await {
-                        Ok(_) => {}
-                        Err(WebDavError::BadStatusCode(http::StatusCode::NOT_FOUND)) => {}
-                        Err(_) => success = false,
-                    }
+                    let c = client.clone();
+                    
+                    futures.push(Box::pin(async move {
+                        match c.request(Delete::new(&event_path).force()).await {
+                            Ok(_) => Ok(()),
+                            Err(WebDavError::BadStatusCode(http::StatusCode::NOT_FOUND)) => Ok(()),
+                            Err(_) => Err(()),
+                        }
+                    }));
                 }
             }
         }
@@ -641,19 +657,27 @@ impl RustyClient {
             } else {
                 task.sessions.len()
             };
-            let max_delete = session_idx + 5; // Delete at most 5 beyond known to handle slight desyncs/deletions
+            let max_delete = session_idx + 2; // Delete at most 2 beyond known to handle slight desyncs/deletions
 
             while session_idx < max_delete {
                 let session_suffix = format!("-session-{}", session_idx);
                 let event_filename = format!("{}{}.ics", base_uid, session_suffix);
                 let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
-
-                let _ = client.request(Delete::new(&event_path).force()).await;
+                let c = client.clone();
+                
+                futures.push(Box::pin(async move {
+                    match c.request(Delete::new(&event_path).force()).await {
+                        Ok(_) => Ok(()),
+                        Err(WebDavError::BadStatusCode(http::StatusCode::NOT_FOUND)) => Ok(()),
+                        Err(_) => Err(()),
+                    }
+                }));
                 session_idx += 1;
             }
         }
 
-        success
+        let results = futures::future::join_all(futures).await;
+        results.into_iter().all(|r| r.is_ok())
     }
 
     /// Public wrapper for convenience
