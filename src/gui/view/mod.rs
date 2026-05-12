@@ -47,12 +47,21 @@ pub fn tooltip_style(theme: &Theme) -> container::Style {
 
 pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
     let base_content: Element<'_, Message> = match app.state {
-        AppState::Loading => container(text(rust_i18n::t!("loading")).size(30))
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .center_x(Length::Fill)
-            .center_y(Length::Fill)
-            .into(),
+        AppState::Loading => container(
+            column![
+                text(rust_i18n::t!("loading")).size(30),
+                text(rust_i18n::t!("waiting_for_keyring"))
+                    .size(14)
+                    .color(Color::from_rgb(0.5, 0.5, 0.5))
+            ]
+            .align_x(iced::Alignment::Center)
+            .spacing(10),
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x(Length::Fill)
+        .center_y(Length::Fill)
+        .into(),
         AppState::Onboarding | AppState::Settings => view_settings(app),
         AppState::Help(tab, _) => view_help(tab, app),
         AppState::Active => {

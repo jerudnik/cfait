@@ -465,6 +465,7 @@
   "unsynced": "Unsynced",
   "username": "Username:",
   "welcome_title": "Welcome",
+  "waiting_for_keyring": "Waiting for OS keyring/wallet unlock (if prompted)...",
   "all_actions_pinned": "All actions pinned",
   "add_description_tooltip": "Add Description & Subtasks (Ctrl+E)",
   "desc_editor_help": "Press Enter for newline. Esc / Ctrl+S to save.",

@@ -264,6 +264,9 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
 
+            let _ = keyring.unlock().await;
+            log::info!("Unlocked Linux Secret Portal keyring for {}/{}", self.service, self.user);
+
             keyring
                 .create_item(
                     &format!("{} ({})", self.service, self.user),
@@ -288,6 +291,10 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
             let keyring = oo7::Keyring::new().await.map_err(|e| {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
+
+            log::warn!("Waiting for Linux Secret Portal keyring to unlock... (check for OS prompts)");
+            let _ = keyring.unlock().await;
+            log::warn!("Unlocked Linux Secret Portal keyring for {}/{}", self.service, self.user);
 
             let items = keyring
                 .search_items(&std::collections::HashMap::from([

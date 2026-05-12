@@ -5,7 +5,7 @@ use crate::config::Config;
 use crate::gui::async_ops::*;
 use crate::gui::message::Message;
 use crate::gui::state::{AppState, GuiApp};
-use crate::gui::update::common::{refresh_filtered_tasks, save_config, scroll_to_selected};
+use crate::gui::update::common::{refresh_filtered_tasks, scroll_to_selected};
 use crate::journal::Journal;
 use crate::model::CalendarListEntry;
 use crate::storage::{LOCAL_CALENDAR_HREF, LOCAL_CALENDAR_NAME, LocalCalendarRegistry};
@@ -150,10 +150,6 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 app.hide_fully_completed_tags = cfg.hide_fully_completed_tags;
                 app.tag_aliases = cfg.tag_aliases;
                 app.disabled_calendars = cfg.disabled_calendars.into_iter().collect();
-            }
-
-            if !app.ob_url.is_empty() {
-                save_config(app);
             }
 
             app.state = AppState::Active;
