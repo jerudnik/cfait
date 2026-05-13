@@ -289,7 +289,7 @@ fun CfaitNavHost(
 
     fun refreshLists() {
         android.util.Log.d("CfaitMain", "refreshLists() called")
-        scope.launch {
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 refreshTick = System.currentTimeMillis()
                 val config = api.getConfig()

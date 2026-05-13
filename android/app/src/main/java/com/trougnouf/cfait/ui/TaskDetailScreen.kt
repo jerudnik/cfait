@@ -188,7 +188,7 @@ fun TaskDetailScreen(
                                     onBack()
                                     triggerBackgroundSync(context, api)
                                 } catch (e: Exception) {
-                                    if (e is kotlinx.coroutines.CancellationException) throw e
+                                    if (e is CancellationException) throw e
                                     android.widget.Toast.makeText(
                                         context,
                                         "Error: ${e.message}",
@@ -293,7 +293,7 @@ fun TaskDetailScreen(
                                         reload()
                                         triggerBackgroundSync(context, api)
                                     } catch (e: Exception) {
-                                        if (e is kotlinx.coroutines.CancellationException) throw e
+                                        if (e is CancellationException) throw e
                                         android.widget.Toast.makeText(
                                             context,
                                             context.getString(R.string.error_general, e.message ?: ""),
@@ -351,7 +351,7 @@ fun TaskDetailScreen(
                                         reload()
                                         triggerBackgroundSync(context, api)
                                     } catch (e: Exception) {
-                                        if (e is kotlinx.coroutines.CancellationException) throw e
+                                        if (e is CancellationException) throw e
                                         android.widget.Toast.makeText(
                                             context,
                                             "Error: ${e.message}",
@@ -408,7 +408,7 @@ fun TaskDetailScreen(
                                         reload()
                                         triggerBackgroundSync(context, api)
                                     } catch (e: Exception) {
-                                        if (e is kotlinx.coroutines.CancellationException) throw e
+                                        if (e is CancellationException) throw e
                                         android.widget.Toast.makeText(
                                             context,
                                             "Error: ${e.message}",
@@ -491,7 +491,7 @@ fun TaskDetailScreen(
                                         reload()
                                         triggerBackgroundSync(context, api)
                                     } catch (e: Exception) {
-                                        if (e is kotlinx.coroutines.CancellationException) throw e
+                                        if (e is CancellationException) throw e
                                         val msg = e.message ?: ""
                                         if (msg.contains("Invalid time format") || msg.contains("Task not found")) {
                                             android.widget.Toast.makeText(
@@ -565,7 +565,7 @@ fun TaskDetailScreen(
                                     reload()
                                     triggerBackgroundSync(context, api)
                                 } catch (e: Exception) {
-                                    if (e is kotlinx.coroutines.CancellationException) throw e
+                                    if (e is CancellationException) throw e
                                     android.widget.Toast.makeText(
                                         context,
                                         context.getString(R.string.error_deleting_session, e.message ?: ""),
@@ -630,7 +630,7 @@ fun TaskDetailScreen(
                                         reload()
                                         triggerBackgroundSync(context, api)
                                     } catch (e: Exception) {
-                                        if (e is kotlinx.coroutines.CancellationException) throw e
+                                        if (e is CancellationException) throw e
                                         android.widget.Toast.makeText(
                                             context,
                                             "Error: ${e.message}",

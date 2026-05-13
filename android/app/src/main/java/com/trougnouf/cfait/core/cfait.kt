@@ -1581,7 +1581,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_dismiss_alarm() != 49985.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_dispatch() != 9577.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_dispatch() != 12530.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_duplicate_task_tree() != 29876.toShort()) {
@@ -2318,7 +2318,7 @@ public interface CfaitMobileInterface {
         `alarmUid`: kotlin.String,
     )
 
-    suspend fun `dispatch`(`intent`: AppIntent): MobileViewData
+    suspend fun `dispatch`(`intent`: AppIntent)
 
     suspend fun `duplicateTaskTree`(`uid`: kotlin.String)
 
@@ -2960,7 +2960,7 @@ open class CfaitMobile :
 
     @Throws(MobileException::class)
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `dispatch`(`intent`: AppIntent): MobileViewData =
+    override suspend fun `dispatch`(`intent`: AppIntent) =
         uniffiRustCallAsync(
             callWithHandle { uniffiHandle ->
                 UniffiLib.uniffi_cfait_fn_method_cfaitmobile_dispatch(
@@ -2968,11 +2968,11 @@ open class CfaitMobile :
                     FfiConverterTypeAppIntent.lower(`intent`),
                 )
             },
-            { future, callback, continuation -> UniffiLib.ffi_cfait_rust_future_poll_rust_buffer(future, callback, continuation) },
-            { future, continuation -> UniffiLib.ffi_cfait_rust_future_complete_rust_buffer(future, continuation) },
-            { future -> UniffiLib.ffi_cfait_rust_future_free_rust_buffer(future) },
+            { future, callback, continuation -> UniffiLib.ffi_cfait_rust_future_poll_void(future, callback, continuation) },
+            { future, continuation -> UniffiLib.ffi_cfait_rust_future_complete_void(future, continuation) },
+            { future -> UniffiLib.ffi_cfait_rust_future_free_void(future) },
             // lift function
-            { FfiConverterTypeMobileViewData.lift(it) },
+            { Unit },
             // Error FFI converter
             MobileException.ErrorHandler,
         )

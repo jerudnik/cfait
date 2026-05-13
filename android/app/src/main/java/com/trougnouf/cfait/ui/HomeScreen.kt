@@ -346,7 +346,7 @@ fun HomeScreen(
     }
 
     fun checkSyncStatus() {
-        scope.launch {
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 localHasUnsynced = api.hasUnsyncedChanges()
             } catch (e: Exception) {
@@ -390,13 +390,14 @@ fun HomeScreen(
         scope.launch {
             activeOpCount++
             try {
-                val viewData = api.dispatch(AppIntent.ToggleTask(task.uid))
-                onUpdateViewData(viewData.tasks, viewData.tags, viewData.locations, aliases)
+                api.dispatch(AppIntent.ToggleTask(task.uid))
+                updateTaskList()
                 checkSyncStatus()
                 onDataChanged()
                 lastSyncFailed = false
                 triggerBackgroundSync(context, api)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 lastSyncFailed = true
             } finally {
                 checkSyncStatus()
@@ -610,8 +611,8 @@ fun HomeScreen(
                 }
 
                 if (intent != null) {
-                    val viewData = api.dispatch(intent)
-                    onUpdateViewData(viewData.tasks, viewData.tags, viewData.locations, aliases)
+                    api.dispatch(intent)
+                    updateTaskList()
                     if (action == "block" || action == "child" || action == "related") {
                         if (!yankLockActive) yankedUid = null
                     }
@@ -620,6 +621,7 @@ fun HomeScreen(
                     triggerBackgroundSync(context, api)
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 lastSyncFailed = true
             } finally {
                 checkSyncStatus()
