@@ -6,7 +6,7 @@ Defines all messages used for the Elm architecture in the GUI.
 */
 
 use crate::client::RustyClient;
-use crate::config::{AppTheme, Config};
+use crate::config::{AppTheme, Config, LogLevel};
 use crate::gui::state::{ResizeDirection, SidebarMode};
 use crate::model::{CalendarListEntry, Task as TodoTask};
 use crate::system::{AlarmMessage, SystemEvent};
@@ -222,6 +222,7 @@ pub enum Message {
     OpenContextMenu(String, bool),
     CloseContextMenu,
     TogglePinnedAction(crate::config::TaskAction, bool),
+    SetLogLevel(LogLevel),
 
     // --- Advanced Settings ---
     ToggleAdvancedSettings(bool),

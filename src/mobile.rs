@@ -450,13 +450,26 @@ impl CfaitMobile {
     }
 }
 
-fn populate_transient(t: &mut Task, store: &TaskStore, aliases: &HashMap<String, Vec<String>>, parent_uids: &HashSet<String>) {
+fn populate_transient(
+    t: &mut Task,
+    store: &TaskStore,
+    aliases: &HashMap<String, Vec<String>>,
+    parent_uids: &HashSet<String>,
+) {
     t.has_blocking_tasks = store.has_tasks_blocking(&t.uid);
     t.has_related_tasks = store.has_tasks_related_to(&t.uid);
     t.has_subtasks = parent_uids.contains(&t.uid);
     let now = Utc::now();
-    t.is_future_start = t.dtstart.as_ref().map(|start| start.to_start_comparison_time() > now).unwrap_or(false);
-    t.is_overdue = t.due.as_ref().map(|d| !t.status.is_done() && d.to_comparison_time() < now).unwrap_or(false);
+    t.is_future_start = t
+        .dtstart
+        .as_ref()
+        .map(|start| start.to_start_comparison_time() > now)
+        .unwrap_or(false);
+    t.is_overdue = t
+        .due
+        .as_ref()
+        .map(|d| !t.status.is_done() && d.to_comparison_time() < now)
+        .unwrap_or(false);
     t.is_blocked = store.is_blocked(t);
     let (p_tags, p_loc) = if let Some(p_uid) = &t.parent_uid {
         if let Some(p) = store.get_task_ref(p_uid) {
@@ -472,10 +485,7 @@ fn populate_transient(t: &mut Task, store: &TaskStore, aliases: &HashMap<String,
     t.visible_location = visible_location;
 }
 
-fn task_to_mobile(
-    t: &Task,
-    store: &TaskStore,
-) -> MobileTask {
+fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
     let smart = t.to_smart_string();
     let status_str = format!("{:?}", t.status);
 
@@ -593,7 +603,7 @@ impl CfaitMobile {
         let ctx: Arc<dyn AppContext> =
             Arc::new(StandardContext::new(Some(PathBuf::from(android_files_dir))));
 
-        crate::system::init_logging(ctx.as_ref(), false);
+        crate::system::init_logging(ctx.as_ref(), false, None);
         crate::system::init_keyring();
 
         let store = Arc::new(Mutex::new(TaskStore::new(ctx.clone())));
@@ -1383,8 +1393,14 @@ impl CfaitMobile {
     }
 
     pub async fn sync_journal(&self) -> Result<bool, MobileError> {
-        let (_warns, synced) = self.controller.sync_and_update_store().await.map_err(MobileError::from)?;
-        Ok(synced.iter().any(|t| t.summary.ends_with("(Conflict Copy)")))
+        let (_warns, synced) = self
+            .controller
+            .sync_and_update_store()
+            .await
+            .map_err(MobileError::from)?;
+        Ok(synced
+            .iter()
+            .any(|t| t.summary.ends_with("(Conflict Copy)")))
     }
 
     pub async fn sync(&self) -> Result<String, MobileError> {
@@ -1522,7 +1538,7 @@ impl CfaitMobile {
         drop(session);
 
         if !actions.is_empty() {
-            // Await disk persistence synchronously so the app doesn't suspend 
+            // Await disk persistence synchronously so the app doesn't suspend
             // before the user's modifications are safely queued to disk.
             let _ = self.controller.persist_changes(actions).await;
         }
@@ -2088,9 +2104,10 @@ impl CfaitMobile {
                 .ok_or(MobileError::from("Offline"))?
                 .clone()
         };
-        
+
         let config = Config::load(self.ctx.as_ref()).unwrap_or_default();
-        let count = client.sync_multiple_companion_events(&all_tasks, true, config.delete_events_on_completion)
+        let count = client
+            .sync_multiple_companion_events(&all_tasks, true, config.delete_events_on_completion)
             .await
             .unwrap_or(0);
         Ok(count as u32)

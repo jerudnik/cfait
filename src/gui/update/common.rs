@@ -118,6 +118,7 @@ pub fn save_config(app: &mut GuiApp) -> Config {
     cfg.quick_filter_icon = app.quick_filter_icon.clone();
     cfg.show_quick_filter = app.show_quick_filter;
     cfg.sidebar_is_hidden = app.sidebar_is_hidden;
+    cfg.log_level = app.log_level;
 
     // Cache the updated config in memory
     app.core_config = cfg.clone();
@@ -359,7 +360,7 @@ pub fn dispatch_intent(app: &mut GuiApp, intent: AppIntent) {
 
     // 1. Update UI filters synchronously
     app.session.apply_session_intent(&intent);
-    
+
     // 2. Mutate in-memory store synchronously & extract persistence actions
     let actions = app.store.apply_task_intent(&intent, config);
 
@@ -367,7 +368,9 @@ pub fn dispatch_intent(app: &mut GuiApp, intent: AppIntent) {
     refresh_filtered_tasks(app);
 
     // 4. Send actions to background thread for disk/network persistence
-    if !actions.is_empty() && let Some(tx) = &app.bg_tx {
+    if !actions.is_empty()
+        && let Some(tx) = &app.bg_tx
+    {
         let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
     }
 }
@@ -381,14 +384,29 @@ pub fn update_journal_state(app: &mut GuiApp) {
         let mut lines = vec![rust_i18n::t!("unsynced").to_string()];
         for (i, action) in journal.queue.iter().enumerate() {
             if i >= 10 {
-                lines.push(rust_i18n::t!("unsynced_and_more", count = journal.queue.len() - 10).to_string());
+                lines.push(
+                    rust_i18n::t!("unsynced_and_more", count = journal.queue.len() - 10)
+                        .to_string(),
+                );
                 break;
             }
             let (verb, summary) = match action {
-                crate::journal::Action::Create(t) => (rust_i18n::t!("unsynced_action_create").to_string(), &t.summary),
-                crate::journal::Action::Update(t) => (rust_i18n::t!("unsynced_action_update").to_string(), &t.summary),
-                crate::journal::Action::Delete(t) => (rust_i18n::t!("unsynced_action_delete").to_string(), &t.summary),
-                crate::journal::Action::Move(t, _) => (rust_i18n::t!("unsynced_action_move").to_string(), &t.summary),
+                crate::journal::Action::Create(t) => (
+                    rust_i18n::t!("unsynced_action_create").to_string(),
+                    &t.summary,
+                ),
+                crate::journal::Action::Update(t) => (
+                    rust_i18n::t!("unsynced_action_update").to_string(),
+                    &t.summary,
+                ),
+                crate::journal::Action::Delete(t) => (
+                    rust_i18n::t!("unsynced_action_delete").to_string(),
+                    &t.summary,
+                ),
+                crate::journal::Action::Move(t, _) => (
+                    rust_i18n::t!("unsynced_action_move").to_string(),
+                    &t.summary,
+                ),
             };
             let trunc_summary = if summary.chars().count() > 40 {
                 format!("{}...", summary.chars().take(37).collect::<String>())

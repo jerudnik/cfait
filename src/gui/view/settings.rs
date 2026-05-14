@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Renders the settings and onboarding screens.
 // File: ./src/gui/view/settings.rs
-use crate::config::AppTheme;
+use crate::config::{AppTheme, LogLevel};
 use crate::gui::icon;
 use crate::gui::message::Message;
 use crate::gui::state::{AppState, GuiApp};
@@ -499,6 +499,23 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                 .spacing(10)
                 .align_y(iced::Alignment::Center),
                 text(rust_i18n::t!("trash_retention_explain"))
+                    .size(12)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6)),
+                Space::new().height(10),
+                text(rust_i18n::t!("logging_label")).size(16),
+                row![
+                    text(rust_i18n::t!("log_level_label")).width(Length::Fixed(200.0)),
+                    iced::widget::pick_list(
+                        LogLevel::ALL.to_vec(),
+                        Some(app.log_level),
+                        Message::SetLogLevel
+                    )
+                    .width(Length::Fixed(120.0))
+                    .padding(5)
+                ]
+                .spacing(10)
+                .align_y(iced::Alignment::Center),
+                text(rust_i18n::t!("log_level_explain"))
                     .size(12)
                     .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),

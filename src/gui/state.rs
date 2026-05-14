@@ -2,7 +2,7 @@
 // File: ./src/gui/state.rs
 // Manages the application state for the GUI (Iced).
 use crate::client::RustyClient;
-use crate::config::{AppTheme, Config};
+use crate::config::{AppTheme, Config, LogLevel};
 use crate::context::AppContext;
 use crate::gui::icon;
 use crate::model::{Alarm, CalendarListEntry, Task as TodoTask};
@@ -211,6 +211,9 @@ pub struct GuiApp {
     pub ob_max_done_subtasks_input: String,
 
     pub show_priority_numbers: bool,
+
+    // Logging level
+    pub log_level: LogLevel,
 
     // Force Server-Side Decorations
     pub force_ssd: bool,
@@ -440,6 +443,7 @@ impl Default for GuiApp {
             ob_max_done_roots_input: "20".to_string(),
             ob_max_done_subtasks_input: "5".to_string(),
             show_priority_numbers: true,
+            log_level: LogLevel::Info,
 
             force_ssd: {
                 #[cfg(target_os = "windows")]

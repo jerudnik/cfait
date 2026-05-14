@@ -10,6 +10,48 @@ use std::fmt;
 use std::fs;
 use strum::EnumIter;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, EnumIter)]
+pub enum LogLevel {
+    #[default]
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl fmt::Display for LogLevel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LogLevel::Error => write!(f, "Error"),
+            LogLevel::Warn => write!(f, "Warn"),
+            LogLevel::Info => write!(f, "Info"),
+            LogLevel::Debug => write!(f, "Debug"),
+            LogLevel::Trace => write!(f, "Trace"),
+        }
+    }
+}
+
+impl LogLevel {
+    pub const ALL: &'static [LogLevel] = &[
+        LogLevel::Error,
+        LogLevel::Warn,
+        LogLevel::Info,
+        LogLevel::Debug,
+        LogLevel::Trace,
+    ];
+
+    pub fn to_level_filter(&self) -> log::LevelFilter {
+        match self {
+            LogLevel::Error => log::LevelFilter::Error,
+            LogLevel::Warn => log::LevelFilter::Warn,
+            LogLevel::Info => log::LevelFilter::Info,
+            LogLevel::Debug => log::LevelFilter::Debug,
+            LogLevel::Trace => log::LevelFilter::Trace,
+        }
+    }
+}
+
 fn default_true() -> bool {
     true
 }
@@ -194,6 +236,10 @@ fn default_trash_retention() -> u32 {
     14
 }
 
+fn default_log_level() -> LogLevel {
+    LogLevel::Info
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, EnumIter)]
 pub enum AppTheme {
     #[default]
@@ -350,6 +396,10 @@ pub struct Config {
     #[serde(default)]
     pub sidebar_is_hidden: bool,
 
+    // Logging level for both file and terminal output
+    #[serde(default = "default_log_level")]
+    pub log_level: LogLevel,
+
     // Maps are typically at the end in TOML
     #[serde(default)]
     pub hidden_calendars: Vec<String>,
@@ -397,6 +447,7 @@ impl Default for Config {
             quick_filter_icon: default_quick_filter_icon(),
             show_quick_filter: true,
             sidebar_is_hidden: false,
+            log_level: default_log_level(),
         }
     }
 }
@@ -668,6 +719,9 @@ impl Config {
             } else if trimmed.starts_with("trash_retention_days =") {
                 out.push_str(line);
                 out.push_str(" # Integer: Days to keep deleted items in local trash before permanent delete. 0 disables trash.");
+            } else if trimmed.starts_with("log_level =") {
+                out.push_str(line);
+                out.push_str(" # String: Logging verbosity level (Error, Warn, Info, Debug, Trace). Applies to both log file and terminal.");
             } else if trimmed.starts_with("config_version =") {
                 out.push_str(
                     "# Internal version for configuration migrations. Do not edit manually.",

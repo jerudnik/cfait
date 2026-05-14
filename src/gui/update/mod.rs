@@ -92,7 +92,8 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::TogglePinnedAction(_, _)
         | Message::SetShowQuickFilter(_)
         | Message::SetQuickFilterTerm(_)
-        | Message::SetQuickFilterIcon(_) => settings::handle(app, message),
+        | Message::SetQuickFilterIcon(_)
+        | Message::SetLogLevel(_) => settings::handle(app, message),
 
         Message::InputChanged(_)
         | Message::DescriptionChanged(_)

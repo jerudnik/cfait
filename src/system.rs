@@ -28,12 +28,19 @@ pub enum SystemEvent {
     EnableAlarms,
 }
 
+/// Reconfigures the global maximum log level.
+/// This can be called after init_logging to change the log level at runtime.
+pub fn set_log_level(level: log::LevelFilter) {
+    log::set_max_level(level);
+}
+
 /// Initializes logging for the application.
 ///
 /// Args:
 ///   ctx: Application context for determining cache directory
 ///   enable_stderr: Whether to enable stderr logging (safe for CLI/GUI, unsafe for interactive TUI)
-pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
+///   level: The log level to use for both file and terminal logging
+pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool, level: Option<log::LevelFilter>) {
     let cache_dir = ctx.get_cache_dir().unwrap_or_else(|_| std::env::temp_dir());
     let log_path = cache_dir.join("cfait.log");
     let old_log_path = cache_dir.join("cfait.old.log");
@@ -42,6 +49,9 @@ pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
     if log_path.exists() {
         let _ = std::fs::rename(&log_path, &old_log_path);
     }
+
+    // Use Info as default if no level specified
+    let level = level.unwrap_or(log::LevelFilter::Info);
 
     // Silence noisy third-party crates (like iced logging raw icon pixels)
     // Mute the noisy UI crates, but DO NOT mute rustls (needed for TLS debugging)
@@ -52,7 +62,7 @@ pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
 
     // File logger: creates a fresh cfait.log for this session
     let file_logger = WriteLogger::new(
-        LevelFilter::Info, // Change to Debug if you want verbose file logs
+        level,
         log_config.clone(),
         File::create(&log_path).expect("Failed to create log file"),
     );
@@ -64,7 +74,7 @@ pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
         let _enable_stderr = enable_stderr;
         let android_logger = android_logger::AndroidLogger::new(
             android_logger::Config::default()
-                .with_max_level(log::LevelFilter::Debug)
+                .with_max_level(level)
                 .with_tag("CfaitRust"),
         );
 
@@ -99,7 +109,7 @@ pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
         };
 
         let _ = log::set_boxed_logger(Box::new(logger));
-        log::set_max_level(log::LevelFilter::Debug);
+        log::set_max_level(level);
         log::info!(
             "Cfait logging initialized on Android. Log file at: {:?}",
             log_path
@@ -113,7 +123,7 @@ pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
         // Terminal logger: only enabled when safe to do so (GUI / CLI)
         if enable_stderr {
             let term_logger = TermLogger::new(
-                LevelFilter::Info,
+                level,
                 log_config.clone(),
                 TerminalMode::Stderr,
                 ColorChoice::Auto,
@@ -122,6 +132,7 @@ pub fn init_logging(ctx: &dyn AppContext, enable_stderr: bool) {
         }
 
         let _ = CombinedLogger::init(loggers);
+        log::set_max_level(level);
         log::info!("Cfait logging initialized. Log file at: {:?}", log_path);
     }
 }
@@ -189,10 +200,15 @@ pub fn init_keyring() {
 #[cfg(target_os = "linux")]
 async fn get_keyring() -> Result<std::sync::Arc<oo7::Keyring>, oo7::Error> {
     // Cache the DBus connection so we only negotiate with the Secret Portal once per launch
-    static KEYRING: tokio::sync::OnceCell<std::sync::Arc<oo7::Keyring>> = tokio::sync::OnceCell::const_new();
-    let keyring = KEYRING.get_or_try_init(|| async {
-        Ok::<std::sync::Arc<oo7::Keyring>, oo7::Error>(std::sync::Arc::new(oo7::Keyring::new().await?))
-    }).await?;
+    static KEYRING: tokio::sync::OnceCell<std::sync::Arc<oo7::Keyring>> =
+        tokio::sync::OnceCell::const_new();
+    let keyring = KEYRING
+        .get_or_try_init(|| async {
+            Ok::<std::sync::Arc<oo7::Keyring>, oo7::Error>(std::sync::Arc::new(
+                oo7::Keyring::new().await?,
+            ))
+        })
+        .await?;
     Ok(keyring.clone())
 }
 

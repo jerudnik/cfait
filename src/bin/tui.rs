@@ -148,7 +148,7 @@ async fn main() -> Result<()> {
     // If command is empty, we are launching the interactive TUI.
     // It is ONLY safe to use stderr if we are NOT in the interactive TUI.
     let is_interactive_tui = command.is_empty();
-    cfait::system::init_logging(ctx.as_ref(), !is_interactive_tui);
+    cfait::system::init_logging(ctx.as_ref(), !is_interactive_tui, None);
     cfait::system::init_keyring(); // <-- ADD THIS LINE
 
     if command.starts_with('-') || command == "help" {
@@ -215,7 +215,8 @@ async fn main() -> Result<()> {
             return Ok(());
         }
         "sync" => {
-            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+            let config =
+                cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             if config.url.is_empty() {
                 println!("Offline mode configured; nothing to sync.");
                 return Ok(());
@@ -239,7 +240,8 @@ async fn main() -> Result<()> {
         "daemon" => {
             println!("Starting Cfait background daemon...");
             loop {
-                let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+                let config =
+                    cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
                 let interval = config.auto_refresh_interval_mins;
                 if interval == 0 {
                     println!("Auto-refresh is disabled in config. Daemon exiting.");
@@ -273,7 +275,8 @@ async fn main() -> Result<()> {
                 std::process::exit(1);
             }
 
-            let mut config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+            let mut config =
+                cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             let def_time =
                 chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
 
@@ -360,7 +363,8 @@ async fn main() -> Result<()> {
                 String::new()
             };
 
-            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+            let config =
+                cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             let store = build_store_cli(&ctx).await;
 
             let mut hidden: HashSet<String> = HashSet::new();
@@ -441,7 +445,9 @@ async fn main() -> Result<()> {
             let partial = args.get(2).map(|s| s.as_str()).unwrap_or("");
             let uid =
                 resolve_uid(&store, partial).ok_or_else(|| anyhow::anyhow!("UID required"))?;
-            let t = store.get_task_ref(&uid).ok_or_else(|| anyhow::anyhow!("Task not found"))?;
+            let t = store
+                .get_task_ref(&uid)
+                .ok_or_else(|| anyhow::anyhow!("Task not found"))?;
 
             println!("Summary:  {}", t.summary);
             println!("Status:   {:?} {}", t.status, t.checkbox_symbol());
@@ -472,7 +478,8 @@ async fn main() -> Result<()> {
                 None => std::process::exit(1),
             };
 
-            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+            let config =
+                cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             let store_arc = Arc::new(tokio::sync::Mutex::new(store));
             let client_arc = Arc::new(tokio::sync::Mutex::new(None));
             let controller =
@@ -481,26 +488,41 @@ async fn main() -> Result<()> {
             match command {
                 "start" => {
                     let mut store_lock = controller.store.lock().await;
-                    let intent = cfait::model::AppIntent::StartTask { uid: full_uid.clone() };
+                    let intent = cfait::model::AppIntent::StartTask {
+                        uid: full_uid.clone(),
+                    };
                     let actions = store_lock.apply_task_intent(&intent, &config);
                     drop(store_lock);
-                    controller.persist_changes(actions).await.map_err(|e| anyhow::anyhow!(e))?;
+                    controller
+                        .persist_changes(actions)
+                        .await
+                        .map_err(|e| anyhow::anyhow!(e))?;
                     println!("Task {} started.", partial_uid);
                 }
                 "pause" => {
                     let mut store_lock = controller.store.lock().await;
-                    let intent = cfait::model::AppIntent::PauseTask { uid: full_uid.clone() };
+                    let intent = cfait::model::AppIntent::PauseTask {
+                        uid: full_uid.clone(),
+                    };
                     let actions = store_lock.apply_task_intent(&intent, &config);
                     drop(store_lock);
-                    controller.persist_changes(actions).await.map_err(|e| anyhow::anyhow!(e))?;
+                    controller
+                        .persist_changes(actions)
+                        .await
+                        .map_err(|e| anyhow::anyhow!(e))?;
                     println!("Task {} paused.", partial_uid);
                 }
                 _ => {
                     let mut store_lock = controller.store.lock().await;
-                    let intent = cfait::model::AppIntent::ToggleTask { uid: full_uid.clone() };
+                    let intent = cfait::model::AppIntent::ToggleTask {
+                        uid: full_uid.clone(),
+                    };
                     let actions = store_lock.apply_task_intent(&intent, &config);
                     drop(store_lock);
-                    controller.persist_changes(actions).await.map_err(|e| anyhow::anyhow!(e))?;
+                    controller
+                        .persist_changes(actions)
+                        .await
+                        .map_err(|e| anyhow::anyhow!(e))?;
                     println!("Task {} toggled.", partial_uid);
                 }
             }
@@ -523,7 +545,8 @@ async fn main() -> Result<()> {
                 None => std::process::exit(1),
             };
 
-            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+            let config =
+                cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             let store_arc = Arc::new(tokio::sync::Mutex::new(store));
             let client_arc = Arc::new(tokio::sync::Mutex::new(None));
             let controller =
@@ -531,10 +554,15 @@ async fn main() -> Result<()> {
 
             let actions = {
                 let mut store_lock = controller.store.lock().await;
-                let intent = cfait::model::AppIntent::DeleteTask { uid: full_uid.clone() };
+                let intent = cfait::model::AppIntent::DeleteTask {
+                    uid: full_uid.clone(),
+                };
                 store_lock.apply_task_intent(&intent, &config)
             };
-            controller.persist_changes(actions).await.map_err(|e| anyhow::anyhow!(e))?;
+            controller
+                .persist_changes(actions)
+                .await
+                .map_err(|e| anyhow::anyhow!(e))?;
             println!("Task {} deleted.", partial_uid);
 
             // Best-effort background sync

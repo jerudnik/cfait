@@ -60,7 +60,7 @@ fn main() -> iced::Result {
         std::sync::Arc::new(cfait::context::StandardContext::new(override_root.clone()));
 
     // Initialize logging - enable stderr for GUI since it's safe
-    cfait::system::init_logging(ctx.as_ref(), true);
+    cfait::system::init_logging(ctx.as_ref(), true, None);
 
     // Handle help flag
     if args.iter().any(|arg| arg == "--help" || arg == "-h") {

@@ -72,6 +72,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.ob_max_done_subtasks_input = config.max_done_subtasks.to_string();
 
             app.pinned_actions = config.pinned_actions.clone();
+            app.log_level = config.log_level;
+
+            // Apply the configured log level
+            crate::system::set_log_level(config.log_level.to_level_filter());
 
             let mut cached_cals = Cache::load_calendars(app.ctx.as_ref()).unwrap_or_default();
 
@@ -210,6 +214,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.ob_quick_filter_icon_input = cfg.quick_filter_icon.clone();
             app.show_quick_filter = cfg.show_quick_filter;
             app.sidebar_is_hidden = cfg.sidebar_is_hidden;
+            app.log_level = cfg.log_level;
             app.state = AppState::Settings;
             Task::none()
         }
@@ -449,6 +454,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             refresh_filtered_tasks(app);
             Task::none()
         }
+        Message::SetLogLevel(level) => {
+            app.log_level = level;
+            app.core_config.log_level = level;
+            save_config(app);
+            // Apply the new log level immediately
+            crate::system::set_log_level(level.to_level_filter());
+            Task::none()
+        }
 
         Message::SetCreateEventsForTasks(val) => {
             let was_disabled = !app.create_events_for_tasks;
@@ -470,7 +483,12 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 let delete_on_completion = app.delete_events_on_completion;
 
                 return Task::perform(
-                    async_backfill_events_wrapper(client.clone(), all_tasks, val, delete_on_completion),
+                    async_backfill_events_wrapper(
+                        client.clone(),
+                        all_tasks,
+                        val,
+                        delete_on_completion,
+                    ),
                     Message::BackfillEventsComplete,
                 );
             }
