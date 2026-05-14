@@ -185,7 +185,8 @@ impl RustyClient {
                     || msg.contains("InvalidInput")
                     || msg.contains("invalid uri character")
                 {
-                    return Ok(StepResult::new(StepOutcome::RecoveryNeeded(msg)));
+                    let detailed_msg = format!("{}\nTarget Path: {}", msg, path);
+                    return Ok(StepResult::new(StepOutcome::RecoveryNeeded(detailed_msg)));
                 }
                 if msg.contains("413") {
                     return Ok(StepResult::new(StepOutcome::Discard).with_warning(msg));
@@ -302,7 +303,8 @@ impl RustyClient {
                     || msg.contains("InvalidInput")
                     || msg.contains("invalid uri character")
                 {
-                    Ok(StepResult::new(StepOutcome::RecoveryNeeded(msg)))
+                    let detailed_msg = format!("{}\nTarget Path: {}", msg, path);
+                    Ok(StepResult::new(StepOutcome::RecoveryNeeded(detailed_msg)))
                 } else if msg.contains("413") {
                     Ok(StepResult::new(StepOutcome::Discard).with_warning(msg))
                 } else {
