@@ -101,12 +101,23 @@ fn fix_and_encode_path(
             }
         }
 
-        let mut fixed = base_path[..base_path.len() - best_overlap.len()].to_string();
-        if !fixed.ends_with('/') && !path.starts_with('/') {
-            fixed.push('/');
+        // --- APPLIED FIX: ONLY REWRITE IF AN OVERLAP WAS ACTUALLY FOUND ---
+        // If best_overlap is empty, the paths are disjoint (e.g. /dav/ vs /calendars/).
+        // In that case, we must trust the absolute path provided by the server.
+        if !best_overlap.is_empty() {
+            let mut fixed = base_path[..base_path.len() - best_overlap.len()].to_string();
+
+            // Prevent double slashes
+            if fixed.ends_with('/') && path.starts_with('/') {
+                fixed.pop();
+            } else if !fixed.ends_with('/') && !path.starts_with('/') {
+                fixed.push('/');
+            }
+
+            fixed.push_str(&path);
+            path = fixed;
         }
-        fixed.push_str(&path);
-        path = fixed;
+        // ------------------------------------------------------------------
     }
 
     if let Some(fname) = filename {
@@ -658,14 +669,14 @@ impl RustyClient {
                             }
                         }
 
-                        if let Some((old_href, new_href)) = &new_href_to_propagate {
-                            let (target_uid, target_cal_href) = match &next_action {
-                                Action::Move(t, target) => (t.uid.clone(), target.clone()),
-                                Action::Create(t) => (t.uid.clone(), t.calendar_href.clone()),
-                                Action::Update(t) => (t.uid.clone(), t.calendar_href.clone()),
-                                _ => (String::new(), String::new()),
-                            };
-                            for item in queue.iter_mut() {
+			if let Some((old_href, new_href)) = &new_href_to_propagate {
+			    let (target_uid, target_cal_href) = match &next_action {
+				Action::Move(t, target) => (t.uid.clone(), target.clone()),
+				Action::Create(t) => (t.uid.clone(), t.calendar_href.clone()),
+				Action::Update(t) => (t.uid.clone(), t.calendar_href.clone()),
+				_ => (String::new(), String::new()),
+			    };
+			    for item in queue.iter_mut() {
                                 match item {
                                     Action::Update(t) | Action::Delete(t)
                                         if (t.uid == target_uid
