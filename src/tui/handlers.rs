@@ -1386,7 +1386,6 @@ pub async fn handle_key_event(
                         c.href.starts_with("local://")
                             && !state.disabled_calendars.contains(&c.href)
                             && c.href != crate::storage::LOCAL_TRASH_HREF
-                            && c.href != "local://recovery"
                     })
                     .cloned()
                     .collect();

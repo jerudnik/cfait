@@ -188,21 +188,27 @@ impl RustyClient {
             }
             Err(e) => {
                 let msg = format!("{:?}", e);
-                if msg.contains("403") // Forbidden (e.g. Nextcloud trash collision)
-                    || msg.contains("405") // Method Not Allowed (e.g. Nextcloud Deck read-only)
-                    || msg.contains("400") // Bad Request
-                    || msg.contains("415") // Unsupported Media Type
-                    || msg.contains("404") || msg.contains("NotFound")
-                    || msg.contains("409") || msg.contains("Conflict")
-                    || msg.contains("InvalidInput")
-                    || msg.contains("invalid uri character")
-                {
+                let is_fatal = match &e {
+                    WebDavError::BadStatusCode(status) => {
+                        let code = status.as_u16();
+                        code == 400 || code == 403 || code == 404 || code == 405 || code == 409 || code == 415
+                    }
+                    _ => msg.contains("NotFound") || msg.contains("Conflict") || msg.contains("InvalidInput") || msg.contains("invalid uri character"),
+                };
+
+                if is_fatal {
                     let detailed_msg = format!("{}\nTarget Path: {}", msg, path);
                     return Ok(StepResult::new(StepOutcome::RecoveryNeeded(detailed_msg)));
                 }
-                if msg.contains("413") {
+
+                if let WebDavError::BadStatusCode(status) = &e {
+                    if status.as_u16() == 413 {
+                        return Ok(StepResult::new(StepOutcome::Discard).with_warning(msg));
+                    }
+                } else if msg.contains("413") {
                     return Ok(StepResult::new(StepOutcome::Discard).with_warning(msg));
                 }
+
                 Err(msg)
             }
         }
@@ -292,7 +298,13 @@ impl RustyClient {
             )),
             Err(e) => {
                 let msg = format!("{:?}", e);
-                if msg.contains("412") || msg.contains("PreconditionFailed") {
+                
+                let is_conflict = match &e {
+                    WebDavError::BadStatusCode(status) => status.as_u16() == 412,
+                    _ => msg.contains("412") || msg.contains("PreconditionFailed"),
+                };
+
+                if is_conflict {
                     let mut conflict_copy = task.clone();
                     conflict_copy.uid = uuid::Uuid::new_v4().to_string();
                     conflict_copy.summary = format!("{} (Conflict Copy)", task.summary);
@@ -307,20 +319,29 @@ impl RustyClient {
                             task.summary
                         )),
                     )
-                } else if msg.contains("403") // Forbidden
-                    || msg.contains("405") // Method Not Allowed
-                    || msg.contains("400") // Bad Request
-                    || msg.contains("415") // Unsupported Media Type
-                    || msg.contains("409") || msg.contains("Conflict")
-                    || msg.contains("InvalidInput")
-                    || msg.contains("invalid uri character")
-                {
-                    let detailed_msg = format!("{}\nTarget Path: {}", msg, path);
-                    Ok(StepResult::new(StepOutcome::RecoveryNeeded(detailed_msg)))
-                } else if msg.contains("413") {
-                    Ok(StepResult::new(StepOutcome::Discard).with_warning(msg))
                 } else {
-                    Err(msg)
+                    let is_fatal = match &e {
+                        WebDavError::BadStatusCode(status) => {
+                            let code = status.as_u16();
+                            code == 400 || code == 403 || code == 405 || code == 409 || code == 415
+                        }
+                        _ => msg.contains("Conflict") || msg.contains("InvalidInput") || msg.contains("invalid uri character"),
+                    };
+
+                    if is_fatal {
+                        let detailed_msg = format!("{}\nTarget Path: {}", msg, path);
+                        Ok(StepResult::new(StepOutcome::RecoveryNeeded(detailed_msg)))
+                    } else if let WebDavError::BadStatusCode(status) = &e {
+                        if status.as_u16() == 413 {
+                            Ok(StepResult::new(StepOutcome::Discard).with_warning(msg))
+                        } else {
+                            Err(msg)
+                        }
+                    } else if msg.contains("413") {
+                        Ok(StepResult::new(StepOutcome::Discard).with_warning(msg))
+                    } else {
+                        Err(msg)
+                    }
                 }
             }
         }
@@ -377,14 +398,15 @@ impl RustyClient {
             }
             Err(e) => {
                 let msg = format!("{:?}", e);
-                if msg.contains("403") // Forbidden (Nextcloud trash collision)
-                    || msg.contains("405") // Method Not Allowed
-                    || msg.contains("400") // Bad Request
-                    || msg.contains("415") // Unsupported Media Type
-                    || msg.contains("409") || msg.contains("Conflict")
-                    || msg.contains("InvalidInput")
-                    || msg.contains("invalid uri character")
-                {
+                let is_fatal = match &e {
+                    WebDavError::BadStatusCode(status) => {
+                        let code = status.as_u16();
+                        code == 400 || code == 403 || code == 405 || code == 409 || code == 415
+                    }
+                    _ => msg.contains("Conflict") || msg.contains("InvalidInput") || msg.contains("invalid uri character"),
+                };
+                
+                if is_fatal {
                     Ok(StepResult::new(StepOutcome::Discard).with_warning(msg))
                 } else {
                     Err(msg)
