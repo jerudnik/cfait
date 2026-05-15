@@ -257,7 +257,6 @@
   "help_search_combine": "Combine filters (AND, OR, NOT)",
   "help_search_date_exclaim": "Include unset dates with '!' suffix",
   "help_search_dates": "Filter by timeframe",
-  "help_search_duration": "Filter by duration",
   "help_search_filter_state": "Filter by state",
   "help_search_filter_tag": "Filter by specific tag",
   "help_search_is_ready": "Work mode - actionable tasks only",
