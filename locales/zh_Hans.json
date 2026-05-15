@@ -445,6 +445,8 @@
     "status_created": "已创建。",
     "status_deleted": "已删除。",
     "status_moved": "已移动。",
+    "status_no_tasks_found": "",
+    "status_no_tasks_to_migrate": "",
     "status_saved": "已保存。",
     "stop_reset": "停止（重置）",
     "strikethrough_completed": "划掉已完成的任务（添加删除线）",
@@ -476,7 +478,8 @@
     "tasks": "任务",
     "tasks_count": {
         "one": "1 个任务",
-        "other": "%{count} 个任务"
+        "other": "%{count} 个任务",
+        "zero": ""
     },
     "theme_auto_detect": "自动检测",
     "theme_dark": "深色",
