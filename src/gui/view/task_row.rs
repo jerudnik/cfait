@@ -593,30 +593,43 @@ pub fn view_task_row<'a>(
                 || !task.related_to.is_empty();
 
             if has_subtasks || is_tree_collapsed {
+                let trees = [
+                    icon::TREE_FA,
+                    icon::TREE_FAE,
+                    icon::TREE_MD,
+                    icon::PALM_TREE,
+                    icon::PINE_TREE,
+                ];
+                let hash = task
+                    .uid
+                    .bytes()
+                    .fold(0u32, |acc, b| acc.wrapping_add(b as u32));
+
+                // Generate random green shade from hash
+                // G is dominant (0.6-0.9), R and B add variety (0.0-0.2)
+                let r = ((hash >> 16) % 20) as f32 / 100.0;  // 0.0-0.19
+                let g = 0.6 + ((hash >> 8) % 30) as f32 / 100.0; // 0.6-0.89
+                let b = (hash % 20) as f32 / 100.0;  // 0.0-0.19
+
                 let (icon_char, tooltip_text) = if is_tree_collapsed {
                     (
                         icon::FAMILY_TREE,
                         rust_i18n::t!("expand_tree_with_key").to_string(),
                     )
                 } else {
-                    let trees = [
-                        icon::TREE_FA,
-                        icon::TREE_FAE,
-                        icon::TREE_MD,
-                        icon::PALM_TREE,
-                        icon::PINE_TREE,
-                    ];
-                    let hash = task
-                        .uid
-                        .bytes()
-                        .fold(0u32, |acc, b| acc.wrapping_add(b as u32));
                     (
                         trees[(hash % 5) as usize],
                         rust_i18n::t!("collapse_tree_with_key").to_string(),
                     )
                 };
 
-                let collapse_btn = button(icon::icon(icon_char).size(14))
+                let tree_color = if is_tree_collapsed {
+                    Color::from_rgb(0.0, 0.0, 1.0)
+                } else {
+                    Color::from_rgb(r, g, b)
+                };
+
+                let collapse_btn = button(icon::icon(icon_char).size(14).color(tree_color))
                     .style(|theme, status| action_style(theme, status, 0))
                     .padding(4)
                     .on_press(Message::ToggleTreeCollapse(task.uid.clone()));

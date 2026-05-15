@@ -384,15 +384,23 @@ fun TaskRow(
             }
 
             if (task.hasVisibleSubtasks || isCollapsed) {
+                val trees = listOf(NfIcons.TREE_FA, NfIcons.TREE_FAE, NfIcons.TREE_MD, NfIcons.PALM_TREE, NfIcons.PINE_TREE)
+                val hash = kotlin.math.abs(task.uid.hashCode())
                 val iconChar = if (isCollapsed) {
                     NfIcons.FAMILY_TREE
                 } else {
-                    val trees = listOf(NfIcons.TREE_FA, NfIcons.TREE_FAE, NfIcons.TREE_MD, NfIcons.PALM_TREE, NfIcons.PINE_TREE)
-                    val hash = kotlin.math.abs(task.uid.hashCode())
                     trees[hash % 5]
                 }
-                val iconColor =
-                    if (isCollapsed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                val iconColor = if (isCollapsed) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    // Generate random green shade from hash
+                    // G is dominant (0.6-0.9), R and B add variety (0.0-0.2)
+                    val r = ((hash shr 16) % 20) / 100f  // 0.0-0.19
+                    val g = 0.6f + ((hash shr 8) % 30) / 100f // 0.6-0.89
+                    val b = ((hash shr 0) % 20) / 100f   // 0.0-0.19
+                    Color(r, g, b, 1f)
+                }
 
                 IconButton(onClick = onToggleCollapse, modifier = Modifier.size(24.dp)) {
                     NfIcon(iconChar, 16.sp, iconColor)
