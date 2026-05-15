@@ -574,7 +574,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         |res| Message::MigrationComplete(res.map_err(|e| e.to_string())),
                     );
                 } else {
-                    app.error_msg = Some("Cannot export while offline/connecting.".to_string());
+                    app.error_msg = Some(rust_i18n::t!("error_cannot_export_offline").to_string());
                     app.loading = false;
                 }
             }

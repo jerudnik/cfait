@@ -68,7 +68,7 @@ pub async fn connect_and_fetch_wrapper(
                 cals,
                 tasks,
                 active_href,
-                Some("Connection timed out. Check your network or server URL.".to_string()),
+                Some(rust_i18n::t!("error_timeout").to_string()),
             ))
         }
     }

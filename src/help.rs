@@ -37,7 +37,7 @@ pub struct HelpSection {
 pub fn get_syntax_help() -> Vec<HelpSection> {
     vec![
         HelpSection {
-            title: "Quick start".to_string(),
+            title: rust_i18n::t!("help_quick_start").to_string(),
             items: vec![
                 HelpItem {
                     keys: "!1..9".to_string(),

@@ -72,7 +72,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             };
             let available_height = app.current_window_size.height - 110.0;
             let show_logo = (available_height - content_height) > 140.0;
-            
+
             let content_layout = if app.sidebar_is_hidden {
                 row![
                     container(view_main_content(app, !show_logo))
@@ -1192,7 +1192,11 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
             }
         })
         .count();
-    let mut subtitle = rust_i18n::t!("tasks_count", count = active_count).to_string();
+    let mut subtitle = match active_count {
+        0 => rust_i18n::t!("tasks_count.zero").to_string(),
+        1 => rust_i18n::t!("tasks_count.one").to_string(),
+        _ => rust_i18n::t!("tasks_count.other", count = active_count).to_string(),
+    };
 
     let search_text = app.search_value.text();
     if !search_text.is_empty() {
@@ -1223,7 +1227,9 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         .style(tooltip_style)
         .delay(Duration::from_millis(700));
 
-        title_group = title_group.push(sidebar_toggle_btn).push(Space::new().width(8));
+        title_group = title_group
+            .push(sidebar_toggle_btn)
+            .push(Space::new().width(8));
     }
 
     if show_logo {
@@ -1281,7 +1287,11 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         (
             icon::SYNC_ALERT,
             Color::from_rgb(0.92, 0.0, 0.0), // Red (#EB0000)
-            if app.unsynced_tooltip.is_empty() { rust_i18n::t!("unsynced").to_string() } else { app.unsynced_tooltip.clone() },
+            if app.unsynced_tooltip.is_empty() {
+                rust_i18n::t!("unsynced").to_string()
+            } else {
+                app.unsynced_tooltip.clone()
+            },
         )
     } else if app.last_sync_failed {
         (
@@ -1374,7 +1384,11 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         search_row = search_row.push(
             tooltip(
                 qf_btn,
-                text(rust_i18n::t!("tooltip_toggle_quick_filter", term = app.quick_filter_term.clone())).size(12),
+                text(rust_i18n::t!(
+                    "tooltip_toggle_quick_filter",
+                    term = app.quick_filter_term.clone()
+                ))
+                .size(12),
                 tooltip::Position::Bottom,
             )
             .style(tooltip_style)
@@ -1474,9 +1488,7 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
 
     let export_ui: Element<'_, Message>;
     if let Some(active_href) = &app.active_cal_href {
-        if active_href.starts_with("local://")
-            && active_href != crate::storage::LOCAL_TRASH_HREF
-        {
+        if active_href.starts_with("local://") && active_href != crate::storage::LOCAL_TRASH_HREF {
             let targets: Vec<_> = app
                 .calendars
                 .iter()

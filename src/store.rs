@@ -1066,7 +1066,7 @@ impl TaskStore {
     pub fn set_parent(&mut self, child_uid: &str, parent_uid: Option<String>) -> Result<Task, &'static str> {
         if let Some(p_uid) = &parent_uid {
             if p_uid == child_uid {
-                return Err("Cannot be child of self");
+                return Err(Box::leak(rust_i18n::t!("error_cannot_be_child_of_self").into_owned().into_boxed_str()));
             }
             if self.get_descendant_uids(child_uid).contains(p_uid) {
                 return Err("Cycle detected: Cannot set a task as a child of its own descendant");
@@ -1077,7 +1077,7 @@ impl TaskStore {
             task.sequence += 1;
             return Ok(task.clone());
         }
-        Err("Task not found")
+        Err(Box::leak(rust_i18n::t!("error_task_not_found").into_owned().into_boxed_str()))
     }
 
     /// Add a dependency (task_uid depends on dep_uid). Maintain reverse blocking index.

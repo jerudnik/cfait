@@ -449,7 +449,7 @@ async fn main() -> Result<()> {
                 resolve_uid(&store, partial).ok_or_else(|| anyhow::anyhow!("UID required"))?;
             let t = store
                 .get_task_ref(&uid)
-                .ok_or_else(|| anyhow::anyhow!("Task not found"))?;
+                .ok_or_else(|| anyhow::anyhow!(rust_i18n::t!("error_task_not_found")))?;
 
             println!("Summary:  {}", t.summary);
             println!("Status:   {:?} {}", t.status, t.checkbox_symbol());

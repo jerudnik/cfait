@@ -423,7 +423,7 @@ impl CfaitMobile {
         let waypoints = store.get_tree_waypoints(&uid);
 
         if waypoints.is_empty() {
-            return Err(MobileError::from("No locations found"));
+            return Err(MobileError::from(rust_i18n::t!("no_locations").to_string()));
         }
 
         let mut gpx = String::from(
@@ -740,10 +740,10 @@ impl CfaitMobile {
                 self.rebuild_alarm_index().await;
                 Ok(())
             } else {
-                Err(MobileError::from("Task not found"))
+                Err(MobileError::from(rust_i18n::t!("error_task_not_found").to_string()))
             }
         } else {
-            Err(MobileError::from("Invalid time format"))
+            Err(MobileError::from(rust_i18n::t!("error_format", msg = "Invalid time format").to_string()))
         }
     }
 
@@ -762,7 +762,7 @@ impl CfaitMobile {
             self.rebuild_alarm_index().await;
             Ok(())
         } else {
-            Err(MobileError::from("Task not found"))
+            Err(MobileError::from(rust_i18n::t!("error_task_not_found").to_string()))
         }
     }
 
@@ -1317,7 +1317,7 @@ impl CfaitMobile {
         blocker_uid: String,
     ) -> Result<(), MobileError> {
         if task_uid == blocker_uid {
-            return Err(MobileError::from("Cannot depend on self"));
+            return Err(MobileError::from(rust_i18n::t!("error_cannot_depend_on_self").to_string()));
         }
         self.apply_store_mutation(&task_uid, |store, id| store.add_dependency(id, blocker_uid))
             .await
@@ -1364,7 +1364,7 @@ impl CfaitMobile {
         related_uid: String,
     ) -> Result<(), MobileError> {
         if task_uid == related_uid {
-            return Err(MobileError::from("Cannot relate to self"));
+            return Err(MobileError::from(rust_i18n::t!("error_cannot_relate_to_self").to_string()));
         }
         self.apply_store_mutation(&task_uid, |store, id| store.add_related_to(id, related_uid))
             .await
@@ -2236,7 +2236,7 @@ impl CfaitMobile {
         F: FnOnce(&mut TaskStore, &str) -> Option<Task>,
     {
         let mut store = self.controller.store.lock().await;
-        let task_to_save = mutator(&mut store, uid).ok_or(MobileError::from("Task not found"))?;
+        let task_to_save = mutator(&mut store, uid).ok_or(MobileError::from(rust_i18n::t!("error_task_not_found").to_string()))?;
         drop(store);
 
         self.controller

@@ -128,7 +128,12 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::ConfigLoaded(Err(e)) => {
             app.state = AppState::Onboarding;
             if !e.contains("Config file not found") {
-                app.error_msg = Some(rust_i18n::t!("config_error_prefix", error = e).to_string().trim().to_owned());
+                app.error_msg = Some(
+                    rust_i18n::t!("config_error_prefix", error = e)
+                        .to_string()
+                        .trim()
+                        .to_owned(),
+                );
                 app.config_was_corrupted = true;
             }
             Task::none()
@@ -285,7 +290,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                             }
                         }
                         Err(e) => {
-                            app.error_msg = Some(format!("Cannot add alias: {}", e));
+                            app.error_msg = Some(format!(
+                                "{}",
+                                rust_i18n::t!("error_adding_alias", error = e)
+                            ));
                         }
                     }
                 }
@@ -664,16 +672,32 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                                     Ok(count) => {
                                         let file_name = file.file_name();
                                         let msg = if count == 1 {
-                                            rust_i18n::t!("import_success_from_file.one", file = file_name).to_string()
+                                            rust_i18n::t!(
+                                                "import_success_from_file.one",
+                                                file = file_name
+                                            )
+                                            .to_string()
                                         } else {
-                                            rust_i18n::t!("import_success_from_file.other", count = count, file = file_name).to_string()
+                                            rust_i18n::t!(
+                                                "import_success_from_file.other",
+                                                count = count,
+                                                file = file_name
+                                            )
+                                            .to_string()
                                         };
                                         Ok(msg)
                                     }
-                                    Err(e) => Err(rust_i18n::t!("import_failed", error = e.to_string()).to_string()),
+                                    Err(e) => {
+                                        Err(rust_i18n::t!("import_failed", error = e.to_string())
+                                            .to_string())
+                                    }
                                 }
                             }
-                            Err(e) => Err(rust_i18n::t!("import_failed_read_text", error = e.to_string()).to_string()),
+                            Err(e) => Err(rust_i18n::t!(
+                                "import_failed_read_text",
+                                error = e.to_string()
+                            )
+                            .to_string()),
                         }
                     } else {
                         Err(rust_i18n::t!("import_cancelled").to_string())
@@ -792,7 +816,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::IcsFileLoaded(Err(e)) => {
-            app.error_msg = Some(format!("Failed to load ICS file: {}", e));
+            app.error_msg = Some(format!(
+                "{}",
+                rust_i18n::t!("import_failed_read_text", error = e)
+            ));
             Task::none()
         }
         Message::IcsImportDialogCalendarSelected(href) => {
@@ -829,12 +856,20 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                                     .and_then(|p| std::path::Path::new(p).file_name())
                                     .and_then(|n| n.to_str())
                                     .unwrap_or("file");
-                                Ok(format!(
-                                    "Successfully imported {} task(s) from {}",
-                                    count, file_name
-                                ))
+                                let msg = if count == 1 {
+                                    rust_i18n::t!("import_success_from_file.one", file = file_name)
+                                        .to_string()
+                                } else {
+                                    rust_i18n::t!(
+                                        "import_success_from_file.other",
+                                        count = count,
+                                        file = file_name
+                                    )
+                                    .to_string()
+                                };
+                                Ok(msg)
                             }
-                            Err(e) => Err(format!("Import failed: {}", e)),
+                            Err(e) => Err(format!("{}", rust_i18n::t!("import_failed", error = e))),
                         }
                     },
                     Message::ImportCompleted,

@@ -688,15 +688,16 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             details_md.push_str("### Related From\n");
             for (related_uid, mut related_name) in incoming_related {
                 if let Some(rel_task) = state.store.get_task_ref(&related_uid)
-                    && rel_task.status.is_done() {
-                        if let Some(comp_date) = rel_task.completion_date() {
-                            let local = comp_date.with_timezone(&chrono::Local);
-                            related_name =
-                                format!("{} (✓ {})", related_name, local.format("%Y-%m-%d %H:%M"));
-                        } else {
-                            related_name = format!("{} (✓)", related_name);
-                        }
+                    && rel_task.status.is_done()
+                {
+                    if let Some(comp_date) = rel_task.completion_date() {
+                        let local = comp_date.with_timezone(&chrono::Local);
+                        related_name =
+                            format!("{} (✓ {})", related_name, local.format("%Y-%m-%d %H:%M"));
+                    } else {
+                        related_name = format!("{} (✓)", related_name);
                     }
+                }
                 details_md.push_str(&format!("- {}\n", related_name));
             }
             details_md.push('\n');
@@ -798,7 +799,12 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             rust_i18n::t!("loading")
         )
     } else {
-        format!(" {} ", rust_i18n::t!("tasks_count", count = active_count))
+        let tasks_str = match active_count {
+            0 => rust_i18n::t!("tasks_count.zero"),
+            1 => rust_i18n::t!("tasks_count.one"),
+            _ => rust_i18n::t!("tasks_count.other", count = active_count),
+        };
+        format!(" {} ", tasks_str)
     };
     if state.unsynced_changes {
         title.push_str(&format!(" [{}] ", rust_i18n::t!("unsynced")));
@@ -1266,22 +1272,40 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
             )));
-            lines.push(Line::from(rust_i18n::t!("about_version", version = env!("CARGO_PKG_VERSION")).to_string()));
+            lines.push(Line::from(
+                rust_i18n::t!("about_version", version = env!("CARGO_PKG_VERSION")).to_string(),
+            ));
             lines.push(Line::from(rust_i18n::t!("about_license").to_string()));
             lines.push(Line::from(""));
-            lines.push(Line::from(rust_i18n::t!("about_repository", url = "https://codeberg.org/trougnouf/cfait").to_string()));
-            lines.push(Line::from(rust_i18n::t!("about_chat", url = "#Cfait:matrix.org").to_string()));
+            lines.push(Line::from(
+                rust_i18n::t!(
+                    "about_repository",
+                    url = "https://codeberg.org/trougnouf/cfait"
+                )
+                .to_string(),
+            ));
+            lines.push(Line::from(
+                rust_i18n::t!("about_chat", url = "#Cfait:matrix.org").to_string(),
+            ));
             lines.push(Line::from(""));
             lines.push(Line::from(Span::styled(
                 rust_i18n::t!("support_card_title").to_string(),
-                Style::default().fg(Color::LightMagenta).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::LightMagenta)
+                    .add_modifier(Modifier::BOLD),
             )));
             lines.push(Line::from("Liberapay: https://liberapay.com/trougnouf"));
             lines.push(Line::from("Ko-fi:     https://ko-fi.com/trougnouf"));
             lines.push(Line::from("Bank (SEPA): BE77 9731 6116 6342"));
-            lines.push(Line::from("Bitcoin:   bc1qc3z9ctv34v0ufxwpmq875r89umnt6ggeclp979"));
-            lines.push(Line::from("Litecoin:  ltc1qv0xcmeuve080j7ad2cj2sd9d22kgqmlxfxvhmg"));
-            lines.push(Line::from("Ethereum:  0x0A5281F3B6f609aeb9D71D7ED7acbEc5d00687CB"));
+            lines.push(Line::from(
+                "Bitcoin:   bc1qc3z9ctv34v0ufxwpmq875r89umnt6ggeclp979",
+            ));
+            lines.push(Line::from(
+                "Litecoin:  ltc1qv0xcmeuve080j7ad2cj2sd9d22kgqmlxfxvhmg",
+            ));
+            lines.push(Line::from(
+                "Ethereum:  0x0A5281F3B6f609aeb9D71D7ED7acbEc5d00687CB",
+            ));
         } else {
             let data = if tab == crate::help::HelpTab::Syntax {
                 crate::help::get_syntax_help()
