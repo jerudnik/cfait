@@ -445,6 +445,8 @@
     "status_created": "",
     "status_deleted": "",
     "status_moved": "",
+    "status_no_tasks_found": "",
+    "status_no_tasks_to_migrate": "",
     "status_saved": "",
     "stop_reset": "",
     "strikethrough_completed": "",
@@ -476,7 +478,8 @@
     "tasks": "",
     "tasks_count": {
         "one": "",
-        "other": ""
+        "other": "",
+        "zero": ""
     },
     "theme_auto_detect": "",
     "theme_dark": "",
