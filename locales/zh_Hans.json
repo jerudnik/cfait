@@ -337,8 +337,8 @@
     "migrating_tasks_background": "正在后台迁移任务…",
     "migration_complete": "迁移完成",
     "migration_complete_moved": {
-      "one": "迁移完成。已移动 1 项。",
-      "other": "迁移完成。已移动 %{count} 项。"
+        "one": "迁移完成。已移动 1 项。",
+        "other": "迁移完成。已移动 %{count} 项。"
     },
     "migration_failed": "迁移失败",
     "min": "最小",
@@ -474,10 +474,7 @@
     "tui_main_help": "?:帮助 q:退出 Tab:侧边栏 a:添加 e:编辑 E:详情 Spc:完成 Del:删除 y:剪切 /:查找 z:折叠",
     "tui_manage_sessions_prompt": "管理会话（Del/x：移除，Esc：取消）",
     "tui_manage_sessions_title": "管理会话（按 Del 键移除）",
-    "tui_older_sessions_hidden": {
-        "one": "（… 已隐藏 1 个旧会话）",
-        "other": "（… 已隐藏 %{count} 个旧会话）"
-    },
+    "tui_older_sessions_hidden": "",
     "tui_sidebar_help": "?:帮助 q:退出 Tab:任务 ↵:选择 Spc:显示/隐藏 *:全部 →:隔离视图",
     "tui_yanked_help": "%{yanked_label}“%{summary}”— b:阻止 c:子任务 l:链接 (Esc:清除)",
     "unblock_remove_dependency": "解除阻止（移除依赖）",
