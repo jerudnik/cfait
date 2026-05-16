@@ -599,6 +599,36 @@ pub struct CfaitMobile {
     session: Arc<Mutex<crate::model::SessionState>>,
 }
 
+fn load_mobile_config_with_credentials(ctx: &dyn AppContext) -> Config {
+    match Config::load_with_credentials(ctx) {
+        Ok(config) => config,
+        Err(err) => {
+            #[cfg(target_os = "android")]
+            log::warn!(
+                "Falling back to config-only load after credential load failure: {}",
+                err
+            );
+            #[cfg(not(target_os = "android"))]
+            let _ = err;
+            Config::load(ctx).unwrap_or_default()
+        }
+    }
+}
+
+fn apply_mobile_credentials_update(config: &mut Config, user: &str, pass: &str) {
+    let previous_username = config.username.clone();
+    config.username = user.to_string();
+
+    if !pass.is_empty() {
+        config.password = pass.to_string();
+    } else if !previous_username.is_empty() && previous_username != user {
+        // The Android settings UI intentionally leaves stored passwords blank on reload.
+        // Preserve credentials for the same account, but avoid reusing one account's
+        // password for a different username when the field is left untouched.
+        config.password.clear();
+    }
+}
+
 #[uniffi::export]
 impl CfaitMobile {
     #[uniffi::constructor]
@@ -743,10 +773,14 @@ impl CfaitMobile {
                 self.rebuild_alarm_index().await;
                 Ok(())
             } else {
-                Err(MobileError::from(rust_i18n::t!("error_task_not_found").to_string()))
+                Err(MobileError::from(
+                    rust_i18n::t!("error_task_not_found").to_string(),
+                ))
             }
         } else {
-            Err(MobileError::from(rust_i18n::t!("error_format", msg = "Invalid time format").to_string()))
+            Err(MobileError::from(
+                rust_i18n::t!("error_format", msg = "Invalid time format").to_string(),
+            ))
         }
     }
 
@@ -765,7 +799,9 @@ impl CfaitMobile {
             self.rebuild_alarm_index().await;
             Ok(())
         } else {
-            Err(MobileError::from(rust_i18n::t!("error_task_not_found").to_string()))
+            Err(MobileError::from(
+                rust_i18n::t!("error_task_not_found").to_string(),
+            ))
         }
     }
 
@@ -797,12 +833,9 @@ impl CfaitMobile {
         quick_filter_term: String,
         quick_filter_icon: String,
     ) -> Result<(), MobileError> {
-        let mut c = Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let mut c = load_mobile_config_with_credentials(self.ctx.as_ref());
         c.url = url;
-        c.username = user;
-        if !pass.is_empty() {
-            c.password = pass;
-        }
+        apply_mobile_credentials_update(&mut c, &user, &pass);
         c.allow_insecure_certs = insecure;
         c.hide_completed = hide_completed;
         c.disabled_calendars = disabled_calendars;
@@ -826,7 +859,8 @@ impl CfaitMobile {
         c.quick_filter_term = quick_filter_term;
         c.quick_filter_icon = quick_filter_icon;
 
-        c.save(self.ctx.as_ref()).map_err(MobileError::from)
+        c.save_with_credentials(self.ctx.as_ref())
+            .map_err(MobileError::from)
     }
 
     pub fn get_calendars(&self) -> Vec<MobileCalendar> {
@@ -1143,7 +1177,9 @@ impl CfaitMobile {
                         task_uid: e.task_uid,
                         alarm_uid: e.alarm_uid,
                         title: e.task_title,
-                        body: e.description.unwrap_or_else(|| rust_i18n::t!("reminder").to_string()),
+                        body: e
+                            .description
+                            .unwrap_or_else(|| rust_i18n::t!("reminder").to_string()),
                     })
                     .collect();
             } else {
@@ -1162,7 +1198,9 @@ impl CfaitMobile {
                         task_uid: e.task_uid,
                         alarm_uid: e.alarm_uid,
                         title: e.task_title,
-                        body: e.description.unwrap_or_else(|| rust_i18n::t!("reminder").to_string()),
+                        body: e
+                            .description
+                            .unwrap_or_else(|| rust_i18n::t!("reminder").to_string()),
                     })
                     .collect();
             } else {
@@ -1208,7 +1246,10 @@ impl CfaitMobile {
                             task_uid: task.uid.clone(),
                             alarm_uid: alarm.uid.clone(),
                             title: task.summary.clone(),
-                            body: alarm.description.clone().unwrap_or_else(|| rust_i18n::t!("reminder").to_string()),
+                            body: alarm
+                                .description
+                                .clone()
+                                .unwrap_or_else(|| rust_i18n::t!("reminder").to_string()),
                         });
                     }
                 }
@@ -1320,7 +1361,9 @@ impl CfaitMobile {
         blocker_uid: String,
     ) -> Result<(), MobileError> {
         if task_uid == blocker_uid {
-            return Err(MobileError::from(rust_i18n::t!("error_cannot_depend_on_self").to_string()));
+            return Err(MobileError::from(
+                rust_i18n::t!("error_cannot_depend_on_self").to_string(),
+            ));
         }
         self.apply_store_mutation(&task_uid, |store, id| store.add_dependency(id, blocker_uid))
             .await
@@ -1367,7 +1410,9 @@ impl CfaitMobile {
         related_uid: String,
     ) -> Result<(), MobileError> {
         if task_uid == related_uid {
-            return Err(MobileError::from(rust_i18n::t!("error_cannot_relate_to_self").to_string()));
+            return Err(MobileError::from(
+                rust_i18n::t!("error_cannot_relate_to_self").to_string(),
+            ));
         }
         self.apply_store_mutation(&task_uid, |store, id| store.add_related_to(id, related_uid))
             .await
@@ -1418,12 +1463,9 @@ impl CfaitMobile {
         pass: String,
         insecure: bool,
     ) -> Result<String, MobileError> {
-        let mut config = Config::load_with_credentials(self.ctx.as_ref()).unwrap_or_default();
+        let mut config = load_mobile_config_with_credentials(self.ctx.as_ref());
         config.url = url;
-        config.username = user;
-        if !pass.is_empty() {
-            config.password = pass;
-        }
+        apply_mobile_credentials_update(&mut config, &user, &pass);
         config.allow_insecure_certs = insecure;
         self.apply_connection(config).await
     }
@@ -1912,7 +1954,9 @@ impl CfaitMobile {
             .lock()
             .await
             .as_ref()
-            .ok_or(MobileError::from(rust_i18n::t!("error_client_not_connected").to_string()))?
+            .ok_or(MobileError::from(
+                rust_i18n::t!("error_client_not_connected").to_string(),
+            ))?
             .clone();
         let tasks = LocalStorage::load_for_href(self.ctx.as_ref(), &source_href)
             .map_err(|e| MobileError::from(e.to_string()))?;
@@ -1964,13 +2008,17 @@ impl CfaitMobile {
                 .map_err(|e| MobileError::from(e.to_string()))?;
             Ok(())
         } else {
-            Err(MobileError::from(rust_i18n::t!("error_no_calendar_available").to_string()))
+            Err(MobileError::from(
+                rust_i18n::t!("error_no_calendar_available").to_string(),
+            ))
         }
     }
 
     pub async fn delete_local_calendar(&self, href: String) -> Result<(), MobileError> {
         if href == LOCAL_CALENDAR_HREF {
-            return Err(MobileError::from(rust_i18n::t!("error_cannot_delete_default_calendar").to_string()));
+            return Err(MobileError::from(
+                rust_i18n::t!("error_cannot_delete_default_calendar").to_string(),
+            ));
         }
         let mut locals = LocalCalendarRegistry::load(self.ctx.as_ref())
             .map_err(|e| MobileError::from(e.to_string()))?;
@@ -1987,7 +2035,9 @@ impl CfaitMobile {
             self.rebuild_alarm_index().await;
             Ok(())
         } else {
-            Err(MobileError::from(rust_i18n::t!("error_no_calendar_available").to_string()))
+            Err(MobileError::from(
+                rust_i18n::t!("error_no_calendar_available").to_string(),
+            ))
         }
     }
 
@@ -2239,7 +2289,9 @@ impl CfaitMobile {
         F: FnOnce(&mut TaskStore, &str) -> Option<Task>,
     {
         let mut store = self.controller.store.lock().await;
-        let task_to_save = mutator(&mut store, uid).ok_or(MobileError::from(rust_i18n::t!("error_task_not_found").to_string()))?;
+        let task_to_save = mutator(&mut store, uid).ok_or(MobileError::from(
+            rust_i18n::t!("error_task_not_found").to_string(),
+        ))?;
         drop(store);
 
         self.controller
@@ -2428,5 +2480,53 @@ impl CfaitMobile {
                 rust_i18n::t!("debug_export_android_only").to_string(),
             ))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::apply_mobile_credentials_update;
+    use crate::config::Config;
+
+    #[test]
+    fn preserves_existing_password_when_android_ui_leaves_password_blank() {
+        let mut config = Config {
+            username: "alice".to_string(),
+            password: "secret".to_string(),
+            ..Config::default()
+        };
+
+        apply_mobile_credentials_update(&mut config, "alice", "");
+
+        assert_eq!(config.username, "alice");
+        assert_eq!(config.password, "secret");
+    }
+
+    #[test]
+    fn clears_password_when_username_changes_without_new_password() {
+        let mut config = Config {
+            username: "alice".to_string(),
+            password: "secret".to_string(),
+            ..Config::default()
+        };
+
+        apply_mobile_credentials_update(&mut config, "bob", "");
+
+        assert_eq!(config.username, "bob");
+        assert!(config.password.is_empty());
+    }
+
+    #[test]
+    fn replaces_password_when_user_enters_a_new_one() {
+        let mut config = Config {
+            username: "alice".to_string(),
+            password: "secret".to_string(),
+            ..Config::default()
+        };
+
+        apply_mobile_credentials_update(&mut config, "alice", "new-secret");
+
+        assert_eq!(config.username, "alice");
+        assert_eq!(config.password, "new-secret");
     }
 }
