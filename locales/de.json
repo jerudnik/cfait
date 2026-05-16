@@ -113,6 +113,7 @@
     "creating_events_background": "Erstelle Ereignisse im Hintergrund…",
     "data_management": "Datenverwaltung",
     "debug_export_explain": "Exportiert alle App-Daten (Konfiguration, Cache, Journale) zur Fehlersuche. Anmeldedaten werden geschwärzt.",
+    "default_calendar": "Standard",
     "default_collection": "Standardsammlung",
     "default_priority_label": "Standardpriorität (!):",
     "default_time_label": "Standard-Uhrzeit:",

@@ -113,6 +113,7 @@
     "creating_events_background": "正在后台创建活动…",
     "data_management": "数据管理",
     "debug_export_explain": "导出所有应用数据（配置、缓存、日志）以进行调试。凭据将被脱敏处理。",
+    "default_calendar": "默认",
     "default_collection": "默认集合",
     "default_priority_label": "默认优先级（!）：",
     "default_time_label": "默认时间：",

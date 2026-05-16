@@ -124,7 +124,7 @@
     "creating_events_background": "Creating events in background…",
     "data_management": "Data management",
     "debug_export_explain": "Export all app data (config, cache, journals) for debugging. Credentials will be redacted.",
-    "default": "Default",
+    "default_calendar": "Default",
     "default_collection": "Default collection",
     "default_priority_label": "Default priority (!):",
     "default_time_label": "Default time:",

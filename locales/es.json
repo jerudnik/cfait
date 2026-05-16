@@ -113,6 +113,7 @@
     "creating_events_background": "Creando eventos en segundo plano…",
     "data_management": "Gestión de datos",
     "debug_export_explain": "Exporta todos los datos (config, caché) para depuración. Las contraseñas serán omitidas.",
+    "default_calendar": "Predeterminado",
     "default_collection": "Colección por defecto",
     "default_priority_label": "Prioridad por defecto (!):",
     "default_time_label": "Hora por defecto:",

@@ -113,6 +113,7 @@
     "creating_events_background": "Создание события в фоне…",
     "data_management": "Управление данными",
     "debug_export_explain": "Выгрузить все данные приложения (конфигурацию, кэш, журналы) отладочные данные. Данные о пользователе будут изменены.",
+    "default_calendar": "По умолчанию",
     "default_collection": "Коллекция по умолчанию",
     "default_priority_label": "Приоритет по умолчанию (!):",
     "default_time_label": "Время по умолчанию",

@@ -371,7 +371,7 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
             .unwrap_or_else(|| rust_i18n::t!("parent").to_string());
         app.current_placeholder = rust_i18n::t!("new_child_of", name = parent_name).to_string();
     } else {
-        let default_str = rust_i18n::t!("default");
+        let default_str = rust_i18n::t!("default_calendar");
         let target_name: &str = app
             .calendars
             .iter()

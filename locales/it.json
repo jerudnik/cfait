@@ -113,6 +113,7 @@
     "creating_events_background": "Creazione eventi in background…",
     "data_management": "Gestione dei dati",
     "debug_export_explain": "Esporta tutti i dati dell'app (config, cache) per il debug. Le password non verranno incluse.",
+    "default_calendar": "Predefinito",
     "default_collection": "Collezione predefinita",
     "default_priority_label": "Priorità predefinita (!):",
     "default_time_label": "Ora predefinita:",
