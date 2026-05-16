@@ -159,7 +159,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
                 }
             }
 
-            if let Err(e) = new_config.save(ctx.as_ref()) {
+            if let Err(e) = new_config.save_with_credentials(ctx.as_ref()) {
                 eprintln!("{}", rust_i18n::t!("tui_warning_save_config", error = e.to_string()));
             } else if let Ok(path) = config::Config::get_path_string(ctx.as_ref()) {
                 println!("{}", rust_i18n::t!("tui_config_saved", path = path));
