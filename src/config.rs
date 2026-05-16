@@ -501,14 +501,41 @@ impl Config {
             &config.username
         };
 
-        if let Ok(entry) = keyring_core::Entry::new("cfait", user_key) {
-            if !config.password.is_empty() {
-                // Migration: plaintext password found in config.toml!
-                // Move it securely into the OS keyring.
-                let _ = entry.set_password(&config.password);
-            } else if let Ok(pw) = entry.get_password() {
-                // Normal run: fetch the password from the OS keyring.
-                config.password = pw;
+        match keyring_core::Entry::new("cfait", user_key) {
+            Ok(entry) => {
+                if !config.password.is_empty() {
+                    // Migration: plaintext password found in config.toml!
+                    // Move it securely into the OS keyring.
+                    if let Err(err) = entry.set_password(&config.password) {
+                        log::warn!(
+                            "Failed to migrate password into keyring for user '{}': {}",
+                            user_key,
+                            err
+                        );
+                    }
+                } else {
+                    match entry.get_password() {
+                        Ok(pw) => {
+                            // Normal run: fetch the password from the OS keyring.
+                            config.password = pw;
+                        }
+                        Err(keyring_core::Error::NoEntry) => {}
+                        Err(err) => {
+                            log::warn!(
+                                "Failed to load password from keyring for user '{}': {}",
+                                user_key,
+                                err
+                            );
+                        }
+                    }
+                }
+            }
+            Err(err) => {
+                log::warn!(
+                    "Failed to initialize keyring entry for user '{}': {}",
+                    user_key,
+                    err
+                );
             }
         }
 
@@ -556,12 +583,34 @@ impl Config {
             &self.username
         };
 
-        if let Ok(entry) = keyring_core::Entry::new("cfait", user_key) {
-            if !self.password.is_empty() {
-                let _ = entry.set_password(&self.password);
-            } else {
-                // Delete credential if the user cleared the password
-                let _ = entry.delete_credential();
+        match keyring_core::Entry::new("cfait", user_key) {
+            Ok(entry) => {
+                if !self.password.is_empty() {
+                    if let Err(err) = entry.set_password(&self.password) {
+                        log::warn!(
+                            "Failed to save password to keyring for user '{}': {}",
+                            user_key,
+                            err
+                        );
+                    }
+                } else if let Err(err) = entry.delete_credential() {
+                    // Delete credential if the user cleared the password.
+                    // Missing entries are fine; anything else is worth logging.
+                    if !matches!(err, keyring_core::Error::NoEntry) {
+                        log::warn!(
+                            "Failed to delete keyring credential for user '{}': {}",
+                            user_key,
+                            err
+                        );
+                    }
+                }
+            }
+            Err(err) => {
+                log::warn!(
+                    "Failed to initialize keyring entry for user '{}': {}",
+                    user_key,
+                    err
+                );
             }
         }
 
