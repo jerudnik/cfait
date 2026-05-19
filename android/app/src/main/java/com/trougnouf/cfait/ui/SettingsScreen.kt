@@ -382,39 +382,6 @@ fun SettingsScreen(
                 }
             }
 
-            // 2. Manage Collections
-            item {
-                HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                Text(
-                    stringResource(R.string.manage_collections),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-            items(allCalendars) { cal ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            val newSet = disabledSet.toMutableSet()
-                            val enabled = disabledSet.contains(cal.href)
-                            if (enabled) newSet.remove(cal.href) else newSet.add(cal.href)
-                            disabledSet = newSet
-                            saveToDisk()
-                        }
-                ) {
-                    Checkbox(checked = !disabledSet.contains(cal.href), onCheckedChange = { enabled ->
-                        val newSet = disabledSet.toMutableSet()
-                        if (enabled) newSet.remove(cal.href) else newSet.add(cal.href)
-                        disabledSet = newSet
-                        saveToDisk()
-                    })
-                    Text(cal.name, modifier = Modifier.weight(1f))
-                }
-            }
-
             // 3. Appearance & Language
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
@@ -783,6 +750,13 @@ fun SettingsScreen(
                 CollectionEditor(
                     cal = cal,
                     isLocal = false,
+                    isEnabled = !disabledSet.contains(cal.href),
+                    onToggleEnabled = { enabled ->
+                        val newSet = disabledSet.toMutableSet()
+                        if (enabled) newSet.remove(cal.href) else newSet.add(cal.href)
+                        disabledSet = newSet
+                        saveToDisk()
+                    },
                     onUpdate = { name, color ->
                         scope.launch {
                             try {
@@ -843,6 +817,13 @@ fun SettingsScreen(
                 CollectionEditor(
                     cal = cal,
                     isLocal = true,
+                    isEnabled = !disabledSet.contains(cal.href),
+                    onToggleEnabled = { enabled ->
+                        val newSet = disabledSet.toMutableSet()
+                        if (enabled) newSet.remove(cal.href) else newSet.add(cal.href)
+                        disabledSet = newSet
+                        saveToDisk()
+                    },
                     onUpdate = { name, color ->
                         scope.launch {
                             try {
@@ -1001,6 +982,8 @@ fun SettingsScreen(
 fun CollectionEditor(
     cal: MobileCalendar,
     isLocal: Boolean,
+    isEnabled: Boolean,
+    onToggleEnabled: (Boolean) -> Unit,
     onUpdate: (String, String?) -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
@@ -1020,6 +1003,11 @@ fun CollectionEditor(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = isEnabled,
+                    onCheckedChange = onToggleEnabled
+                )
+                Spacer(modifier = Modifier.width(4.dp))
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
