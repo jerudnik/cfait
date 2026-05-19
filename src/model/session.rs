@@ -16,7 +16,6 @@ pub struct SessionState {
     pub active_calendar_href: Option<String>,
     pub match_all_categories: bool,
     pub expanded_done_groups: Vec<String>,
-    pub collapsed_trees: Vec<String>,
 }
 
 impl SessionState {
@@ -38,7 +37,6 @@ impl SessionState {
         let selected_locations: HashSet<String> = self.selected_locations.iter().cloned().collect();
         let expanded_done_groups: HashSet<String> =
             self.expanded_done_groups.iter().cloned().collect();
-        let collapsed_trees: HashSet<String> = self.collapsed_trees.iter().cloned().collect();
 
         store.filter(FilterOptions {
             active_cal_href: None, // Logic handled by hidden_calendars
@@ -58,7 +56,6 @@ impl SessionState {
             default_priority: config.default_priority,
             start_grace_period_days: config.start_grace_period_days,
             expanded_done_groups: &expanded_done_groups,
-            collapsed_trees: &collapsed_trees,
             max_done_roots: config.max_done_roots,
             max_done_subtasks: config.max_done_subtasks,
             tag_aliases: &config.tag_aliases,
@@ -96,13 +93,6 @@ impl SessionState {
             }
             AppIntent::ClearTagFilters => self.selected_categories.clear(),
             AppIntent::ClearLocationFilters => self.selected_locations.clear(),
-            AppIntent::ToggleTreeCollapse { uid } => {
-                if let Some(pos) = self.collapsed_trees.iter().position(|x| x == uid) {
-                    self.collapsed_trees.remove(pos);
-                } else {
-                    self.collapsed_trees.push(uid.clone());
-                }
-            }
             AppIntent::ToggleDoneGroup { key } => {
                 if let Some(pos) = self.expanded_done_groups.iter().position(|x| x == key) {
                     self.expanded_done_groups.remove(pos);

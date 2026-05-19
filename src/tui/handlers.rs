@@ -1430,12 +1430,16 @@ pub async fn handle_key_event(
             }
             KeyCode::Char('z') => {
                 if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone()) {
-                    if state.collapsed_trees.contains(&uid) {
-                        state.collapsed_trees.remove(&uid);
-                    } else {
-                        state.collapsed_trees.insert(uid);
-                    }
+                    let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
+                    let intent = AppIntent::ToggleTreeCollapse { uid: uid.clone() };
+                    let actions = state.store.apply_task_intent(&intent, &config);
                     state.refresh_filtered_view();
+                    if !actions.is_empty() {
+                        let tx = action_tx.clone();
+                        tokio::spawn(async move {
+                            let _ = tx.send(Action::PersistBatch(actions)).await;
+                        });
+                    }
                 }
             }
             KeyCode::Char('3') => {

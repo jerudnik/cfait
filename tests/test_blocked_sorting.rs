@@ -51,7 +51,7 @@ fn test_blocked_tasks_skip_urgent_rank() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -130,7 +130,7 @@ fn test_blocked_tasks_skip_due_soon_rank() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -207,7 +207,7 @@ fn test_blocked_tasks_skip_started_rank() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -285,7 +285,7 @@ fn test_dependency_blocked_tasks_also_skip_ranks() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -368,7 +368,7 @@ fn test_is_ready_filters_manually_blocked_tasks() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -437,7 +437,7 @@ fn test_is_blocked_filter_shows_only_blocked() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),

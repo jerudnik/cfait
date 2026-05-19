@@ -82,7 +82,7 @@ struct HierarchyContext<'a> {
     result: &'a mut Vec<TaskListItem>,
     visited_keys: &'a mut HashSet<(String, String)>,
     expanded_groups: &'a HashSet<String>,
-    collapsed_trees: &'a HashSet<String>,
+    search_active: bool,
     max_done_subtasks: usize,
 }
 
@@ -97,9 +97,9 @@ pub fn organize_hierarchy(
     mut tasks: Vec<Task>,
     default_priority: u8,
     expanded_groups: &HashSet<String>,
-    collapsed_trees: &HashSet<String>,
     max_done_roots: usize,
     max_done_subtasks: usize,
+    search_active: bool,
 ) -> Vec<TaskListItem> {
     let present_uids: HashSet<String> = tasks.iter().map(|t| t.uid.clone()).collect();
     let mut children_map: HashMap<String, Vec<Task>> = HashMap::new();
@@ -133,7 +133,7 @@ pub fn organize_hierarchy(
         result: &mut result,
         visited_keys: &mut visited_keys,
         expanded_groups,
-        collapsed_trees,
+        search_active,
         max_done_subtasks,
     };
 
@@ -211,8 +211,8 @@ pub fn organize_hierarchy(
 
         context.result.push(TaskListItem::Task(Box::new(t)));
 
-        // If the user manually folded this tree, truncate children iteration
-        if context.collapsed_trees.contains(&task.uid) {
+        // If the user manually folded this tree, truncate children iteration (unless searching)
+        if task.collapsed && !context.search_active {
             return;
         }
 
@@ -376,7 +376,6 @@ pub struct FilterOptions<'a> {
     pub default_priority: u8,
     pub start_grace_period_days: u32,
     pub expanded_done_groups: &'a HashSet<String>,
-    pub collapsed_trees: &'a HashSet<String>,
     pub max_done_roots: usize,
     pub max_done_subtasks: usize,
     pub tag_aliases: &'a HashMap<String, Vec<String>>,
@@ -1953,9 +1952,9 @@ impl TaskStore {
             final_tasks_processed,
             options.default_priority,
             options.expanded_done_groups,
-            options.collapsed_trees,
             options.max_done_roots,
             options.max_done_subtasks,
+            !options.search_term.is_empty(),
         );
 
         FilterResult {
@@ -2110,6 +2109,14 @@ impl TaskStore {
             }
             AppIntent::RemoveRelatedTo { uid, related_uid } => {
                 if let Some(updated) = self.remove_related_to(uid, related_uid) {
+                    actions.push(JournalAction::Update(updated));
+                }
+            }
+            AppIntent::ToggleTreeCollapse { uid } => {
+                if let Some((task, _)) = self.get_task_mut(uid) {
+                    task.collapsed = !task.collapsed;
+                    task.sequence += 1;
+                    let updated = task.clone();
                     actions.push(JournalAction::Update(updated));
                 }
             }

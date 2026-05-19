@@ -116,9 +116,9 @@ fn test_hierarchy_organization() {
         tasks,
         5,
         &HashSet::new(),
-        &HashSet::new(),
         usize::MAX,
         usize::MAX,
+        false,
     );
 
     assert_eq!(organized.len(), 2);

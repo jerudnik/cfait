@@ -47,6 +47,7 @@ const HANDLED_KEYS: &[&str] = &[
     "X-CFAIT-ESTIMATED-DURATION-MAX",
     "X-CFAIT-FUZZY-START",
     "X-CFAIT-FUZZY-DUE",
+    "X-CFAIT-COLLAPSED",
 ];
 
 pub struct IcsAdapter;
@@ -262,6 +263,10 @@ impl IcsAdapter {
                 "X-CFAIT-CREATE-EVENT",
                 if create_event { "TRUE" } else { "FALSE" },
             );
+        }
+
+        if task.collapsed {
+            todo.add_property("X-CFAIT-COLLAPSED", "TRUE");
         }
 
         // Emit time-tracking properties (if present)
@@ -482,6 +487,10 @@ impl IcsAdapter {
                 "FALSE" | "0" | "NO" => Some(false),
                 _ => None,
             });
+
+        let collapsed = get_prop("X-CFAIT-COLLAPSED")
+            .map(|v| v.trim().to_uppercase() == "TRUE")
+            .unwrap_or(false);
 
         let fuzzy_due = get_prop("X-CFAIT-FUZZY-DUE");
         let fuzzy_start = get_prop("X-CFAIT-FUZZY-START");
@@ -916,6 +925,7 @@ impl IcsAdapter {
             location,
             url,
             geo,
+            collapsed,
             time_spent_seconds,
             last_started_at,
             sessions: manual_sessions, // Use manual parsing result

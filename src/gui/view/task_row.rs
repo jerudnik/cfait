@@ -126,7 +126,7 @@ pub fn view_task_row<'a>(
             let show_indent = app.active_cal_href.is_some();
             let indent_size = if show_indent { task.depth * 12 } else { 0 };
             let indent = Space::new().width(Length::Fixed(indent_size as f32));
-            let is_tree_collapsed = app.session.collapsed_trees.contains(&task.uid);
+            let is_tree_collapsed = task.collapsed;
             let is_expanded = app.expanded_tasks.contains(&task.uid);
 
             let visible_tags = &task.visible_categories;

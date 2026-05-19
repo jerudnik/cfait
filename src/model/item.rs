@@ -302,6 +302,8 @@ pub struct Task {
     pub location: Option<String>,
     pub url: Option<String>,
     pub geo: Option<String>,
+    #[serde(default)]
+    pub collapsed: bool,
 
     // Time-tracking fields:
     // - `time_spent_seconds` accumulates committed seconds of work for this task.
@@ -508,6 +510,7 @@ impl Task {
             location: None,
             url: None,
             geo: None,
+            collapsed: false,
             time_spent_seconds: 0,
             last_started_at: None,
             sessions: Vec::new(),

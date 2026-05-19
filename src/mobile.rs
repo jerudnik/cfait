@@ -149,7 +149,6 @@ pub struct MobileFilterOptions {
     pub filter_locations: Vec<String>,
     pub search_query: String,
     pub expanded_groups: Vec<String>,
-    pub collapsed_groups: Vec<String>,
     pub match_all_categories: bool,
 }
 
@@ -204,6 +203,7 @@ pub struct MobileTask {
     pub sessions: Vec<MobileWorkSession>,
     pub virtual_type: String,
     pub virtual_payload: String,
+    pub is_collapsed: bool,
 
     // UI Visual resolution fields
     pub visible_categories: Vec<String>,
@@ -256,6 +256,7 @@ impl MobileTask {
             sessions: vec![],
             virtual_type: vtype.to_string(),
             virtual_payload: payload.to_string(),
+            is_collapsed: false,
             visible_categories: vec![],
             visible_location: None,
         }
@@ -586,6 +587,7 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
             .collect(),
         virtual_type: v_type,
         virtual_payload: v_payload,
+        is_collapsed: t.collapsed,
         visible_categories: t.visible_categories.clone(),
         visible_location: t.visible_location.clone(),
     }
@@ -1499,7 +1501,6 @@ impl CfaitMobile {
         hidden.extend(config.disabled_calendars);
 
         let expanded_set: HashSet<String> = options.expanded_groups.into_iter().collect();
-        let collapsed_set: HashSet<String> = options.collapsed_groups.into_iter().collect();
 
         let cutoff_date = config
             .sort_cutoff_months
@@ -1523,7 +1524,6 @@ impl CfaitMobile {
             start_grace_period_days: config.start_grace_period_days,
 
             expanded_done_groups: &expanded_set,
-            collapsed_trees: &collapsed_set,
             max_done_roots: config.max_done_roots,
             max_done_subtasks: config.max_done_subtasks,
             tag_aliases: &config.tag_aliases,
@@ -1638,7 +1638,6 @@ impl CfaitMobile {
             default_priority: config.default_priority,
             start_grace_period_days: config.start_grace_period_days,
             expanded_done_groups: &HashSet::new(),
-            collapsed_trees: &HashSet::new(),
             max_done_roots: config.max_done_roots,
             max_done_subtasks: config.max_done_subtasks,
             tag_aliases: &config.tag_aliases,
@@ -2569,3 +2568,4 @@ mod tests {
         assert_eq!(config.password, "new-secret");
     }
 }
+

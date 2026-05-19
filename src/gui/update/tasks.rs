@@ -122,12 +122,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::ToggleTreeCollapse(uid) => {
-            if let Some(pos) = app.session.collapsed_trees.iter().position(|x| x == &uid) {
-                app.session.collapsed_trees.remove(pos);
-            } else {
-                app.session.collapsed_trees.push(uid);
-            }
-            common::refresh_filtered_tasks(app);
+            common::dispatch_intent(app, AppIntent::ToggleTreeCollapse { uid });
             Task::none()
         }
         Message::ToggleHelpSection(title) => {

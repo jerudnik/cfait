@@ -241,7 +241,6 @@ fun HomeScreen(
     var filterLocations by rememberSaveable { mutableStateOf<Set<String>>(emptySet()) }
     var matchAllCategories by rememberSaveable { mutableStateOf(true) }
     var expandedGroups by rememberSaveable { mutableStateOf<Set<String>>(emptySet()) }
-    var collapsedGroups by rememberSaveable { mutableStateOf<Set<String>>(emptySet()) }
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
@@ -334,7 +333,6 @@ fun HomeScreen(
                     filterLocations = filterLocations.toList(),
                     searchQuery = searchQuery,
                     expandedGroups = expandedGroups.toList(),
-                    collapsedGroups = collapsedGroups.toList(),
                     matchAllCategories = matchAllCategories
                 )
                 val viewData = api.getViewTasks(options)
@@ -607,6 +605,7 @@ fun HomeScreen(
                     "block" -> if (yankedUid != null) AppIntent.AddDependency(task.uid, yankedUid!!) else null
                     "child" -> if (yankedUid != null) AppIntent.MakeChild(task.uid, yankedUid!!) else null
                     "related" -> if (yankedUid != null) AppIntent.AddRelatedTo(task.uid, yankedUid!!) else null
+                    "toggle_collapse" -> AppIntent.ToggleTreeCollapse(task.uid)
                     else -> null
                 }
 
@@ -748,7 +747,7 @@ fun HomeScreen(
 
     LaunchedEffect(
         searchQuery, filterTags, filterLocations, isLoading,
-        calendars, refreshTick, expandedGroups, collapsedGroups, matchAllCategories
+        calendars, refreshTick, expandedGroups, matchAllCategories
     ) {
         updateTaskList()
     }
@@ -1866,10 +1865,9 @@ fun HomeScreen(
                                                 yankedUid = yankedUid,
                                                 enabledCalendarCount = enabledCalendarCount,
                                                 isHighlighted = task.uid == highlightedUid,
-                                                isCollapsed = collapsedGroups.contains(task.uid),
+                                                isCollapsed = task.isCollapsed,
                                                 onToggleCollapse = {
-                                                    collapsedGroups =
-                                                        if (collapsedGroups.contains(task.uid)) collapsedGroups - task.uid else collapsedGroups + task.uid
+                                                    onTaskAction("toggle_collapse", task)
                                                 }
                                             )
                                         } else {
@@ -1899,6 +1897,10 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+    }
+}
+    }
         }
     }
 }

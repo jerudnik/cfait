@@ -48,7 +48,7 @@ fn test_filter_by_tag() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &empty_set,
-        collapsed_trees: &empty_set,
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -94,7 +94,7 @@ fn test_filter_hierarchical_tags() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &empty_set,
-        collapsed_trees: &empty_set,
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -146,7 +146,7 @@ fn test_hide_hidden_calendars() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &empty_set,
-        collapsed_trees: &empty_set,
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),

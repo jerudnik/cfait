@@ -4200,7 +4200,6 @@ data class MobileFilterOptions(
     var `filterLocations`: List<kotlin.String>,
     var `searchQuery`: kotlin.String,
     var `expandedGroups`: List<kotlin.String>,
-    var `collapsedGroups`: List<kotlin.String>,
     var `matchAllCategories`: kotlin.Boolean,
 ) {
     companion object
@@ -4216,7 +4215,6 @@ public object FfiConverterTypeMobileFilterOptions : FfiConverterRustBuffer<Mobil
             FfiConverterSequenceString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterSequenceString.read(buf),
-            FfiConverterSequenceString.read(buf),
             FfiConverterBoolean.read(buf),
         )
 
@@ -4226,7 +4224,6 @@ public object FfiConverterTypeMobileFilterOptions : FfiConverterRustBuffer<Mobil
                 FfiConverterSequenceString.allocationSize(value.`filterLocations`) +
                 FfiConverterString.allocationSize(value.`searchQuery`) +
                 FfiConverterSequenceString.allocationSize(value.`expandedGroups`) +
-                FfiConverterSequenceString.allocationSize(value.`collapsedGroups`) +
                 FfiConverterBoolean.allocationSize(value.`matchAllCategories`)
         )
 
@@ -4238,7 +4235,6 @@ public object FfiConverterTypeMobileFilterOptions : FfiConverterRustBuffer<Mobil
         FfiConverterSequenceString.write(value.`filterLocations`, buf)
         FfiConverterString.write(value.`searchQuery`, buf)
         FfiConverterSequenceString.write(value.`expandedGroups`, buf)
-        FfiConverterSequenceString.write(value.`collapsedGroups`, buf)
         FfiConverterBoolean.write(value.`matchAllCategories`, buf)
     }
 }
@@ -4527,6 +4523,7 @@ data class MobileTask(
     var `sessions`: List<MobileWorkSession>,
     var `virtualType`: kotlin.String,
     var `virtualPayload`: kotlin.String,
+    var `isCollapsed`: kotlin.Boolean,
     var `visibleCategories`: List<kotlin.String>,
     var `visibleLocation`: kotlin.String?,
 ) {
@@ -4582,6 +4579,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
             FfiConverterSequenceTypeMobileWorkSession.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
             FfiConverterSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
         )
@@ -4631,6 +4629,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
                 FfiConverterSequenceTypeMobileWorkSession.allocationSize(value.`sessions`) +
                 FfiConverterString.allocationSize(value.`virtualType`) +
                 FfiConverterString.allocationSize(value.`virtualPayload`) +
+                FfiConverterBoolean.allocationSize(value.`isCollapsed`) +
                 FfiConverterSequenceString.allocationSize(value.`visibleCategories`) +
                 FfiConverterOptionalString.allocationSize(value.`visibleLocation`)
         )
@@ -4682,6 +4681,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
         FfiConverterSequenceTypeMobileWorkSession.write(value.`sessions`, buf)
         FfiConverterString.write(value.`virtualType`, buf)
         FfiConverterString.write(value.`virtualPayload`, buf)
+        FfiConverterBoolean.write(value.`isCollapsed`, buf)
         FfiConverterSequenceString.write(value.`visibleCategories`, buf)
         FfiConverterOptionalString.write(value.`visibleLocation`, buf)
     }
@@ -4765,7 +4765,6 @@ data class SessionState(
     var `activeCalendarHref`: kotlin.String?,
     var `matchAllCategories`: kotlin.Boolean,
     var `expandedDoneGroups`: List<kotlin.String>,
-    var `collapsedTrees`: List<kotlin.String>,
 ) {
     companion object
 }
@@ -4782,7 +4781,6 @@ public object FfiConverterTypeSessionState : FfiConverterRustBuffer<SessionState
             FfiConverterOptionalString.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterSequenceString.read(buf),
-            FfiConverterSequenceString.read(buf),
         )
 
     override fun allocationSize(value: SessionState) =
@@ -4792,8 +4790,7 @@ public object FfiConverterTypeSessionState : FfiConverterRustBuffer<SessionState
                 FfiConverterSequenceString.allocationSize(value.`selectedLocations`) +
                 FfiConverterOptionalString.allocationSize(value.`activeCalendarHref`) +
                 FfiConverterBoolean.allocationSize(value.`matchAllCategories`) +
-                FfiConverterSequenceString.allocationSize(value.`expandedDoneGroups`) +
-                FfiConverterSequenceString.allocationSize(value.`collapsedTrees`)
+                FfiConverterSequenceString.allocationSize(value.`expandedDoneGroups`)
         )
 
     override fun write(
@@ -4806,7 +4803,6 @@ public object FfiConverterTypeSessionState : FfiConverterRustBuffer<SessionState
         FfiConverterOptionalString.write(value.`activeCalendarHref`, buf)
         FfiConverterBoolean.write(value.`matchAllCategories`, buf)
         FfiConverterSequenceString.write(value.`expandedDoneGroups`, buf)
-        FfiConverterSequenceString.write(value.`collapsedTrees`, buf)
     }
 }
 

@@ -53,7 +53,7 @@ fn test_start_grace_period_keeps_tasks_in_active_section() {
         default_priority: 5,
         start_grace_period_days: 2, // 2-day grace period
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -135,7 +135,7 @@ fn test_grace_period_zero_pushes_all_future_starts() {
         default_priority: 5,
         start_grace_period_days: 0, // No grace period
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -219,7 +219,7 @@ fn test_acknowledged_alarm_keeps_task_in_active_section() {
         default_priority: 5,
         start_grace_period_days: 1, // 1-day grace period
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -312,7 +312,7 @@ fn test_any_acknowledged_alarm_keeps_task_active() {
         default_priority: 5,
         start_grace_period_days: 1, // 1-day grace period
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -395,7 +395,7 @@ fn test_recurring_task_with_fresh_dates_goes_to_future() {
         default_priority: 5,
         start_grace_period_days: 1,
         expanded_done_groups: &HashSet::new(),
-        collapsed_trees: &HashSet::new(),
+        
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
