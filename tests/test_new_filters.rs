@@ -350,3 +350,184 @@ fn test_is_ready_combines_with_other_filters() {
         panic!("Expected Task variant");
     }
 }
+
+#[test]
+fn test_is_ready_filters_implicitly_future_tasks() {
+    // Test that a child task with no start date but with a parent that has a future start date
+    // is filtered out by is:ready (is_implicitly_future behavior)
+    let ctx = Arc::new(TestContext::new());
+    let mut store = TaskStore::new(ctx.clone());
+
+    let aliases = std::collections::HashMap::new();
+    // Use UTC to avoid timezone issues
+    let now = chrono::Utc::now().date_naive();
+
+    // Parent task with future start date
+    let mut parent = Task::new(
+        &format!("Parent Project ^{}", (now + Duration::days(5)).format("%Y-%m-%d")),
+        &aliases,
+        None,
+    );
+    parent.calendar_href = "cal1".to_string();
+
+    // Child task with no start date - should inherit parent's future start
+    let mut child = Task::new("Child Task", &aliases, None);
+    child.parent_uid = Some(parent.uid.clone());
+    child.calendar_href = "cal1".to_string();
+
+    // Another task with no parent and no start date - should be ready
+    let mut ready_task = Task::new("Ready Task", &aliases, None);
+    ready_task.calendar_href = "cal1".to_string();
+
+    store.add_task(parent);
+    store.add_task(child);
+    store.add_task(ready_task);
+
+    let options = FilterOptions {
+        active_cal_href: None,
+        hidden_calendars: &HashSet::new(),
+        selected_categories: &HashSet::new(),
+        selected_locations: &HashSet::new(),
+        match_all_categories: false,
+        search_term: "is:ready",
+        hide_completed_global: true,
+        hide_fully_completed_tags: false,
+        cutoff_date: None,
+        min_duration: None,
+        max_duration: None,
+        include_unset_duration: true,
+        urgent_days: 7,
+        urgent_prio: 5,
+        default_priority: 5,
+        start_grace_period_days: 1,
+        expanded_done_groups: &HashSet::new(),
+        max_done_roots: usize::MAX,
+        max_done_subtasks: usize::MAX,
+        tag_aliases: &HashMap::new(),
+    };
+
+    let filtered = store.filter(options).items;
+
+    // Child task should be filtered out (implicitly future via parent)
+    assert!(!filtered.iter().any(|t| {
+        if let cfait::store::TaskListItem::Task(task) = t {
+            task.summary.contains("Child Task")
+        } else {
+            false
+        }
+    }));
+
+    // Ready task should be included
+    assert!(filtered.iter().any(|t| {
+        if let cfait::store::TaskListItem::Task(task) = t {
+            task.summary.contains("Ready Task")
+        } else {
+            false
+        }
+    }));
+
+    // Parent task should also be filtered out (explicit future start)
+    assert!(!filtered.iter().any(|t| {
+        if let cfait::store::TaskListItem::Task(task) = t {
+            task.summary.contains("Parent Project")
+        } else {
+            false
+        }
+    }));
+
+    // Verify is_implicitly_future flag is set correctly on filtered tasks
+    // We need to filter without is:ready to get the child task
+    let options_all = FilterOptions {
+        active_cal_href: None,
+        hidden_calendars: &HashSet::new(),
+        selected_categories: &HashSet::new(),
+        selected_locations: &HashSet::new(),
+        match_all_categories: false,
+        search_term: "",
+        hide_completed_global: true,
+        hide_fully_completed_tags: false,
+        cutoff_date: None,
+        min_duration: None,
+        max_duration: None,
+        include_unset_duration: true,
+        urgent_days: 7,
+        urgent_prio: 5,
+        default_priority: 5,
+        start_grace_period_days: 1,
+        expanded_done_groups: &HashSet::new(),
+        max_done_roots: usize::MAX,
+        max_done_subtasks: usize::MAX,
+        tag_aliases: &HashMap::new(),
+    };
+
+    let all_tasks = store.filter(options_all).items;
+    let child_task = all_tasks.iter().find_map(|t| {
+        if let cfait::store::TaskListItem::Task(task) = t {
+            if task.summary.contains("Child Task") {
+                Some(task)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    });
+
+    assert!(child_task.is_some(), "Child task should exist in all tasks");
+    if let Some(child) = child_task {
+        // Child has no explicit start date, so is_future_start should be false
+        assert!(!child.is_future_start, "Child should not have explicit future start");
+        // But it should have is_implicitly_future set to true due to parent
+        assert!(child.is_implicitly_future, "Child should be implicitly future via parent");
+    }
+}
+
+#[test]
+fn test_random_selector_skips_implicitly_future_tasks() {
+    // Test that the random task selector skips tasks that are implicitly future via parent
+    use cfait::store::select_weighted_random_index;
+
+    let aliases = std::collections::HashMap::new();
+    let now = chrono::Utc::now().date_naive();
+
+    // Parent task with future start date
+    let mut parent = Task::new(
+        &format!("Parent Project ^{}", (now + Duration::days(5)).format("%Y-%m-%d")),
+        &aliases,
+        None,
+    );
+    parent.calendar_href = "cal1".to_string();
+    // Set the transient flag that would be set by the filter pipeline
+    parent.is_future_start = true;
+    parent.is_implicitly_future = false;
+
+    // Child task with no start date - should inherit parent's future start
+    let mut child = Task::new("Child Task", &aliases, None);
+    child.parent_uid = Some(parent.uid.clone());
+    child.calendar_href = "cal1".to_string();
+    // Set the transient flags that would be set by the filter pipeline
+    child.is_future_start = false;
+    child.is_implicitly_future = true; // This is what we're testing
+
+    // Ready task with no parent and no start date
+    let mut ready_task = Task::new("Ready Task", &aliases, None);
+    ready_task.calendar_href = "cal1".to_string();
+    ready_task.is_future_start = false;
+    ready_task.is_implicitly_future = false;
+
+    let tasks = vec![parent, child, ready_task];
+
+    // Run the selector multiple times - it should never pick the child or parent
+    let mut ready_count = 0;
+    let iterations = 100;
+    for _ in 0..iterations {
+        if let Some(idx) = select_weighted_random_index(&tasks, 5) {
+            assert_ne!(idx, 0, "Should not select parent task (explicit future start)");
+            assert_ne!(idx, 1, "Should not select child task (implicitly future)");
+            assert_eq!(idx, 2, "Should only select ready task");
+            ready_count += 1;
+        }
+    }
+
+    assert_eq!(ready_count, iterations, "Should have selected ready task every time");
+}

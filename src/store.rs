@@ -289,8 +289,6 @@ pub fn select_weighted_random_index(tasks: &[Task], default_priority: u8) -> Opt
         return None;
     }
 
-    let now = Utc::now();
-
     let weights: Vec<u32> = tasks
         .iter()
         .map(|t| {
@@ -305,9 +303,7 @@ pub fn select_weighted_random_index(tasks: &[Task], default_priority: u8) -> Opt
             }
 
             // 3. Must not start in the future (is:ready logic)
-            if let Some(start) = &t.dtstart
-                && start.to_start_comparison_time() > now
-            {
+            if t.is_future_start || t.is_implicitly_future {
                 return 0;
             }
 
@@ -1415,6 +1411,32 @@ impl TaskStore {
         let is_blocked_mode = search_lower.contains("is:blocked");
         let now = Utc::now();
 
+        // Helper: determine whether a task is effectively in the future by checking ancestors
+        let check_is_effectively_future = |t: &Task| -> bool {
+            let mut current = t;
+            let mut visited = HashSet::new();
+
+            loop {
+                if let Some(start) = &current.dtstart
+                    && start.to_start_comparison_time() > now
+                {
+                    return true;
+                }
+
+                if let Some(p_uid) = &current.parent_uid {
+                    if !visited.insert(p_uid.clone()) {
+                        break;
+                    }
+                    if let Some(p_task) = self.get_task_ref(p_uid) {
+                        current = p_task;
+                        continue;
+                    }
+                }
+                break;
+            }
+            false
+        };
+
         // 1) Build iterator over allowed calendars (respecting active/hidden calendar restrictions).
         let all_allowed_refs: Vec<&Task> = self
             .calendars
@@ -1453,9 +1475,7 @@ impl TaskStore {
                         // InProcess (ongoing) tasks should be considered actionable/ready
                         // even if they would otherwise be treated as blocked or start in the future.
                         if t.status != TaskStatus::InProcess {
-                            if let Some(start) = &t.dtstart
-                                && start.to_start_comparison_time() > now
-                            {
+                            if check_is_effectively_future(t) {
                                 return false;
                             }
                             if check_is_effectively_blocked(t, &completed_uids) {
@@ -1837,6 +1857,7 @@ impl TaskStore {
             t.has_related_tasks = self.has_tasks_related_to(&t.uid);
             
             t.is_future_start = t.dtstart.as_ref().map(|start| start.to_start_comparison_time() > now).unwrap_or(false);
+            t.is_implicitly_future = !t.is_future_start && check_is_effectively_future(t);
             t.is_overdue = t.due.as_ref().map(|d| !t.status.is_done() && d.to_comparison_time() < now).unwrap_or(false);
             
             let (p_tags, p_loc) = if let Some(p_uid) = &t.parent_uid {
