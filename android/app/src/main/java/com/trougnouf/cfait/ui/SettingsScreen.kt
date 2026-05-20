@@ -991,6 +991,7 @@ fun CollectionEditor(
 ) {
     var name by remember { mutableStateOf(cal.name) }
     var color by remember { mutableStateOf(cal.color) }
+    var showColorPicker by remember { mutableStateOf(false) }
 
     val hasChanges = name != cal.name || color != cal.color
     val isDefault = cal.href == "local://default"
@@ -1001,74 +1002,85 @@ fun CollectionEditor(
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Checkbox(
                     checked = isEnabled,
-                    onCheckedChange = onToggleEnabled
+                    onCheckedChange = onToggleEnabled,
+                    modifier = Modifier.size(24.dp)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text(stringResource(R.string.name_label)) },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp)
+                )
+
+                val colorVal = color?.let { parseHexColor(it) } ?: Color.Gray
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(colorVal, androidx.compose.foundation.shape.CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, androidx.compose.foundation.shape.CircleShape)
+                        .clickable { showColorPicker = !showColorPicker }
                 )
 
                 if (hasChanges) {
-                    IconButton(onClick = { onUpdate(name, color) }) {
+                    IconButton(
+                        onClick = { showColorPicker = false; onUpdate(name, color) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         NfIcon(NfIcons.CHECK, 20.sp, MaterialTheme.colorScheme.primary)
                     }
                 }
 
                 if (isLocal) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        IconButton(onClick = onExport) {
-                            NfIcon(NfIcons.EXPORT, 20.sp, MaterialTheme.colorScheme.onSurfaceVariant)
+                    Box {
+                        var showMenu by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showMenu = true }, modifier = Modifier.size(32.dp)) {
+                            NfIcon(NfIcons.DOTS_CIRCLE, 20.sp, MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Text(
-                            stringResource(R.string.export),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontSize = 8.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        IconButton(onClick = onImport) {
-                            NfIcon(NfIcons.IMPORT, 20.sp, MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Text(
-                            stringResource(R.string.import_action),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontSize = 8.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    if (!isDefault) {
-                        IconButton(onClick = onDelete) {
-                            NfIcon(NfIcons.DELETE, 20.sp, MaterialTheme.colorScheme.error)
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.export)) },
+                                onClick = { showMenu = false; onExport() },
+                                leadingIcon = { NfIcon(NfIcons.EXPORT, 16.sp) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.import_action)) },
+                                onClick = { showMenu = false; onImport() },
+                                leadingIcon = { NfIcon(NfIcons.IMPORT, 16.sp) }
+                            )
+                            if (!isDefault) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) },
+                                    onClick = { showMenu = false; onDelete() },
+                                    leadingIcon = { NfIcon(NfIcons.DELETE, 16.sp, MaterialTheme.colorScheme.error) }
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                stringResource(R.string.color_label),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            ColorPickerRow(
-                selectedColor = color,
-                onColorSelected = {
-                    color = it
-                    onUpdate(name, it)
+            androidx.compose.animation.AnimatedVisibility(visible = showColorPicker) {
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    ColorPickerRow(
+                        selectedColor = color,
+                        onColorSelected = {
+                            color = it
+                            onUpdate(name, it)
+                            showColorPicker = false
+                        }
+                    )
                 }
-            )
+            }
         }
     }
 }
