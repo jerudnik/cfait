@@ -25,6 +25,21 @@ class CfaitApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // Set up crash logging to capture JVM crashes in the debug export zip
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, exception ->
+            try {
+                val crashFile = java.io.File(cacheDir, "android_crash.txt")
+                crashFile.appendText("\n--- CRASH at ${java.util.Date()} ---\n")
+                val sw = java.io.StringWriter()
+                exception.printStackTrace(java.io.PrintWriter(sw))
+                crashFile.appendText(sw.toString())
+            } catch (e: Exception) {
+                // Ignore errors during crash handling
+            }
+            defaultHandler?.uncaughtException(thread, exception)
+        }
+
         // 1. Initialize the NDK context FIRST
         initNdkContext(this)
 
