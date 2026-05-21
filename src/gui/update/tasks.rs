@@ -11,6 +11,33 @@ use chrono::NaiveTime;
 use iced::Task;
 use iced::widget::text_editor;
 
+fn dispatch_and_maintain_selection(app: &mut GuiApp, intent: AppIntent, focus_uid: &str) {
+    let old_idx = app.find_task_index_by_uid(focus_uid);
+    common::dispatch_intent(app, intent);
+    if let Some(idx) = old_idx
+        && app.find_task_index_by_uid(focus_uid).is_none() {
+            let new_idx = idx.min(app.tasks.len().saturating_sub(1));
+            let mut fallback = None;
+            for i in new_idx..app.tasks.len() {
+                if let Some(t) = app.get_task_at_index(i) {
+                    fallback = Some(t.uid.clone());
+                    break;
+                }
+            }
+            if fallback.is_none() {
+                for i in (0..new_idx).rev() {
+                    if let Some(t) = app.get_task_at_index(i) {
+                        fallback = Some(t.uid.clone());
+                        break;
+                    }
+                }
+            }
+            if fallback.is_some() {
+                app.selected_uid = fallback;
+            }
+        }
+}
+
 pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
     match message {
         Message::InputChanged(action) => {
@@ -99,9 +126,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 if is_pending {
                     return Task::none();
                 }
-                common::dispatch_intent(
+                dispatch_and_maintain_selection(
                     app,
-                    AppIntent::ToggleTask { uid },
+                    AppIntent::ToggleTask { uid: uid.clone() },
+                    &uid
                 );
             }
             Task::none()
@@ -137,9 +165,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::DeleteTask(index) => {
             if let Some(uid) = app.get_task_at_index(index).map(|t| t.uid.clone()) {
                 app.selected_uid = Some(uid.clone());
-                common::dispatch_intent(
+                dispatch_and_maintain_selection(
                     app,
-                    AppIntent::DeleteTask { uid },
+                    AppIntent::DeleteTask { uid: uid.clone() },
+                    &uid
                 );
             }
             Task::none()
@@ -202,12 +231,13 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 && let Some(selected_uid) = app.selected_uid.clone()
                 && parent_uid != selected_uid
             {
-                common::dispatch_intent(
+                dispatch_and_maintain_selection(
                     app,
                     AppIntent::MakeChild {
-                        uid: selected_uid,
+                        uid: selected_uid.clone(),
                         parent_uid,
                     },
+                    &selected_uid
                 );
             }
             Task::none()
@@ -298,7 +328,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::DeleteTaskTree(uid) => {
             app.yanked_uid = None;
             app.yank_lock_active = false;
-            common::dispatch_intent(app, AppIntent::DeleteTaskTree { uid });
+            dispatch_and_maintain_selection(app, AppIntent::DeleteTaskTree { uid: uid.clone() }, &uid);
             Task::none()
         }
 
@@ -325,7 +355,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
         Message::CancelSelected => {
             if let Some(uid) = app.selected_uid.clone() {
-                common::dispatch_intent(app, AppIntent::CancelTask { uid });
+                dispatch_and_maintain_selection(app, AppIntent::CancelTask { uid: uid.clone() }, &uid);
             }
             Task::none()
         }
@@ -355,9 +385,9 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             if let Some(uid) = app.get_task_at_index(index).map(|t| t.uid.clone()) {
                 app.selected_uid = Some(uid.clone());
                 if new_status == crate::model::TaskStatus::Cancelled {
-                    common::dispatch_intent(app, AppIntent::CancelTask { uid });
+                    dispatch_and_maintain_selection(app, AppIntent::CancelTask { uid: uid.clone() }, &uid);
                 } else if new_status.is_done() {
-                    common::dispatch_intent(app, AppIntent::ToggleTask { uid });
+                    dispatch_and_maintain_selection(app, AppIntent::ToggleTask { uid: uid.clone() }, &uid);
                 }
             }
             Task::none()
@@ -366,7 +396,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::MoveTask(uid, target_href) => {
             app.selected_uid = Some(uid.clone());
             app.moving_task_uid = None;
-            common::dispatch_intent(app, AppIntent::MoveTask { uid, target_href });
+            dispatch_and_maintain_selection(app, AppIntent::MoveTask { uid: uid.clone(), target_href }, &uid);
             Task::none()
         }
 
@@ -481,29 +511,30 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 if !app.yank_lock_active {
                     app.yanked_uid = None;
                 }
-                common::dispatch_intent(
+                dispatch_and_maintain_selection(
                     app,
                     AppIntent::MakeChild {
-                        uid: target_uid,
+                        uid: target_uid.clone(),
                         parent_uid,
                     },
+                    &target_uid
                 );
             }
             Task::none()
         }
 
         Message::RemoveParent(child_uid) => {
-            common::dispatch_intent(app, AppIntent::RemoveParent { uid: child_uid });
+            dispatch_and_maintain_selection(app, AppIntent::RemoveParent { uid: child_uid.clone() }, &child_uid);
             Task::none()
         }
 
         Message::RemoveDependency(uid, blocker_uid) => {
-            common::dispatch_intent(app, AppIntent::RemoveDependency { uid, blocker_uid });
+            dispatch_and_maintain_selection(app, AppIntent::RemoveDependency { uid: uid.clone(), blocker_uid }, &uid);
             Task::none()
         }
 
         Message::RemoveRelatedTo(uid, related_uid) => {
-            common::dispatch_intent(app, AppIntent::RemoveRelatedTo { uid, related_uid });
+            dispatch_and_maintain_selection(app, AppIntent::RemoveRelatedTo { uid: uid.clone(), related_uid }, &uid);
             Task::none()
         }
 
@@ -512,12 +543,13 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 if !app.yank_lock_active {
                     app.yanked_uid = None;
                 }
-                common::dispatch_intent(
+                dispatch_and_maintain_selection(
                     app,
                     AppIntent::AddDependency {
-                        uid: target_uid,
+                        uid: target_uid.clone(),
                         blocker_uid,
                     },
+                    &target_uid
                 );
             }
             Task::none()
@@ -528,12 +560,13 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 if !app.yank_lock_active {
                     app.yanked_uid = None;
                 }
-                common::dispatch_intent(
+                dispatch_and_maintain_selection(
                     app,
                     AppIntent::AddRelatedTo {
-                        uid: target_uid,
+                        uid: target_uid.clone(),
                         related_uid,
                     },
+                    &target_uid
                 );
             }
             Task::none()
@@ -606,7 +639,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 if task.etag == "pending_refresh" {
                     return Task::none();
                 }
-                common::dispatch_intent(app, AppIntent::ToggleTask { uid: t_uid });
+                dispatch_and_maintain_selection(app, AppIntent::ToggleTask { uid: t_uid.clone() }, &t_uid);
             }
             Task::none()
         }
@@ -616,7 +649,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 .retain(|(t, a)| !(t.uid == t_uid && a.uid == a_uid));
 
             if app.find_task_index_by_uid(&t_uid).is_some() {
-                common::dispatch_intent(app, AppIntent::CancelTask { uid: t_uid });
+                dispatch_and_maintain_selection(app, AppIntent::CancelTask { uid: t_uid.clone() }, &t_uid);
             }
             Task::none()
         }
@@ -625,8 +658,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             if let Some((task, _)) = app.store.get_task_mut(&t_uid)
                 && task.handle_snooze(&a_uid, mins)
             {
+                task.sequence += 1;
+                let cloned = task.clone();
                 common::refresh_filtered_tasks(app);
-                common::dispatch_intent(app, AppIntent::ToggleTask { uid: t_uid });
+                if let Some(tx) = &app.bg_tx {
+                    let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(vec![
+                        crate::journal::Action::Update(cloned),
+                    ]));
+                }
             }
             Task::none()
         }
@@ -635,8 +674,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             if let Some((task, _)) = app.store.get_task_mut(&t_uid)
                 && task.handle_dismiss(&a_uid)
             {
+                task.sequence += 1;
+                let cloned = task.clone();
                 common::refresh_filtered_tasks(app);
-                common::dispatch_intent(app, AppIntent::ToggleTask { uid: t_uid });
+                if let Some(tx) = &app.bg_tx {
+                    let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(vec![
+                        crate::journal::Action::Update(cloned),
+                    ]));
+                }
             }
             Task::none()
         }
