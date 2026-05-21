@@ -137,6 +137,24 @@ pub fn organize_hierarchy(
         max_done_subtasks,
     };
 
+    fn mark_tree_as_visited(task: &Task, context: &mut HierarchyContext) {
+        let visit_key = (task.uid.clone(), task.calendar_href.clone());
+        if !context.visited_keys.insert(visit_key) {
+            return;
+        }
+        let mut stack = vec![task.uid.clone()];
+        while let Some(current) = stack.pop() {
+            if let Some(children) = context.children_map.get(&current) {
+                for child in children {
+                    let v_key = (child.uid.clone(), child.calendar_href.clone());
+                    if context.visited_keys.insert(v_key) {
+                        stack.push(child.uid.clone());
+                    }
+                }
+            }
+        }
+    }
+
     /// Process a group of tasks (either root level or children of a parent)
     /// and handle truncation of completed tasks with expand/collapse controls
     fn process_group(
@@ -183,6 +201,9 @@ pub fn organize_hierarchy(
                     append_task_and_children(&task, context, depth);
                 }
             }
+            for task in iter {
+                mark_tree_as_visited(&task, context);
+            }
             context
                 .result
                 .push(TaskListItem::ExpandGroup(effective_key, depth));
@@ -213,6 +234,11 @@ pub fn organize_hierarchy(
 
         // If the user manually folded this tree, truncate children iteration (unless searching)
         if task.collapsed && !context.search_active {
+            if let Some(children) = context.children_map.get(&task.uid) {
+                for child in children {
+                    mark_tree_as_visited(child, context);
+                }
+            }
             return;
         }
 
@@ -240,6 +266,9 @@ pub fn organize_hierarchy(
                         if let Some(c) = iter.next() {
                             append_task_and_children(&c, context, depth + 1);
                         }
+                    }
+                    for c in iter {
+                        mark_tree_as_visited(&c, context);
                     }
                     context
                         .result
@@ -2144,5 +2173,177 @@ impl TaskStore {
             _ => {} // Ignore session intents
         }
         actions
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{Task, TaskStatus};
+
+    fn make_task(uid: &str, parent_uid: Option<&str>, status: TaskStatus, collapsed: bool) -> Task {
+        Task {
+            uid: uid.to_string(),
+            summary: uid.to_string(),
+            description: String::new(),
+            status,
+            estimated_duration: None,
+            estimated_duration_max: None,
+            due: None,
+            dtstart: None,
+            alarms: vec![],
+            exdates: vec![],
+            priority: 5,
+            percent_complete: None,
+            parent_uid: parent_uid.map(|s| s.to_string()),
+            dependencies: vec![],
+            related_to: vec![],
+            etag: String::new(),
+            href: String::new(),
+            calendar_href: "local://default".to_string(),
+            categories: vec![],
+            depth: 0,
+            rrule: None,
+            location: None,
+            url: None,
+            geo: None,
+            collapsed,
+            time_spent_seconds: 0,
+            last_started_at: None,
+            sessions: vec![],
+            unmapped_properties: vec![],
+            sequence: 0,
+            raw_alarms: vec![],
+            raw_components: vec![],
+            create_event: None,
+            // Transient fields
+            is_blocked: false,
+            is_implicitly_blocked: false,
+            is_implicitly_future: false,
+            has_subtasks: false,
+            has_visible_subtasks: false,
+            sort_rank: 0,
+            effective_priority: 5,
+            effective_due: None,
+            effective_dtstart: None,
+            visible_categories: vec![],
+            visible_location: None,
+            has_blocking_tasks: false,
+            has_related_tasks: false,
+            is_future_start: false,
+            is_overdue: false,
+        }
+    }
+
+    #[test]
+    fn test_collapsed_tree_children_not_orphaned() {
+        // Create a parent task with collapsed flag and two children
+        let parent = make_task("parent", None, TaskStatus::NeedsAction, true);
+        let child1 = make_task("child1", Some("parent"), TaskStatus::NeedsAction, false);
+        let child2 = make_task("child2", Some("parent"), TaskStatus::NeedsAction, false);
+
+        let tasks = vec![parent, child1, child2];
+        let expanded_groups = HashSet::new();
+
+        let result = organize_hierarchy(
+            tasks,
+            5,  // default_priority
+            &expanded_groups,
+            10, // max_done_roots
+            10, // max_done_subtasks
+            false, // search_active
+        );
+
+        // Extract task UIDs from the result
+        let result_uids: Vec<String> = result
+            .into_iter()
+            .filter_map(|item| {
+                match item {
+                    TaskListItem::Task(t) => Some(t.uid),
+                    _ => None,
+                }
+            })
+            .collect();
+
+        // The parent should be present, but children should NOT appear as orphans at root level
+        assert!(result_uids.contains(&"parent".to_string()), "Parent should be present");
+        // Children should NOT be in the result since parent is collapsed and we're not searching
+        assert!(!result_uids.contains(&"child1".to_string()), "Child1 should not appear when parent is collapsed");
+        assert!(!result_uids.contains(&"child2".to_string()), "Child2 should not appear when parent is collapsed");
+    }
+
+    #[test]
+    fn test_collapsed_tree_with_done_children_not_orphaned() {
+        // Create a parent task with collapsed flag and two done children
+        let parent = make_task("parent", None, TaskStatus::NeedsAction, true);
+        let child1 = make_task("child1", Some("parent"), TaskStatus::Completed, false);
+        let child2 = make_task("child2", Some("parent"), TaskStatus::Completed, false);
+
+        let tasks = vec![parent, child1, child2];
+        let expanded_groups = HashSet::new();
+
+        let result = organize_hierarchy(
+            tasks,
+            5,
+            &expanded_groups,
+            10,
+            1, // max_done_subtasks = 1, so only 1 done child shown, 1 hidden
+            false,
+        );
+
+        let result_uids: Vec<String> = result
+            .into_iter()
+            .filter_map(|item| {
+                match item {
+                    TaskListItem::Task(t) => Some(t.uid),
+                    _ => None,
+                }
+            })
+            .collect();
+
+        // Parent should be present
+        assert!(result_uids.contains(&"parent".to_string()), "Parent should be present");
+        // At most 1 child should appear (due to max_done_subtasks=1)
+        let child_count = result_uids.iter().filter(|u| u.starts_with("child")).count();
+        assert!(child_count <= 1, "At most 1 child should appear due to truncation");
+        // The hidden child should NOT appear as orphan
+        // If child1 is shown, child2 should not be orphaned; if child2 is shown, child1 should not be orphaned
+    }
+
+    #[test]
+    fn test_truncated_done_tasks_not_orphaned() {
+        // Create 5 done tasks at root level with max_done_roots=3
+        // Note: the logic uses saturating_sub(1) so with limit=3, it shows 2 and hides the rest
+        let tasks: Vec<Task> = (0..5)
+            .map(|i| make_task(&format!("done{}", i), None, TaskStatus::Completed, false))
+            .collect();
+
+        let expanded_groups = HashSet::new();
+
+        let result = organize_hierarchy(
+            tasks,
+            5,
+            &expanded_groups,
+            3, // max_done_roots = 3, so 2 shown (3-1), 3 hidden
+            10,
+            false,
+        );
+
+        let result_uids: Vec<String> = result
+            .clone()
+            .into_iter()
+            .filter_map(|item| {
+                match item {
+                    TaskListItem::Task(t) => Some(t.uid),
+                    _ => None,
+                }
+            })
+            .collect();
+
+        // Only 2 done tasks should appear (due to truncation: limit.saturating_sub(1) = 3-1 = 2)
+        assert_eq!(result_uids.len(), 2, "Only 2 done tasks should appear at root level (3-1=2)");
+        // Check that there's an ExpandGroup item
+        let has_expand = result.iter().any(|item| matches!(item, TaskListItem::ExpandGroup(_, _)));
+        assert!(has_expand, "Should have an ExpandGroup item for truncated tasks");
     }
 }
