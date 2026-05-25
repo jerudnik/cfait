@@ -162,6 +162,45 @@ fn test_hide_hidden_calendars() {
 }
 
 #[test]
+fn test_toggle_task_shift_advances_from_today() {
+    let mut store = make_store();
+
+    // Create a task that was originally due 10 days ago, recurring weekly.
+    let mut t = Task::new("Overdue Weekly", &HashMap::new(), None);
+    t.uid = "shift_test".to_string();
+    t.calendar_href = "cal1".to_string();
+
+    let now = chrono::Utc::now();
+    let ten_days_ago = now - chrono::Duration::days(10);
+
+    t.dtstart = Some(cfait::model::DateType::Specific(ten_days_ago));
+    t.due = Some(cfait::model::DateType::Specific(ten_days_ago));
+    t.rrule = Some("FREQ=WEEKLY".to_string());
+    t.status = TaskStatus::NeedsAction;
+
+    store.add_task(t);
+
+    // Call toggle_task_shift (which simulates pressing Shift+Space in the UI)
+    let res = store.toggle_task_shift("shift_test");
+    assert!(res.is_some());
+    let (history, secondary, _children) = res.unwrap();
+
+    // Primary history should be completed
+    assert_eq!(history.status, TaskStatus::Completed);
+
+    // Secondary should be advanced to exactly ONE WEEK from TODAY.
+    let advanced = secondary.expect("Expected advanced task");
+
+    let next_due = match advanced.due.unwrap() {
+        cfait::model::DateType::Specific(dt) => dt,
+        _ => panic!("Expected specific date"),
+    };
+
+    let diff = next_due - now;
+    assert!(diff.num_days() >= 6 && diff.num_days() <= 7, "Task should be shifted to next week from today");
+}
+
+#[test]
 fn test_set_status_cancelled_advances_recurring_task() {
     let mut store = make_store();
 

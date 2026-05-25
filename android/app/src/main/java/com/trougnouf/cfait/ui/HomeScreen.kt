@@ -591,6 +591,7 @@ fun HomeScreen(
                     "duplicate" -> AppIntent.DuplicateTaskTree(task.uid)
                     "promote" -> AppIntent.RemoveParent(task.uid)
                     "cancel" -> AppIntent.CancelTask(task.uid)
+                    "complete_and_shift" -> AppIntent.ToggleTaskShift(task.uid)
                     "playpause" -> if (task.statusString == "InProcess") AppIntent.PauseTask(task.uid) else AppIntent.StartTask(task.uid)
                     "stop" -> AppIntent.StopTask(task.uid)
                     "prio_up" -> AppIntent.ChangePriority(task.uid, 1)
