@@ -889,10 +889,9 @@ impl TaskStore {
         updated
     }
 
-    /// Stop a running task and its subtree; commit time and close sessions.
+    /// Stop a running or paused task and its subtree; reset all time tracking data.
     pub fn stop_task(&mut self, uid: &str) -> Vec<Task> {
         let mut updated = Vec::new();
-        let now = Utc::now().timestamp();
         let mut queue = vec![uid.to_string()];
         let mut visited = HashSet::new();
 
@@ -916,17 +915,16 @@ impl TaskStore {
                     task.status = TaskStatus::NeedsAction;
                     changed = true;
                 }
-
-                if let Some(start) = task.last_started_at {
-                    if now > start {
-                        let duration = (now - start) as u64;
-                        task.time_spent_seconds = task.time_spent_seconds.saturating_add(duration);
-                        if duration > 60 {
-                            task.sessions
-                                .push(crate::model::item::WorkSession { start, end: now });
-                        }
-                    }
+                if task.last_started_at.is_some() {
                     task.last_started_at = None;
+                    changed = true;
+                }
+                if task.time_spent_seconds > 0 {
+                    task.time_spent_seconds = 0;
+                    changed = true;
+                }
+                if !task.sessions.is_empty() {
+                    task.sessions.clear();
                     changed = true;
                 }
 
