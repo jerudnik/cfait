@@ -72,7 +72,7 @@ Self-documenting config file. See also: https://codeberg.org/trougnouf/cfait/wik
 <a name="linux"></a>
 ### 🐧 Linux
 *   **Flatpak:** Available on [Flathub](https://flathub.org/apps/com.trougnouf.Cfait)
-*   **Arch Linux (AUR):** `yay -S cfait` (or `cfait-git`)
+*   **Arch Linux (AUR):** `yay -S cfait` (or `cfait-git`, `cfait-bin`)
 *   **Debian/Ubuntu/Mint:** Download the `.deb` file from the [releases page](https://codeberg.org/trougnouf/cfait/releases). (Req. Ubuntu 24.04+ / Mint 22+ / Debian 13+)
 *   **Generic:** Download the pre-compiled `.tar.gz` binary tarball from the [releases page](https://codeberg.org/trougnouf/cfait/releases). (Req. `glibc 2.39`, e.g. Fedora 40+)
 

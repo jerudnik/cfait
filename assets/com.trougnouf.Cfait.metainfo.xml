@@ -78,6 +78,142 @@
   </requires>
 
   <releases>
+    <release version="1.0.2" date="2026-05-22">
+      <description>
+        <p>Features:</p>
+        <ul>
+          <li>Add target path to recovered tasks' description ( https://github.com/trougnouf/cfait/issues/25 )</li>
+          <li>Optimize companion event sync using CalDAV REPORT queries and task UID metadata</li>
+          <li>Log level advanced setting ( https://github.com/trougnouf/cfait/issues/31 )</li>
+          <li>Add ability to create remote CalDAV collections ( https://codeberg.org/trougnouf/cfait/issues/62 )</li>
+          <li>Remember and synchronize task trees collapsed status</li>
+          <li>(android) Merge calendar visibility toggles into collection editors ( https://codeberg.org/trougnouf/cfait/issues/62 )</li>
+          <li>(android) Log Kotlin-related crashes to cache/android_crash.txt ( https://codeberg.org/trougnouf/cfait/issues/63 )</li>
+          <li>Set sub-tasks' implicit start datetime based on parent's (for e.g. is:ready filtering and random task selection)</li>
+          <li>Add ## and @@@ syntax to add tags and locations that remain in the title</li>
+          <li>(gui) Remember cursor position after deleting a task</li>
+          <li>(i18n) Add complete Czech translation</li>
+        </ul>
+        <p>Bug Fixes:</p>
+        <ul>
+          <li>Fix cyclic parent_uid loops and prevent recursive UI event flood</li>
+          <li>Refine CalDAV path overlap detection to ignore root-only slashes and support disjoint paths ( https://github.com/trougnouf/cfait/issues/25 )</li>
+          <li>(sync) Use status codes for robust error handling and allow recovery export ( https://github.com/trougnouf/cfait/issues/31 )</li>
+          <li>(i18n) Fix mismatching substitution</li>
+          <li>(android) Preserve stored password only for unchanged username</li>
+          <li>(tui) Store password to keyring during onboarding</li>
+          <li>(gui,mobile) Implement optimistic updates for remote calendar actions to prevent UI jitter ( https://codeberg.org/trougnouf/cfait/issues/62 )</li>
+          <li>(mobile) Prevent DST gap panics in implicit alarm evaluators</li>
+          <li>Hide collapsed sub-tasks which were picked up by the fallback routine for orphaned tasks (reported by @Shadowminx )</li>
+          <li>(i18n) Improve Czech translation terminology and add missing keys</li>
+          <li>(android) Fix language switch on older (&lt;13) Android versions ( https://github.com/trougnouf/cfait/issues/32 )</li>
+        </ul>
+        <p>Other:</p>
+        <ul>
+          <li>Translated using Weblate (Dutch)</li>
+          <li>Translated using Weblate (Dutch)</li>
+          <li>Translated using Weblate (French)</li>
+          <li>Merge remote-tracking branch 'refs/remotes/origin/master'</li>
+          <li>Translated using Weblate (Chinese (Simplified Han script))</li>
+          <li>Translated using Weblate (German)</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Merge remote-tracking branch 'refs/remotes/origin/master'</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Translated using Weblate (French)</li>
+          <li>Translated using Weblate (Chinese (Simplified Han script))</li>
+          <li>Translated using Weblate (Chinese (Simplified Han script))</li>
+          <li>Translated using Weblate (German)</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Translated using Weblate (Italian)</li>
+          <li>Translated using Weblate (Dutch)</li>
+          <li>Translated using Weblate (Russian)</li>
+          <li>Translated using Weblate (Russian)</li>
+          <li>Translated using Weblate (Czech)</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Merge remote-tracking branch 'refs/remotes/origin/master'</li>
+          <li>Update translation files</li>
+          <li>Update translation files</li>
+          <li>Translated using Weblate (Russian)</li>
+          <li>Merge remote-tracking branch 'refs/remotes/origin/master'</li>
+          <li>Translated using Weblate (Chinese (Simplified Han script))</li>
+          <li>Translated using Weblate (German)</li>
+          <li>Translated using Weblate (Italian)</li>
+          <li>Translated using Weblate (Dutch)</li>
+          <li>Translated using Weblate (Russian)</li>
+          <li>Translated using Weblate (Russian)</li>
+          <li>Translated using Weblate (Czech)</li>
+          <li>Translated using Weblate (French)</li>
+          <li>Merge remote-tracking branch 'refs/remotes/origin/master'</li>
+          <li>Translated using Weblate (French)</li>
+          <li>Translated using Weblate (French)</li>
+          <li>Translated using Weblate (Chinese (Simplified Han script))</li>
+          <li>Translated using Weblate (German)</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Translated using Weblate (Italian)</li>
+          <li>Translated using Weblate (Dutch)</li>
+          <li>Translated using Weblate (Russian)</li>
+          <li>Translated using Weblate (Czech)</li>
+          <li>Merge remote-tracking branch 'refs/remotes/origin/master'</li>
+          <li>Translated using Weblate (French)</li>
+          <li>Translated using Weblate (French)</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Merge branch 'master' into wip-fix-android-credential-not-saved</li>
+          <li>Merge pull request 'Fix Android credential persistence when password field is left blank' (#59) from zerodegress/cfait:wip-fix-android-credential-not-saved into master</li>
+          <li>Translated using Weblate (French)</li>
+          <li>Translated using Weblate (Chinese (Simplified Han script))</li>
+          <li>Translated using Weblate (German)</li>
+          <li>Translated using Weblate (Italian)</li>
+          <li>Translated using Weblate (Dutch)</li>
+          <li>Translated using Weblate (Russian)</li>
+          <li>Translated using Weblate (Czech)</li>
+          <li>Update translation files</li>
+          <li>Translated using Weblate (Chinese (Simplified Han script))</li>
+          <li>Translated using Weblate (Spanish)</li>
+          <li>Merge remote-tracking branch 'refs/remotes/origin/master'</li>
+          <li>Merge pull request 'Czech translation' (#64) from MarrekNozka/cfait:master into master</li>
+          <li>Translated using Weblate (Chinese (Simplified Han script))</li>
+          <li>Translated using Weblate (Spanish)</li>
+        </ul>
+        <p>Documentation:</p>
+        <ul>
+          <li>Update French translations</li>
+          <li>(i18n) Localize hardcoded strings, prune unused keys, and unify TUI/CLI help</li>
+          <li>(i18n) Allow migration_complete_moved to be singular/pluralized (per gallegonovato)</li>
+          <li>(i18n) Allow migration_complete_moved to be singular/pluralized (update existing translations)</li>
+          <li>(i18n) Support singular/plural forms for calendars and sessions (reported by gallegonovato)</li>
+          <li>(i18n) Add zero plural form and use tasks_count i18n key (suggested by @gallegonovato)</li>
+          <li>(i18n) Remove unused color strings</li>
+          <li>(i18n) French translations</li>
+          <li>(i18n) Remove unnecessary formatting marks from translatable strings</li>
+          <li>(i18n) Fix pluralization usage and remove duplicate help_search_filter_by_duration string</li>
+          <li>(i18n) Replace hardcoded text with i18n strings, fix tasks_count usage</li>
+          <li>(i18n) Replace hardcoded text with i18n strings</li>
+          <li>(i18n) Remove unused strings</li>
+        </ul>
+        <p>Styling:</p>
+        <ul>
+          <li>Make the Collapse tree button/icon a random shade of green</li>
+          <li>Make Windows icons transparent ( https://codeberg.org/trougnouf/cfait/issues/60 )</li>
+          <li>(android) Use one line per collection in the settings</li>
+          <li>(gui) Improve collapsed tree icon visibility</li>
+          <li>(android) Reduce space between collections in the settings</li>
+        </ul>
+        <p>Testing:</p>
+        <ul>
+          <li>Build binaries on PR</li>
+          <li>Improve test coverage</li>
+        </ul>
+        <p>Miscellaneous Tasks:</p>
+        <ul>
+          <li>Lint</li>
+          <li>Switch locales to 4-spaces</li>
+          <li>Fix Android compilation error</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.1" date="2026-05-14">
       <description>
         <p>Features:</p>

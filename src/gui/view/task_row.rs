@@ -624,7 +624,7 @@ pub fn view_task_row<'a>(
                 };
 
                 let tree_color = if is_tree_collapsed {
-                    Color::from_rgb(0.0, 0.0, 1.0)
+                    Color::from_rgb(1.0, 0.6, 0.0)
                 } else {
                     Color::from_rgb(r, g, b)
                 };

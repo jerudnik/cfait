@@ -545,7 +545,7 @@ fun SettingsScreen(
                                                     else androidx.core.os.LocaleListCompat.getEmptyLocaleList()
                                                 )
                                                 // Force recreate for ComponentActivity on older APIs
-                                                (context as? android.app.Activity)?.recreate()
+                                                context.findActivity()?.recreate()
                                             }
                                         },
                                         leadingIcon = if (selectedLanguage == code) {
@@ -774,7 +774,6 @@ fun SettingsScreen(
                     onExport = {},
                     onImport = {}
                 )
-                Spacer(modifier = Modifier.height(12.dp))
             }
             item {
                 Button(
@@ -873,7 +872,6 @@ fun SettingsScreen(
                         importLauncher.launch("*/*")
                     }
                 )
-                Spacer(modifier = Modifier.height(12.dp))
             }
             item {
                 Button(

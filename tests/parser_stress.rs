@@ -323,6 +323,21 @@ fn test_recurrence_mixed_casing_and_spacing() {
     assert_eq!(t.rrule, Some("FREQ=MONTHLY;INTERVAL=2".to_string()));
 }
 
+#[test]
+fn test_tokenize_smart_input_search_mode_operators() {
+    use cfait::model::parser::{tokenize_smart_input, SyntaxType};
+    
+    let input = "is:done -urgent | (work and not personal)";
+    let tokens = tokenize_smart_input(input, true);
+    
+    // Check that we extracted operators
+    let operators: Vec<_> = tokens.iter().filter(|t| t.kind == SyntaxType::Operator).collect();
+    assert!(!operators.is_empty());
+
+    let filters: Vec<_> = tokens.iter().filter(|t| t.kind == SyntaxType::Filter).collect();
+    assert!(!filters.is_empty());
+}
+
 // --- RECURRENCE EXTENSIONS TESTS (until/except) ---
 
 #[test]

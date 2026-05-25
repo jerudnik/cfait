@@ -146,6 +146,40 @@ async fn test_recovery_calendar_visibility() {
     );
 }
 
+#[tokio::test]
+#[serial]
+async fn test_calendar_creation_and_updating() {
+    let ctx = std::sync::Arc::new(cfait::context::TestContext::new());
+    let mut server = mockito::Server::new_async().await;
+    let url = server.url();
+
+    let client = RustyClient::new(ctx.clone(), &url, "u", "p", true, None).unwrap();
+
+    // Mock principal discovery
+    let _mock_principal = server.mock("PROPFIND", "/")
+        .with_status(207)
+        .with_body(r#"<d:multistatus xmlns:d="DAV:"><d:response><d:href>/</d:href><d:propstat><d:prop><d:current-user-principal><d:href>/user/</d:href></d:current-user-principal></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>"#)
+        .create_async().await;
+
+    let _mock_home = server.mock("PROPFIND", "/user/")
+        .with_status(207)
+        .with_body(r#"<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:response><d:href>/user/</d:href><d:propstat><d:prop><c:calendar-home-set><d:href>/cal/</d:href></c:calendar-home-set></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>"#)
+        .create_async().await;
+
+    let _mock_mkcal = server.mock("MKCALENDAR", mockito::Matcher::Any)
+        .with_status(201)
+        .create_async().await;
+
+    let _mock_proppatch = server.mock("PROPPATCH", mockito::Matcher::Any)
+        .with_status(200)
+        .create_async().await;
+
+    let new_cal = client.create_calendar("New Cal", Some("#FF0000")).await.unwrap();
+    assert!(new_cal.starts_with("/cal/"));
+
+    client.update_calendar(&new_cal, "Updated Cal", None).await.unwrap();
+}
+
 // --- MOVE TASK TESTS (updated to use TaskController) ---
 
 #[tokio::test]

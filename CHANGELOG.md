@@ -1,5 +1,422 @@
 # Changelog
 
+## [1.0.2] - 2026-05-22
+
+### 🚀 Features
+
+- Add target path to recovered tasks' description ( https://github.com/trougnouf/cfait/issues/25 )
+- Optimize companion event sync using CalDAV REPORT queries and task UID metadata
+- Log level advanced setting ( https://github.com/trougnouf/cfait/issues/31 )
+- Add ability to create remote CalDAV collections ( https://codeberg.org/trougnouf/cfait/issues/62 )
+- Remember and synchronize task trees collapsed status
+- *(android)* Merge calendar visibility toggles into collection editors ( https://codeberg.org/trougnouf/cfait/issues/62 )
+- *(android)* Log Kotlin-related crashes to cache/android_crash.txt ( https://codeberg.org/trougnouf/cfait/issues/63 )
+- Set sub-tasks' implicit start datetime based on parent's (for e.g. is:ready filtering and random task selection)
+- Add ## and @@@ syntax to add tags and locations that remain in the title
+- *(gui)* Remember cursor position after deleting a task
+- *(i18n)* Add complete Czech translation
+
+### 🐛 Bug Fixes
+
+- Fix cyclic parent_uid loops and prevent recursive UI event flood
+- Refine CalDAV path overlap detection to ignore root-only slashes and support disjoint paths ( https://github.com/trougnouf/cfait/issues/25 )
+- *(sync)* Use status codes for robust error handling and allow recovery export ( https://github.com/trougnouf/cfait/issues/31 )
+- *(i18n)* Fix mismatching substitution
+- *(android)* Preserve stored password only for unchanged username
+- *(tui)* Store password to keyring during onboarding
+- *(gui,mobile)* Implement optimistic updates for remote calendar actions to prevent UI jitter ( https://codeberg.org/trougnouf/cfait/issues/62 )
+- *(mobile)* Prevent DST gap panics in implicit alarm evaluators
+- Hide collapsed sub-tasks which were picked up by the fallback routine for orphaned tasks (reported by @Shadowminx )
+- *(i18n)* Improve Czech translation terminology and add missing keys
+- *(android)* Fix language switch on older (<13) Android versions ( https://github.com/trougnouf/cfait/issues/32 )
+
+### 💼 Other
+
+- Translated using Weblate (Dutch)
+
+Currently translated at 16.6% (81 of 486 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/nl/
+- Translated using Weblate (Dutch)
+
+Currently translated at 22.0% (107 of 486 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/nl/
+- Translated using Weblate (French)
+
+Currently translated at 100.0% (486 of 486 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/fr/
+- Merge remote-tracking branch 'refs/remotes/origin/master'
+- Translated using Weblate (Chinese (Simplified Han script))
+
+Currently translated at 100.0% (489 of 489 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/zh_Hans/
+- Translated using Weblate (German)
+
+Currently translated at 100.0% (489 of 489 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/de/
+- Translated using Weblate (Spanish)
+
+Currently translated at 100.0% (489 of 489 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Translated using Weblate (Spanish)
+
+Currently translated at 94.9% (512 of 539 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Translated using Weblate (Spanish)
+
+Currently translated at 95.9% (517 of 539 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Merge remote-tracking branch 'refs/remotes/origin/master'
+- Translated using Weblate (Spanish)
+
+Currently translated at 99.4% (537 of 540 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Translated using Weblate (Spanish)
+
+Currently translated at 100.0% (540 of 540 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Translated using Weblate (French)
+
+Currently translated at 88.3% (480 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/fr/
+- Translated using Weblate (Chinese (Simplified Han script))
+
+Currently translated at 88.9% (483 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/zh_Hans/
+- Translated using Weblate (Chinese (Simplified Han script))
+
+Currently translated at 88.9% (483 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/zh_Hans/
+- Translated using Weblate (German)
+
+Currently translated at 88.9% (483 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/de/
+- Translated using Weblate (Spanish)
+
+Currently translated at 100.0% (543 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Translated using Weblate (Italian)
+
+Currently translated at 65.9% (358 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/it/
+- Translated using Weblate (Dutch)
+
+Currently translated at 19.1% (104 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/nl/
+- Translated using Weblate (Russian)
+
+Currently translated at 21.9% (119 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/ru/
+- Translated using Weblate (Russian)
+
+Currently translated at 21.9% (119 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/ru/
+- Translated using Weblate (Czech)
+
+Currently translated at 0.0% (0 of 543 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/cs/
+- Translated using Weblate (Spanish)
+
+Currently translated at 100.0% (546 of 546 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Merge remote-tracking branch 'refs/remotes/origin/master'
+- Update translation files
+
+Updated by "Cleanup translation files" add-on in Weblate.
+
+Translation: Cfait/Android fastlane short description
+Translate-URL: https://translate.codeberg.org/projects/cfait/android-fastlane-short-description/
+- Update translation files
+
+Updated by "Cleanup translation files" add-on in Weblate.
+
+Translation: Cfait/Android fastlane long description
+Translate-URL: https://translate.codeberg.org/projects/cfait/android-fastlane-long-description/
+- Translated using Weblate (Russian)
+
+Currently translated at 24.5% (134 of 546 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/ru/
+- Merge remote-tracking branch 'refs/remotes/origin/master'
+- Translated using Weblate (Chinese (Simplified Han script))
+
+Currently translated at 88.4% (483 of 546 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/zh_Hans/
+- Translated using Weblate (German)
+
+Currently translated at 88.4% (483 of 546 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/de/
+- Translated using Weblate (Italian)
+
+Currently translated at 65.5% (358 of 546 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/it/
+- Translated using Weblate (Dutch)
+
+Currently translated at 19.0% (104 of 546 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/nl/
+- Translated using Weblate (Russian)
+
+Currently translated at 30.9% (169 of 546 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/ru/
+- Translated using Weblate (Russian)
+
+Currently translated at 30.9% (169 of 546 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/ru/
+- Translated using Weblate (Czech)
+
+Currently translated at 0.0% (0 of 546 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/cs/
+- Translated using Weblate (French)
+
+Currently translated at 100.0% (538 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/fr/
+- Merge remote-tracking branch 'refs/remotes/origin/master'
+- Translated using Weblate (French)
+
+Currently translated at 100.0% (538 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/fr/
+- Translated using Weblate (French)
+
+Currently translated at 100.0% (538 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/fr/
+- Translated using Weblate (Chinese (Simplified Han script))
+
+Currently translated at 89.7% (483 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/zh_Hans/
+- Translated using Weblate (German)
+
+Currently translated at 89.7% (483 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/de/
+- Translated using Weblate (Spanish)
+
+Currently translated at 100.0% (538 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Translated using Weblate (Italian)
+
+Currently translated at 66.5% (358 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/it/
+- Translated using Weblate (Dutch)
+
+Currently translated at 19.3% (104 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/nl/
+- Translated using Weblate (Russian)
+
+Currently translated at 29.9% (161 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/ru/
+- Translated using Weblate (Czech)
+
+Currently translated at 0.0% (0 of 538 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/cs/
+- Merge remote-tracking branch 'refs/remotes/origin/master'
+- Translated using Weblate (French)
+
+Currently translated at 91.7% (480 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/fr/
+- Translated using Weblate (French)
+
+Currently translated at 92.1% (482 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/fr/
+- Translated using Weblate (Spanish)
+
+Currently translated at 100.0% (523 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Merge branch 'master' into wip-fix-android-credential-not-saved
+- Merge pull request 'Fix Android credential persistence when password field is left blank' (#59) from zerodegress/cfait:wip-fix-android-credential-not-saved into master
+
+Reviewed-on: https://codeberg.org/trougnouf/cfait/pulls/59
+- Translated using Weblate (French)
+
+Currently translated at 92.1% (482 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/fr/
+- Translated using Weblate (Chinese (Simplified Han script))
+
+Currently translated at 81.4% (426 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/zh_Hans/
+- Translated using Weblate (German)
+
+Currently translated at 81.4% (426 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/de/
+- Translated using Weblate (Italian)
+
+Currently translated at 60.8% (318 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/it/
+- Translated using Weblate (Dutch)
+
+Currently translated at 18.7% (98 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/nl/
+- Translated using Weblate (Russian)
+
+Currently translated at 29.2% (153 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/ru/
+- Translated using Weblate (Czech)
+
+Currently translated at 0.0% (0 of 523 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/cs/
+- Update translation files
+
+Updated by "Remove blank strings" add-on in Weblate.
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/
+- Translated using Weblate (Chinese (Simplified Han script))
+
+Currently translated at 100.0% (527 of 527 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/zh_Hans/
+- Translated using Weblate (Spanish)
+
+Currently translated at 100.0% (527 of 527 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+- Merge remote-tracking branch 'refs/remotes/origin/master'
+- Merge pull request 'Czech translation' (#64) from MarrekNozka/cfait:master into master
+
+Reviewed-on: https://codeberg.org/trougnouf/cfait/pulls/64
+- Translated using Weblate (Chinese (Simplified Han script))
+
+Currently translated at 100.0% (528 of 528 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/zh_Hans/
+- Translated using Weblate (Spanish)
+
+Currently translated at 100.0% (528 of 528 strings)
+
+Translation: Cfait/Cfait
+Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/es/
+
+### 📚 Documentation
+
+- Update French translations
+- *(i18n)* Localize hardcoded strings, prune unused keys, and unify TUI/CLI help
+- *(i18n)* Allow migration_complete_moved to be singular/pluralized (per gallegonovato)
+- *(i18n)* Allow migration_complete_moved to be singular/pluralized (update existing translations)
+- *(i18n)* Support singular/plural forms for calendars and sessions (reported by gallegonovato)
+- *(i18n)* Add zero plural form and use tasks_count i18n key (suggested by @gallegonovato)
+- *(i18n)* Remove unused color strings
+- *(i18n)* French translations
+- *(i18n)* Remove unnecessary formatting marks from translatable strings
+- *(i18n)* Fix pluralization usage and remove duplicate help_search_filter_by_duration string
+- *(i18n)* Replace hardcoded text with i18n strings, fix tasks_count usage
+- *(i18n)* Replace hardcoded text with i18n strings
+- *(i18n)* Remove unused strings
+
+### 🎨 Styling
+
+- Make the Collapse tree button/icon a random shade of green
+- Make Windows icons transparent ( https://codeberg.org/trougnouf/cfait/issues/60 )
+- *(android)* Use one line per collection in the settings
+- *(gui)* Improve collapsed tree icon visibility
+- *(android)* Reduce space between collections in the settings
+
+### 🧪 Testing
+
+- Build binaries on PR
+- Improve test coverage
+
+### ⚙️ Miscellaneous Tasks
+
+- Lint
+- Switch locales to 4-spaces
+- Fix Android compilation error
 ## [1.0.1] - 2026-05-14
 
 ### 🚀 Features
@@ -164,6 +581,7 @@ Translate-URL: https://translate.codeberg.org/projects/cfait/cfait/zh_Hans/
 - Re-log some iced info messages
 - Bump cache/storage versions, fix config save race condition, and remove unsafe unwraps
 - Update libdav to v0.10.5 (breaking change) and other rust dependencies
+- Release cfait version 1.0.1
 ## [0.5.9] - 2026-05-05
 
 ### 🚀 Features
