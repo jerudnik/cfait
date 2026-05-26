@@ -627,7 +627,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             }
         }
 
-        if !added_unpinned {
+        if !*is_full && !added_unpinned {
             menu_actions = menu_actions.push(
                 container(
                     text(rust_i18n::t!("all_actions_pinned"))
