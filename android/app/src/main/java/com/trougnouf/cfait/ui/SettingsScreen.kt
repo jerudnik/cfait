@@ -187,6 +187,7 @@ fun SettingsScreen(
         val cfg = api.getConfig()
         url = cfg.url
         user = cfg.username
+        pass = cfg.password
         insecure = cfg.allowInsecure
         hideCompleted = cfg.hideCompleted
         sortMonths = cfg.sortCutoffMonths?.toString() ?: ""
