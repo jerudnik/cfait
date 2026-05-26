@@ -206,6 +206,7 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::SelectPrevTask
         | Message::SelectNextPage
         | Message::SelectPrevPage
+        | Message::EnterPressed
         | Message::DeleteSelected
         | Message::ToggleSelected
         | Message::EditSelected

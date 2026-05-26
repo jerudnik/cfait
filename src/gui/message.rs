@@ -94,6 +94,7 @@ pub enum Message {
     KeyboardOpenLocations,
     KeyboardOpenUrl,
     KeyboardOpenContextMenu,
+    EnterPressed,
     DuplicateTask(String),
     DeleteTaskTree(String),
     ToggleActiveSelected,

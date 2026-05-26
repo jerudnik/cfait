@@ -696,16 +696,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         && let Some(idx) = app.find_task_index_by_uid(uid)
         && let Some(task) = app.get_task_at_index(idx)
     {
-        let targets: Vec<_> = app
-            .calendars
-            .iter()
-            .filter(|c| {
-                c.href != task.calendar_href
-                    && !app.disabled_calendars.contains(&c.href)
-                    && c.href != crate::storage::LOCAL_TRASH_HREF
-                    && c.href != "local://recovery"
-            })
-            .collect();
+        let targets = app.get_move_targets(&task.calendar_href);
 
         let icon_header = container(
             icon::icon(icon::MOVE)
@@ -725,27 +716,35 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             .align_x(Horizontal::Center);
 
         let mut cal_list = column![].spacing(5);
-        for cal in targets {
-            let cal_button = button(
+        for (i, cal) in targets.iter().enumerate() {
+            let is_selected = i == app.move_target_idx;
+
+            let mut cal_button = button(
                 row![
                     icon::icon(icon::CALENDAR)
                         .size(14)
-                        .color(Color::from_rgb(0.6, 0.6, 0.6)),
+                        .color(if is_selected { Color::from_rgb(1.0, 1.0, 1.0) } else { Color::from_rgb(0.6, 0.6, 0.6) }),
                     text(&cal.name).size(14)
                 ]
                 .spacing(8)
                 .align_y(iced::Alignment::Center),
             )
-            .style(iced::widget::button::secondary)
             .width(Length::Fill)
             .padding(10)
             .on_press(Message::MoveTask(task.uid.clone(), cal.href.clone()));
+
+            if is_selected {
+                cal_button = cal_button.style(iced::widget::button::primary);
+            } else {
+                cal_button = cal_button.style(iced::widget::button::secondary);
+            }
 
             cal_list = cal_list.push(cal_button);
         }
 
         let calendar_scroll =
             scrollable(cal_list)
+                .id(iced::widget::Id::new("move_modal_scrollable"))
                 .height(Length::Fixed(250.0))
                 .direction(Direction::Vertical(
                     Scrollbar::new().width(8).scroller_width(8),
@@ -2026,6 +2025,7 @@ fn view_ics_import_overlay<'a>(app: &'a GuiApp) -> Element<'a, Message> {
     }
 
     let calendar_scroll = scrollable(calendar_list)
+        .id(iced::widget::Id::new("ics_import_scrollable"))
         .height(Length::Fixed(250.0))
         .direction(Direction::Vertical(
             Scrollbar::new().width(8).scroller_width(8),

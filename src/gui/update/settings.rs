@@ -890,7 +890,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.ics_import_file_path = Some(file_path);
             app.ics_import_content = Some(content);
             app.ics_import_task_count = Some(task_count);
-            app.ics_import_selected_calendar = None;
+            app.ics_import_selected_calendar = app.calendars.iter().filter(|c| !app.disabled_calendars.contains(&c.href)).map(|c| c.href.clone()).next();
 
             Task::none()
         }
