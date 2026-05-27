@@ -120,6 +120,18 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             common::scroll_to_selected(app, true)
         }
 
+        Message::ToggleTaskShift(uid) => {
+            dispatch_and_maintain_selection(app, AppIntent::ToggleTaskShift { uid: uid.clone() }, &uid);
+            Task::none()
+        }
+
+        Message::ToggleTaskShiftSelected => {
+            if let Some(uid) = app.selected_uid.clone() {
+                dispatch_and_maintain_selection(app, AppIntent::ToggleTaskShift { uid: uid.clone() }, &uid);
+            }
+            Task::none()
+        }
+
         Message::ToggleTask(index, _) => {
             let data = app.get_task_at_index(index).map(|t| (t.uid.clone(), t.etag == "pending_refresh"));
             if let Some((uid, is_pending)) = data {
@@ -461,6 +473,13 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             if app.moving_task_uid.is_some() {
                 app.moving_task_uid = None;
                 captured_action = true;
+            } else if app.ics_import_dialog_open {
+                app.ics_import_dialog_open = false;
+                app.ics_import_file_path = None;
+                app.ics_import_content = None;
+                app.ics_import_selected_calendar = None;
+                app.ics_import_task_count = None;
+                captured_action = true;
             } else if app.editing_uid.is_some()
                 || app.creating_child_of.is_some()
                 || app.creating_with_desc
@@ -574,6 +593,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
         Message::StartMoveTask(uid) => {
             app.moving_task_uid = Some(uid);
+            app.move_target_idx = 0;
             app.active_context_menu = None; // Hide context menu if open
             Task::none()
         }

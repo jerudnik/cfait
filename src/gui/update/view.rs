@@ -135,7 +135,87 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
         Message::FocusInput => operation::focus("main_input"),
         Message::FocusSearch => operation::focus("header_search_input"),
+        Message::EnterPressed => {
+            if let Some(uid) = &app.moving_task_uid {
+                if let Some(idx) = app.find_task_index_by_uid(uid)
+                    && let Some(task) = app.get_task_at_index(idx)
+                {
+                    let targets = app.get_move_targets(&task.calendar_href);
+                    if let Some(target) = targets.get(app.move_target_idx) {
+                        return crate::gui::update::tasks::handle(
+                            app,
+                            Message::MoveTask(task.uid.clone(), target.href.clone()),
+                        );
+                    }
+                }
+                return Task::none();
+            }
+
+            if app.ics_import_dialog_open {
+                if app.ics_import_selected_calendar.is_some() && app.ics_import_task_count.unwrap_or(0) > 0 {
+                    return crate::gui::update::settings::handle(app, Message::IcsImportDialogConfirm);
+                }
+                return Task::none();
+            }
+
+            Task::none()
+        }
         Message::SelectNextTask => {
+            if let Some(uid) = &app.moving_task_uid {
+                if let Some(idx) = app.find_task_index_by_uid(uid)
+                    && let Some(task) = app.get_task_at_index(idx)
+                {
+                    let targets = app.get_move_targets(&task.calendar_href);
+                    let targets_len = targets.len();
+                    if !targets.is_empty() {
+                        app.move_target_idx = (app.move_target_idx + 1).min(targets_len - 1);
+                        
+                        let viewport_h = 250.0;
+                        let item_h = 39.0;
+                        let content_h = targets_len as f32 * item_h;
+                        let item_center = (app.move_target_idx as f32 + 0.5) * item_h;
+                        let max_scroll_px = (content_h - viewport_h).max(0.0);
+                        let desired_offset_px = (item_center - viewport_h / 2.0).clamp(0.0, max_scroll_px);
+                        let y = if max_scroll_px > 0.0 {
+                            (desired_offset_px / max_scroll_px).clamp(0.0, 1.0)
+                        } else {
+                            0.0
+                        };
+                        return iced::widget::operation::snap_to(
+                            iced::widget::Id::new("move_modal_scrollable"),
+                            iced::widget::scrollable::RelativeOffset { x: 0.0, y }
+                        );
+                    }
+                }
+                return Task::none();
+            }
+
+            if app.ics_import_dialog_open {
+                let targets: Vec<_> = app.calendars.iter().filter(|c| !app.disabled_calendars.contains(&c.href)).collect();
+                if !targets.is_empty() {
+                    let current_idx = targets.iter().position(|c| Some(&c.href) == app.ics_import_selected_calendar.as_ref()).unwrap_or(0);
+                    let next_idx = (current_idx + 1).min(targets.len() - 1);
+                    app.ics_import_selected_calendar = Some(targets[next_idx].href.clone());
+
+                    let viewport_h = 250.0;
+                    let item_h = 39.0;
+                    let content_h = targets.len() as f32 * item_h;
+                    let item_center = (next_idx as f32 + 0.5) * item_h;
+                    let max_scroll_px = (content_h - viewport_h).max(0.0);
+                    let desired_offset_px = (item_center - viewport_h / 2.0).clamp(0.0, max_scroll_px);
+                    let y = if max_scroll_px > 0.0 {
+                        (desired_offset_px / max_scroll_px).clamp(0.0, 1.0)
+                    } else {
+                        0.0
+                    };
+                    return iced::widget::operation::snap_to(
+                        iced::widget::Id::new("ics_import_scrollable"),
+                        iced::widget::scrollable::RelativeOffset { x: 0.0, y }
+                    );
+                }
+                return Task::none();
+            }
+
             if app.tasks.is_empty() {
                 return Task::none();
             }
@@ -160,6 +240,62 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::SelectPrevTask => {
+            if app.moving_task_uid.is_some() {
+                app.move_target_idx = app.move_target_idx.saturating_sub(1);
+                
+                if let Some(uid) = &app.moving_task_uid
+                    && let Some(idx) = app.find_task_index_by_uid(uid)
+                    && let Some(task) = app.get_task_at_index(idx)
+                {
+                    let targets = app.get_move_targets(&task.calendar_href);
+                    let targets_len = targets.len();
+                    
+                    let viewport_h = 250.0;
+                    let item_h = 39.0;
+                    let content_h = targets_len as f32 * item_h;
+                    let item_center = (app.move_target_idx as f32 + 0.5) * item_h;
+                    let max_scroll_px = (content_h - viewport_h).max(0.0);
+                    let desired_offset_px = (item_center - viewport_h / 2.0).clamp(0.0, max_scroll_px);
+                    let y = if max_scroll_px > 0.0 {
+                        (desired_offset_px / max_scroll_px).clamp(0.0, 1.0)
+                    } else {
+                        0.0
+                    };
+                    return iced::widget::operation::snap_to(
+                        iced::widget::Id::new("move_modal_scrollable"),
+                        iced::widget::scrollable::RelativeOffset { x: 0.0, y }
+                    );
+                }
+                
+                return Task::none();
+            }
+
+            if app.ics_import_dialog_open {
+                let targets: Vec<_> = app.calendars.iter().filter(|c| !app.disabled_calendars.contains(&c.href)).collect();
+                if !targets.is_empty() {
+                    let current_idx = targets.iter().position(|c| Some(&c.href) == app.ics_import_selected_calendar.as_ref()).unwrap_or(0);
+                    let prev_idx = current_idx.saturating_sub(1);
+                    app.ics_import_selected_calendar = Some(targets[prev_idx].href.clone());
+
+                    let viewport_h = 250.0;
+                    let item_h = 39.0;
+                    let content_h = targets.len() as f32 * item_h;
+                    let item_center = (prev_idx as f32 + 0.5) * item_h;
+                    let max_scroll_px = (content_h - viewport_h).max(0.0);
+                    let desired_offset_px = (item_center - viewport_h / 2.0).clamp(0.0, max_scroll_px);
+                    let y = if max_scroll_px > 0.0 {
+                        (desired_offset_px / max_scroll_px).clamp(0.0, 1.0)
+                    } else {
+                        0.0
+                    };
+                    return iced::widget::operation::snap_to(
+                        iced::widget::Id::new("ics_import_scrollable"),
+                        iced::widget::scrollable::RelativeOffset { x: 0.0, y }
+                    );
+                }
+                return Task::none();
+            }
+
             if app.tasks.is_empty() {
                 return Task::none();
             }

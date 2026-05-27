@@ -103,7 +103,26 @@ fn test_export_task_with_recurrence() {
     assert!(ics.contains("RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR"));
 }
 
-// ==================== Full Roundtrip Tests ====================
+#[test]
+#[serial]
+fn test_export_task_with_relative_recurrence() {
+    let task = Task::new("Water plants @after 1w", &HashMap::new(), None);
+    let tasks = vec![task.clone()];
+    let ics = LocalStorage::to_ics_string(&tasks);
+
+    assert!(ics.contains("RRULE:FREQ=WEEKLY;INTERVAL=1"));
+    assert!(ics.contains("X-CFAIT-RECUR-FROM-COMPLETION:TRUE"));
+
+    // Roundtrip verification
+    let parsed = Task::from_ics(&ics, "etag".into(), "href".into(), "cal".into()).unwrap();
+    assert!(parsed.unmapped_properties.iter().any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION" && p.value == "TRUE"));
+
+    // Display string verification
+    let smart = parsed.to_smart_string();
+    assert!(smart.contains("@after 1w"));
+}
+
+// ==================== Full Roundtrip Tests ========================================
 
 #[test]
 #[serial]

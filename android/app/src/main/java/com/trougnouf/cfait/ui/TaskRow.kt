@@ -467,6 +467,14 @@ fun TaskRow(
                         )
                     }
 
+                    if (task.isRecurring && !task.isDone && task.statusString != "Cancelled") {
+                        DropdownMenuItem(
+                            text = { Text(androidx.compose.ui.res.stringResource(R.string.action_complete_and_shift)) },
+                            onClick = { expanded = false; onAction("complete_and_shift") },
+                            leadingIcon = { NfIcon(NfIcons.REPEAT, 16.sp) }
+                        )
+                    }
+
                     val duplicateLabel = if (task.hasSubtasks) androidx.compose.ui.res.stringResource(R.string.duplicate_task)
                     else androidx.compose.ui.res.stringResource(R.string.duplicate_single_task)
 

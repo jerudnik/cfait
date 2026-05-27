@@ -4,6 +4,7 @@
     "about_repository": "仓库：%{url}",
     "about_title": "Cfait 任务管理器",
     "about_version": "版本 %{version}",
+    "action_complete_and_shift": "完成并轮班时间表",
     "action_open_locations": "打开位置（GPX）",
     "actions": "操作",
     "active_alarm": "活动闹钟",

@@ -521,6 +521,11 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                     Message::OpenUrl(task.url.clone().unwrap()),
                     false,
                 ),
+                TaskAction::CompleteAndShift => (
+                    icon::icon(icon::REPEAT).size(14).into(),
+                    Message::ToggleTaskShift(uid.clone()),
+                    false,
+                ),
             };
 
             let btn = button(
@@ -547,6 +552,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::OpenCoordinates, // Single coordinates first
                 TaskAction::OpenLocations,   // GPX export second
                 TaskAction::ToggleDetails,
+                TaskAction::CompleteAndShift,
                 TaskAction::ToggleTimer,
                 TaskAction::StopTimer,
                 TaskAction::AddSession,
@@ -592,6 +598,14 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             }
             if let Some(pos) = unpinned_actions
                 .iter()
+                .position(|&a| a == TaskAction::CompleteAndShift)
+            {
+                unpinned_actions.remove(pos);
+                unpinned_actions.insert(insert_idx, TaskAction::CompleteAndShift);
+                insert_idx += 1;
+            }
+            if let Some(pos) = unpinned_actions
+                .iter()
                 .position(|&a| a == TaskAction::OpenLocations)
             {
                 unpinned_actions.remove(pos);
@@ -602,16 +616,18 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         };
 
         let mut added_unpinned = false;
+        let mut num_items = 0;
         for action in context_menu_order {
             if let Some(btn) = build_btn(&action) {
                 menu_actions = menu_actions.push(btn);
+                num_items += 1;
                 if !*is_full && !app.pinned_actions.contains(&action) {
                     added_unpinned = true;
                 }
             }
         }
 
-        if !added_unpinned {
+        if !*is_full && !added_unpinned {
             menu_actions = menu_actions.push(
                 container(
                     text(rust_i18n::t!("all_actions_pinned"))
@@ -620,10 +636,19 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 )
                 .padding(8),
             );
+            num_items += 1;
         }
 
-        let menu_container = container(menu_actions)
+        let max_available_height = (app.current_window_size.height - 20.0).max(100.0);
+
+        let menu_scrollable = scrollable(menu_actions)
+            .direction(Direction::Vertical(
+                Scrollbar::new().width(6).scroller_width(6).margin(0),
+            ));
+
+        let menu_container = container(menu_scrollable)
             .width(Length::Fixed(180.0))
+            .max_height(max_available_height)
             .padding(4)
             .style(|theme: &Theme| {
                 let palette = theme.extended_palette();
@@ -645,24 +670,24 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
 
         // Position the menu exactly by the mouse
         let menu_width = 180.0;
-        let menu_height = if *is_full { 350.0 } else { 150.0 };
+        let estimated_menu_height = (num_items as f32 * 34.0 + 8.0).min(max_available_height);
 
         let mut top_padding = pt.y;
         let mut left_padding = pt.x;
 
         if left_padding + menu_width > app.current_window_size.width {
-            left_padding = app.current_window_size.width - menu_width;
+            left_padding = (app.current_window_size.width - menu_width - 10.0).max(0.0);
         }
-        if top_padding + menu_height > app.current_window_size.height {
-            top_padding = app.current_window_size.height - menu_height;
+        if top_padding + estimated_menu_height > app.current_window_size.height {
+            top_padding = (app.current_window_size.height - estimated_menu_height - 10.0).max(0.0);
         }
 
         let positioned_menu = container(menu_container)
             .width(Length::Fill)
             .height(Length::Fill)
             .padding(iced::Padding {
-                top: top_padding.max(0.0),
-                left: left_padding.max(0.0),
+                top: top_padding,
+                left: left_padding,
                 ..Default::default()
             });
 
@@ -682,16 +707,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         && let Some(idx) = app.find_task_index_by_uid(uid)
         && let Some(task) = app.get_task_at_index(idx)
     {
-        let targets: Vec<_> = app
-            .calendars
-            .iter()
-            .filter(|c| {
-                c.href != task.calendar_href
-                    && !app.disabled_calendars.contains(&c.href)
-                    && c.href != crate::storage::LOCAL_TRASH_HREF
-                    && c.href != "local://recovery"
-            })
-            .collect();
+        let targets = app.get_move_targets(&task.calendar_href);
 
         let icon_header = container(
             icon::icon(icon::MOVE)
@@ -711,27 +727,35 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             .align_x(Horizontal::Center);
 
         let mut cal_list = column![].spacing(5);
-        for cal in targets {
-            let cal_button = button(
+        for (i, cal) in targets.iter().enumerate() {
+            let is_selected = i == app.move_target_idx;
+
+            let mut cal_button = button(
                 row![
                     icon::icon(icon::CALENDAR)
                         .size(14)
-                        .color(Color::from_rgb(0.6, 0.6, 0.6)),
+                        .color(if is_selected { Color::from_rgb(1.0, 1.0, 1.0) } else { Color::from_rgb(0.6, 0.6, 0.6) }),
                     text(&cal.name).size(14)
                 ]
                 .spacing(8)
                 .align_y(iced::Alignment::Center),
             )
-            .style(iced::widget::button::secondary)
             .width(Length::Fill)
             .padding(10)
             .on_press(Message::MoveTask(task.uid.clone(), cal.href.clone()));
+
+            if is_selected {
+                cal_button = cal_button.style(iced::widget::button::primary);
+            } else {
+                cal_button = cal_button.style(iced::widget::button::secondary);
+            }
 
             cal_list = cal_list.push(cal_button);
         }
 
         let calendar_scroll =
             scrollable(cal_list)
+                .id(iced::widget::Id::new("move_modal_scrollable"))
                 .height(Length::Fixed(250.0))
                 .direction(Direction::Vertical(
                     Scrollbar::new().width(8).scroller_width(8),
@@ -2012,6 +2036,7 @@ fn view_ics_import_overlay<'a>(app: &'a GuiApp) -> Element<'a, Message> {
     }
 
     let calendar_scroll = scrollable(calendar_list)
+        .id(iced::widget::Id::new("ics_import_scrollable"))
         .height(Length::Fixed(250.0))
         .direction(Direction::Vertical(
             Scrollbar::new().width(8).scroller_width(8),

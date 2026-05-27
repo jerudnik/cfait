@@ -247,7 +247,14 @@ fn handle_hotkey(
             keyboard::Key::Named(Named::ArrowUp) => Some(Message::SelectPrevTask),
             keyboard::Key::Named(Named::PageDown) => Some(Message::SelectNextPage),
             keyboard::Key::Named(Named::PageUp) => Some(Message::SelectPrevPage),
-            keyboard::Key::Named(Named::Space) => Some(Message::ToggleSelected),
+            keyboard::Key::Named(Named::Enter) => Some(Message::EnterPressed),
+            keyboard::Key::Named(Named::Space) => {
+                if modifiers.shift() {
+                    Some(Message::ToggleTaskShiftSelected)
+                } else {
+                    Some(Message::ToggleSelected)
+                }
+            }
             keyboard::Key::Named(Named::Escape) => Some(Message::EscapePressed),
             keyboard::Key::Named(Named::Delete) => {
                 // Handled in is_cmd block for Ctrl+Delete, so here it's just Delete

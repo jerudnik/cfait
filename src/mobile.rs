@@ -311,6 +311,7 @@ pub struct MobileAlarmInfo {
 pub struct MobileConfig {
     pub url: String,
     pub username: String,
+    pub password: String,
     pub default_calendar: Option<String>,
     pub allow_insecure: bool,
     pub hide_completed: bool,
@@ -726,10 +727,11 @@ impl CfaitMobile {
     }
 
     pub fn get_config(&self) -> MobileConfig {
-        let c = Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let c = load_mobile_config_with_credentials(self.ctx.as_ref());
         MobileConfig {
             url: c.url,
             username: c.username,
+            password: c.password,
             default_calendar: c.default_calendar,
             allow_insecure: c.allow_insecure_certs,
             hide_completed: c.hide_completed,
@@ -1875,6 +1877,12 @@ impl CfaitMobile {
         Ok(())
     }
 
+    pub async fn toggle_task_shift(&self, uid: String) -> Result<(), MobileError> {
+        self.dispatch(crate::model::AppIntent::ToggleTaskShift { uid })
+            .await?;
+        Ok(())
+    }
+
     pub async fn move_task(&self, uid: String, new_cal_href: String) -> Result<(), MobileError> {
         self.dispatch(crate::model::AppIntent::MoveTask {
             uid,
@@ -2528,4 +2536,3 @@ mod tests {
         assert_eq!(config.password, "new-secret");
     }
 }
-

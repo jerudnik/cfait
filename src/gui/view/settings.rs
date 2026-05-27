@@ -443,6 +443,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                         let action_val = *action; // Copy for closure
 
                         let icon_char = match action_val {
+                            crate::config::TaskAction::CompleteAndShift => icon::REPEAT,
                             crate::config::TaskAction::ToggleDetails => icon::INFO,
                             crate::config::TaskAction::ToggleTimer => icon::PLAY,
                             crate::config::TaskAction::StopTimer => icon::DEBUG_STOP,
@@ -627,7 +628,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
 
     let cal_mgmt_ui: Element<_> = if is_settings && (!app.calendars.is_empty() || !app.remote_cals_editing.is_empty()) {
         let mut col = column![text(rust_i18n::t!("remote_collections")).size(20)].spacing(10);
-        
+
         for cal in &app.remote_cals_editing {
             let cal_href = cal.href.clone();
             let is_enabled = !app.disabled_calendars.contains(&cal_href);
@@ -654,7 +655,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                 .and_then(|h| crate::color_utils::parse_hex_to_floats(h))
                 .map(|(r,g,b)| Color::from_rgb(r,g,b))
                 .unwrap_or(Color::from_rgb(0.5,0.5,0.5));
-                
+
             let color_btn = {
                 let href = cal_href.clone();
                 button(text(icon::PALETTE_COLOR.to_string()).font(icon::FONT).size(16).color(current_color))
@@ -856,10 +857,22 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .on_input(Message::ObUserChanged)
                     .padding(10),
                 text(rust_i18n::t!("password")),
-                text_input(&rust_i18n::t!("password"), &app.ob_pass)
-                    .on_input(Message::ObPassChanged)
-                    .secure(true)
-                    .padding(10),
+                row![
+                    text_input(&rust_i18n::t!("password"), &app.ob_pass)
+                        .on_input(Message::ObPassChanged)
+                        .secure(!app.ob_password_visible)
+                        .padding(10)
+                        .width(Length::Fill),
+                    button(
+                        icon::icon(if app.ob_password_visible { icon::EYE_CLOSED } else { icon::EYE })
+                            .size(20)
+                    )
+                    .style(button::text)
+                    .padding(10)
+                    .on_press(Message::ToggleObPasswordVisibility)
+                ]
+                .spacing(8)
+                .align_y(iced::Alignment::Center),
                 insecure_check,
                 save_connect_btn
             ]
