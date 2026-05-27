@@ -358,6 +358,9 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                 checkbox::<Message, iced::Theme, iced::Renderer>(app.strikethrough_completed)
                     .label(rust_i18n::t!("strikethrough_completed"))
                     .on_toggle(Message::SetStrikethroughCompleted),
+                checkbox::<Message, iced::Theme, iced::Renderer>(app.sort_standard_by_priority)
+                    .label(rust_i18n::t!("sort_standard_by_priority_label"))
+                    .on_toggle(Message::ToggleSortStandardByPriority),
                 Space::new().height(10),
                 text(rust_i18n::t!("priority_rules")).size(16),
                 row![

@@ -33,9 +33,10 @@ pub fn parse_icon(s: &str) -> char {
         return s.chars().next().unwrap();
     }
     if let Ok(code) = u32::from_str_radix(s.trim_start_matches("0x").trim_start_matches("U+"), 16)
-        && let Some(c) = std::char::from_u32(code) {
-            return c;
-        }
+        && let Some(c) = std::char::from_u32(code)
+    {
+        return c;
+    }
     '\u{f0fa9}' // default nf-md-clock_check
 }
 

@@ -1205,6 +1205,7 @@ internal object UniffiLib {
         `hideCompleted`: Byte,
         `disabledCalendars`: RustBuffer.ByValue,
         `sortCutoffMonths`: RustBuffer.ByValue,
+        `sortStandardByPriority`: Byte,
         `urgentDays`: Int,
         `urgentPrio`: Byte,
         `defaultPriority`: Byte,
@@ -1707,7 +1708,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_remove_related_to() != 37228.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_save_config() != 12820.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_save_config() != 60283.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_calendar_visibility() != 45711.toShort()) {
@@ -2456,6 +2457,7 @@ public interface CfaitMobileInterface {
         `hideCompleted`: kotlin.Boolean,
         `disabledCalendars`: List<kotlin.String>,
         `sortCutoffMonths`: kotlin.UInt?,
+        `sortStandardByPriority`: kotlin.Boolean,
         `urgentDays`: kotlin.UInt,
         `urgentPrio`: kotlin.UByte,
         `defaultPriority`: kotlin.UByte,
@@ -3557,6 +3559,7 @@ open class CfaitMobile :
         `hideCompleted`: kotlin.Boolean,
         `disabledCalendars`: List<kotlin.String>,
         `sortCutoffMonths`: kotlin.UInt?,
+        `sortStandardByPriority`: kotlin.Boolean,
         `urgentDays`: kotlin.UInt,
         `urgentPrio`: kotlin.UByte,
         `defaultPriority`: kotlin.UByte,
@@ -3585,6 +3588,7 @@ open class CfaitMobile :
                 FfiConverterBoolean.lower(`hideCompleted`),
                 FfiConverterSequenceString.lower(`disabledCalendars`),
                 FfiConverterOptionalUInt.lower(`sortCutoffMonths`),
+                FfiConverterBoolean.lower(`sortStandardByPriority`),
                 FfiConverterUInt.lower(`urgentDays`),
                 FfiConverterUByte.lower(`urgentPrio`),
                 FfiConverterUByte.lower(`defaultPriority`),
@@ -4112,6 +4116,7 @@ data class MobileConfig(
     var `tagAliases`: Map<kotlin.String, List<kotlin.String>>,
     var `disabledCalendars`: List<kotlin.String>,
     var `sortCutoffMonths`: kotlin.UInt?,
+    var `sortStandardByPriority`: kotlin.Boolean,
     var `urgentDays`: kotlin.UInt,
     var `urgentPrio`: kotlin.UByte,
     var `defaultPriority`: kotlin.UByte,
@@ -4148,6 +4153,7 @@ public object FfiConverterTypeMobileConfig : FfiConverterRustBuffer<MobileConfig
             FfiConverterMapStringSequenceString.read(buf),
             FfiConverterSequenceString.read(buf),
             FfiConverterOptionalUInt.read(buf),
+            FfiConverterBoolean.read(buf),
             FfiConverterUInt.read(buf),
             FfiConverterUByte.read(buf),
             FfiConverterUByte.read(buf),
@@ -4178,6 +4184,7 @@ public object FfiConverterTypeMobileConfig : FfiConverterRustBuffer<MobileConfig
                 FfiConverterMapStringSequenceString.allocationSize(value.`tagAliases`) +
                 FfiConverterSequenceString.allocationSize(value.`disabledCalendars`) +
                 FfiConverterOptionalUInt.allocationSize(value.`sortCutoffMonths`) +
+                FfiConverterBoolean.allocationSize(value.`sortStandardByPriority`) +
                 FfiConverterUInt.allocationSize(value.`urgentDays`) +
                 FfiConverterUByte.allocationSize(value.`urgentPrio`) +
                 FfiConverterUByte.allocationSize(value.`defaultPriority`) +
@@ -4210,6 +4217,7 @@ public object FfiConverterTypeMobileConfig : FfiConverterRustBuffer<MobileConfig
         FfiConverterMapStringSequenceString.write(value.`tagAliases`, buf)
         FfiConverterSequenceString.write(value.`disabledCalendars`, buf)
         FfiConverterOptionalUInt.write(value.`sortCutoffMonths`, buf)
+        FfiConverterBoolean.write(value.`sortStandardByPriority`, buf)
         FfiConverterUInt.write(value.`urgentDays`, buf)
         FfiConverterUByte.write(value.`urgentPrio`, buf)
         FfiConverterUByte.write(value.`defaultPriority`, buf)

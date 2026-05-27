@@ -368,11 +368,41 @@ pub struct SortKey {
     pub start: Option<DateType>,
 }
 
+/// Options to parameterize a comparison operation. Using a struct keeps the
+/// signature of `compare_with_cutoff` manageable as the comparison logic
+/// supports multiple global settings.
+pub struct CompareOptions {
+    pub cutoff: Option<DateTime<Utc>>,
+    pub urgent_days: u32,
+    pub urgent_prio: u8,
+    pub default_priority: u8,
+    pub start_grace_period_days: u32,
+    pub sort_standard_by_priority: bool,
+}
+
 /// Comparison helper for sort policies. The ordering decision tree is centralized here
 /// to make ranking behavior deterministic and easy to test.
-pub fn compare_sortkeys(a: &SortKey, b: &SortKey, default_prio: u8) -> Ordering {
-    if a.rank != b.rank {
-        return a.rank.cmp(&b.rank);
+///
+/// `sort_standard_by_priority`: when `true`, ranks 4 and 5 are merged into a single group
+/// sorted by priority first, then by due date (tasks without a date follow tasks with the
+/// same priority that have a date).  When `false` (the default) rank 4 and 5 are kept
+/// separate and sorted date-first within rank 4.
+pub fn compare_sortkeys(
+    a: &SortKey,
+    b: &SortKey,
+    default_prio: u8,
+    sort_standard_by_priority: bool,
+) -> Ordering {
+    // When the priority-first mode is active, treat ranks 4 and 5 as one merged group.
+    let effective_rank = |rank: u8| {
+        if sort_standard_by_priority && rank == 5 {
+            4
+        } else {
+            rank
+        }
+    };
+    if effective_rank(a.rank) != effective_rank(b.rank) {
+        return effective_rank(a.rank).cmp(&effective_rank(b.rank));
     }
     let norm_prio = |p: u8| if p == 0 { default_prio } else { p };
     let compare_dates = |d1: &Option<DateType>, d2: &Option<DateType>| -> Ordering {
@@ -383,12 +413,22 @@ pub fn compare_sortkeys(a: &SortKey, b: &SortKey, default_prio: u8) -> Ordering 
             (None, None) => Ordering::Equal,
         }
     };
-    match a.rank {
+    match effective_rank(a.rank) {
         1 => norm_prio(a.prio)
             .cmp(&norm_prio(b.prio))
             .then_with(|| compare_dates(&a.due, &b.due)),
-        2..=4 => compare_dates(&a.due, &b.due).then(norm_prio(a.prio).cmp(&norm_prio(b.prio))),
-        5 | 6 => norm_prio(a.prio)
+        2 | 3 => compare_dates(&a.due, &b.due).then(norm_prio(a.prio).cmp(&norm_prio(b.prio))),
+        4 => {
+            if sort_standard_by_priority {
+                // Merged group: priority first, then date (None sorts after Some).
+                norm_prio(a.prio)
+                    .cmp(&norm_prio(b.prio))
+                    .then_with(|| compare_dates(&a.due, &b.due))
+            } else {
+                compare_dates(&a.due, &b.due).then(norm_prio(a.prio).cmp(&norm_prio(b.prio)))
+            }
+        }
+        5 => norm_prio(a.prio)
             .cmp(&norm_prio(b.prio))
             .then_with(|| compare_dates(&a.due, &b.due)),
         7 => {
@@ -648,11 +688,16 @@ impl Task {
             due: due_b.clone(),
             start: start_b.clone(),
         };
-        compare_sortkeys(&a, &b, default_prio)
+        compare_sortkeys(&a, &b, default_prio, false)
     }
 
     /// Compare two tasks using their effective fields (used by top-level sorting).
-    pub fn compare_for_sort(&self, other: &Self, default_priority: u8) -> Ordering {
+    pub fn compare_for_sort(
+        &self,
+        other: &Self,
+        default_priority: u8,
+        sort_standard_by_priority: bool,
+    ) -> Ordering {
         // Stable ordering for trash and completed groups uses completion date desc.
         if self.sort_rank == 9 && other.sort_rank == 9 {
             return other
@@ -680,34 +725,27 @@ impl Task {
             due: other.effective_due.clone(),
             start: other.effective_dtstart.clone(),
         };
-        compare_sortkeys(&a, &b, default_priority).then_with(|| self.summary.cmp(&other.summary))
+        compare_sortkeys(&a, &b, default_priority, sort_standard_by_priority)
+            .then_with(|| self.summary.cmp(&other.summary))
     }
 
     /// Compare taking into account cutoff and other global settings.
-    pub fn compare_with_cutoff(
-        &self,
-        other: &Self,
-        cutoff: Option<DateTime<Utc>>,
-        urgent_days: u32,
-        urgent_prio: u8,
-        default_priority: u8,
-        start_grace_period_days: u32,
-    ) -> Ordering {
+    pub fn compare_with_cutoff(&self, other: &Self, opts: &CompareOptions) -> Ordering {
         let eff_blocked_self = self.is_blocked || self.is_implicitly_blocked;
         let eff_blocked_other = other.is_blocked || other.is_implicitly_blocked;
 
         let rank_self = self.calculate_base_rank(
-            cutoff,
-            urgent_days,
-            urgent_prio,
-            start_grace_period_days,
+            opts.cutoff,
+            opts.urgent_days,
+            opts.urgent_prio,
+            opts.start_grace_period_days,
             eff_blocked_self,
         );
         let rank_other = other.calculate_base_rank(
-            cutoff,
-            urgent_days,
-            urgent_prio,
-            start_grace_period_days,
+            opts.cutoff,
+            opts.urgent_days,
+            opts.urgent_prio,
+            opts.start_grace_period_days,
             eff_blocked_other,
         );
         let a = SortKey {
@@ -722,7 +760,8 @@ impl Task {
             due: other.due.clone(),
             start: other.dtstart.clone(),
         };
-        compare_sortkeys(&a, &b, default_priority).then_with(|| self.summary.cmp(&other.summary))
+        compare_sortkeys(&a, &b, opts.default_priority, opts.sort_standard_by_priority)
+            .then_with(|| self.summary.cmp(&other.summary))
     }
 
     /// Build a flattened, display-ordered list that respects parent/child hierarchy
