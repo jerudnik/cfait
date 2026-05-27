@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Tests for task sorting logic.
 use cfait::model::{DateType, Task, TaskStatus};
-use cfait::model::item::compare_sortkeys;
-use cfait::model::item::SortKey;
+use cfait::model::item::{compare_sortkeys, CompareOptions, SortKey};
 use cfait::store::organize_hierarchy;
 use chrono::{Duration, Utc};
 use std::collections::{HashMap, HashSet};
@@ -24,13 +23,13 @@ fn test_sorting_priority_basic() {
 
     // 1 < 9
     assert_eq!(
-        high.compare_with_cutoff(&low, None, 1, 1, 5, 1, false), // Pass defaults
+        high.compare_with_cutoff(&low, &CompareOptions { cutoff: None, urgent_days: 1, urgent_prio: 1, default_priority: 5, start_grace_period_days: 1, sort_standard_by_priority: false }), // Pass defaults
         std::cmp::Ordering::Less
     );
 
     // 1 < 0 (High vs None/Normal)
     assert_eq!(
-        high.compare_with_cutoff(&none, None, 1, 1, 5, 1, false), // Pass defaults
+        high.compare_with_cutoff(&none, &CompareOptions { cutoff: None, urgent_days: 1, urgent_prio: 1, default_priority: 5, start_grace_period_days: 1, sort_standard_by_priority: false }), // Pass defaults
         std::cmp::Ordering::Less
     );
 }
@@ -52,7 +51,7 @@ fn test_sorting_status_trumps_everything() {
     // With the urgency logic, tasks that are urgent may beat started tasks.
     // Expect critical urgent task to sort before active started task here.
     assert_eq!(
-        critical.compare_with_cutoff(&active, None, 1, 1, 5, 1, false),
+        critical.compare_with_cutoff(&active, &CompareOptions { cutoff: None, urgent_days: 1, urgent_prio: 1, default_priority: 5, start_grace_period_days: 1, sort_standard_by_priority: false }),
         std::cmp::Ordering::Less
     );
 }
@@ -69,7 +68,7 @@ fn test_sorting_completed_sinks() {
 
     // Todo should come FIRST (Less), Done should sink (Greater)
     assert_eq!(
-        todo.compare_with_cutoff(&done, None, 1, 1, 5, 1, false),
+        todo.compare_with_cutoff(&done, &CompareOptions { cutoff: None, urgent_days: 1, urgent_prio: 1, default_priority: 5, start_grace_period_days: 1, sort_standard_by_priority: false }),
         std::cmp::Ordering::Less
     );
 }
@@ -89,13 +88,13 @@ fn test_sorting_due_dates() {
 
     // Soon < Later
     assert_eq!(
-        t1.compare_with_cutoff(&t2, None, 1, 1, 5, 1, false),
+        t1.compare_with_cutoff(&t2, &CompareOptions { cutoff: None, urgent_days: 1, urgent_prio: 1, default_priority: 5, start_grace_period_days: 1, sort_standard_by_priority: false }),
         std::cmp::Ordering::Less
     );
 
     // Date < No Date
     assert_eq!(
-        t2.compare_with_cutoff(&t3, None, 1, 1, 5, 1, false),
+        t2.compare_with_cutoff(&t3, &CompareOptions { cutoff: None, urgent_days: 1, urgent_prio: 1, default_priority: 5, start_grace_period_days: 1, sort_standard_by_priority: false }),
         std::cmp::Ordering::Less
     );
 }

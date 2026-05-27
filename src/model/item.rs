@@ -368,6 +368,18 @@ pub struct SortKey {
     pub start: Option<DateType>,
 }
 
+/// Options to parameterize a comparison operation. Using a struct keeps the
+/// signature of `compare_with_cutoff` manageable as the comparison logic
+/// supports multiple global settings.
+pub struct CompareOptions {
+    pub cutoff: Option<DateTime<Utc>>,
+    pub urgent_days: u32,
+    pub urgent_prio: u8,
+    pub default_priority: u8,
+    pub start_grace_period_days: u32,
+    pub sort_standard_by_priority: bool,
+}
+
 /// Comparison helper for sort policies. The ordering decision tree is centralized here
 /// to make ranking behavior deterministic and easy to test.
 ///
@@ -718,31 +730,22 @@ impl Task {
     }
 
     /// Compare taking into account cutoff and other global settings.
-    pub fn compare_with_cutoff(
-        &self,
-        other: &Self,
-        cutoff: Option<DateTime<Utc>>,
-        urgent_days: u32,
-        urgent_prio: u8,
-        default_priority: u8,
-        start_grace_period_days: u32,
-        sort_standard_by_priority: bool,
-    ) -> Ordering {
+    pub fn compare_with_cutoff(&self, other: &Self, opts: &CompareOptions) -> Ordering {
         let eff_blocked_self = self.is_blocked || self.is_implicitly_blocked;
         let eff_blocked_other = other.is_blocked || other.is_implicitly_blocked;
 
         let rank_self = self.calculate_base_rank(
-            cutoff,
-            urgent_days,
-            urgent_prio,
-            start_grace_period_days,
+            opts.cutoff,
+            opts.urgent_days,
+            opts.urgent_prio,
+            opts.start_grace_period_days,
             eff_blocked_self,
         );
         let rank_other = other.calculate_base_rank(
-            cutoff,
-            urgent_days,
-            urgent_prio,
-            start_grace_period_days,
+            opts.cutoff,
+            opts.urgent_days,
+            opts.urgent_prio,
+            opts.start_grace_period_days,
             eff_blocked_other,
         );
         let a = SortKey {
@@ -757,7 +760,7 @@ impl Task {
             due: other.due.clone(),
             start: other.dtstart.clone(),
         };
-        compare_sortkeys(&a, &b, default_priority, sort_standard_by_priority)
+        compare_sortkeys(&a, &b, opts.default_priority, opts.sort_standard_by_priority)
             .then_with(|| self.summary.cmp(&other.summary))
     }
 
