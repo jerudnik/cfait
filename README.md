@@ -360,7 +360,7 @@ Cfait organizes tasks in the following order:
 
 ### 🔀 Sort by Priority (toggle)
 
-Press **`p`** (TUI/GUI) or click the sort icon (GUI toolbar, left of the random-task button) to switch between two sorting modes for the standard and remaining task groups (ranks 4 & 5):
+Press **`Ctrl+P`** (TUI/GUI) to switch between two sorting modes for the standard and remaining task groups (ranks 4 & 5). The toggle can also be set permanently in More settings > Sorting & visibility.
 
 | Mode | Standard tasks (rank 4) | Remaining tasks (rank 5) |
 | :--- | :--- | :--- |
