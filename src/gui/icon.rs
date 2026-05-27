@@ -33,9 +33,10 @@ pub fn parse_icon(s: &str) -> char {
         return s.chars().next().unwrap();
     }
     if let Ok(code) = u32::from_str_radix(s.trim_start_matches("0x").trim_start_matches("U+"), 16)
-        && let Some(c) = std::char::from_u32(code) {
-            return c;
-        }
+        && let Some(c) = std::char::from_u32(code)
+    {
+        return c;
+    }
     '\u{f0fa9}' // default nf-md-clock_check
 }
 
@@ -97,7 +98,6 @@ pub const KEYBOARD: char = '\u{f0313}'; // nf-md-keyboard_variant
 pub const HELP_RHOMBUS: char = '\u{f0625}'; // nf-md-help_circle_outline
 pub const SEARCH_STOP: char = '\u{eb4e}'; // nf-cod-search_stop
 pub const SEARCH: char = '\u{ea6d}'; // nf-cod-search
-pub const SORT_PRIORITY: char = '\u{203c}'; // ‼ exclamation mark (sort by priority toggle)
 
 // Window Controls
 pub const WINDOW_MINIMIZE: char = '\u{f2d1}'; // nf-fa-window_minimize
