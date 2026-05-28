@@ -104,10 +104,12 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
             for cal in &app.calendars {
                 if cal.href.starts_with("local://") {
-                    if let Ok(tasks) = LocalStorage::load_for_href(app.ctx.as_ref(), &cal.href) {
+                    if let Ok(mut tasks) = LocalStorage::load_for_href(app.ctx.as_ref(), &cal.href) {
+                        crate::journal::Journal::apply_to_tasks(app.ctx.as_ref(), &mut tasks, &cal.href);
                         app.store.insert(cal.href.clone(), tasks);
                     }
-                } else if let Ok((tasks, _)) = Cache::load(app.ctx.as_ref(), &cal.href) {
+                } else if let Ok((mut tasks, _)) = Cache::load(app.ctx.as_ref(), &cal.href) {
+                    crate::journal::Journal::apply_to_tasks(app.ctx.as_ref(), &mut tasks, &cal.href);
                     app.store.insert(cal.href.clone(), tasks);
                 }
             }

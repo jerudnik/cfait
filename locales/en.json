@@ -502,7 +502,7 @@
     "tui_caldav_url_prompt": "Server URL (e.g. https://cloud.example.com/remote.php/dav/): ",
     "tui_choice_prompt": "Choice [1]: ",
     "tui_config_saved": "Configuration saved to: %{path}",
-    "tui_desc_editor_help": "Enter: newline | Ctrl+S: save | Esc: cancel",
+    "tui_desc_editor_help": "Enter: newline | Ctrl+S/D or F2: save | Esc: cancel",
     "tui_export_select_source": "Select source local calendar to export from.",
     "tui_fallback_offline": "Falling back to offline mode (saving provided details anyway).",
     "tui_help_actions": "Tab: switch | Up/Dn: scroll | Esc/?: close",

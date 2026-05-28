@@ -210,9 +210,7 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
         state.creating_child_of = None;
     } else {
         // Standard Edit
-        let target_uid: Option<String> = state
-            .editing_index
-            .and_then(|idx| state.get_task_at_index(idx).map(|t| t.uid.clone()));
+        let target_uid: Option<String> = state.editing_uid.clone();
 
         if let Some(uid) = target_uid
             && let Some((t, _)) = state.store.get_task_mut(&uid)
@@ -223,14 +221,9 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
             state.refresh_filtered_view();
             state.mode = InputMode::Normal;
             state.reset_input();
-            let tx = action_tx.clone();
-            tokio::spawn(async move {
-                let _ = tx
-                    .send(Action::PersistBatch(vec![crate::journal::Action::Update(
-                        clone,
-                    )]))
-                    .await;
-            });
+            let _ = action_tx.try_send(Action::PersistBatch(vec![crate::journal::Action::Update(
+                clone,
+            )]));
         }
         state.mode = InputMode::Normal;
         state.reset_input();
@@ -532,14 +525,9 @@ pub async fn handle_key_event(
                         let modified = state.store.apply_alias_retroactively(&key, &tags);
 
                         for t in modified {
-                            let tx = action_tx.clone();
-                            tokio::spawn(async move {
-                                let _ = tx
-                                    .send(Action::PersistBatch(vec![
-                                        crate::journal::Action::Update(t),
-                                    ]))
-                                    .await;
-                            });
+                            let _ = action_tx.try_send(Action::PersistBatch(vec![
+                                crate::journal::Action::Update(t),
+                            ]));
                         }
                     }
                     if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
@@ -634,14 +622,9 @@ pub async fn handle_key_event(
                         state.tag_aliases.insert(k.clone(), v.clone());
                         let modified = state.store.apply_alias_retroactively(&k, &v);
                         for mod_t in modified {
-                            let tx = action_tx.clone();
-                            tokio::spawn(async move {
-                                let _ = tx
-                                    .send(Action::PersistBatch(vec![
-                                        crate::journal::Action::Update(mod_t),
-                                    ]))
-                                    .await;
-                            });
+                            let _ = action_tx.try_send(Action::PersistBatch(vec![
+                                crate::journal::Action::Update(mod_t),
+                            ]));
                         }
                     }
                     if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
@@ -650,9 +633,7 @@ pub async fn handle_key_event(
                     }
                 }
 
-                let target_uid: Option<String> = state
-                    .editing_index
-                    .and_then(|idx| state.get_task_at_index(idx).map(|t| t.uid.clone()));
+                let target_uid: Option<String> = state.editing_uid.clone();
 
                 if let Some(uid) = target_uid
                     && let Some((t, _)) = state.store.get_task_mut(&uid)
@@ -667,15 +648,9 @@ pub async fn handle_key_event(
                     update_alarms(state);
                     state.mode = InputMode::Normal;
                     state.reset_input();
-                    // Send via PersistBatch
-                    let tx = action_tx.clone();
-                    tokio::spawn(async move {
-                        let _ = tx
-                            .send(Action::PersistBatch(vec![crate::journal::Action::Update(
-                                clone,
-                            )]))
-                            .await;
-                    });
+                    let _ = action_tx.try_send(Action::PersistBatch(vec![crate::journal::Action::Update(
+                        clone,
+                    )]));
                 }
                 state.mode = InputMode::Normal;
             }
@@ -694,8 +669,12 @@ pub async fn handle_key_event(
             KeyCode::Enter => {
                 state.enter_char('\n');
             }
-            // Save: Ctrl+S
-            KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            // Save: Ctrl+S, Ctrl+D, F2
+            KeyCode::Char('s') | KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                save_description(state, action_tx);
+                return None;
+            }
+            KeyCode::F(2) => {
                 save_description(state, action_tx);
                 return None;
             }
@@ -1815,7 +1794,7 @@ pub async fn handle_key_event(
                 if let Some(t) = state.get_selected_task() {
                     state.input_buffer = t.to_smart_string();
                     state.cursor_position = state.input_buffer.chars().count();
-                    state.editing_index = state.list_state.selected();
+                    state.editing_uid = Some(t.uid.clone());
                     state.mode = InputMode::Editing;
                 }
             }
@@ -1834,14 +1813,9 @@ pub async fn handle_key_event(
                                 t_mut.sequence += 1;
                                 let clone = t_mut.clone();
                                 state.refresh_filtered_view();
-                                let tx = action_tx.clone();
-                                tokio::spawn(async move {
-                                    let _ = tx
-                                        .send(crate::tui::action::Action::PersistBatch(vec![
-                                            crate::journal::Action::Update(clone),
-                                        ]))
-                                        .await;
-                                });
+                                let _ = action_tx.try_send(crate::tui::action::Action::PersistBatch(vec![
+                                    crate::journal::Action::Update(clone),
+                                ]));
                             }
                             state.needs_redraw = true;
                             return None;
@@ -1852,7 +1826,7 @@ pub async fn handle_key_event(
                             state.cursor_position = state.input_buffer.chars().count();
                             state.edit_scroll_offset = 0;
                             state.edit_scroll_x = 0;
-                            state.editing_index = state.list_state.selected();
+                            state.editing_uid = Some(uid.clone());
                             state.mode = InputMode::EditingDescription;
                         }
                         Err(e) => {
@@ -1862,7 +1836,7 @@ pub async fn handle_key_event(
                             state.cursor_position = state.input_buffer.chars().count();
                             state.edit_scroll_offset = 0;
                             state.edit_scroll_x = 0;
-                            state.editing_index = state.list_state.selected();
+                            state.editing_uid = Some(uid.clone());
                             state.mode = InputMode::EditingDescription;
                             state.needs_redraw = true;
                         }
@@ -1884,15 +1858,9 @@ pub async fn handle_key_event(
                         state.refresh_filtered_view();
                         state.mode = InputMode::Normal;
                         state.reset_input();
-                        // Send via PersistBatch
-                        let tx = action_tx.clone();
-                        tokio::spawn(async move {
-                            let _ = tx
-                                .send(Action::PersistBatch(vec![crate::journal::Action::Update(
-                                    cloned,
-                                )]))
-                                .await;
-                        });
+                        let _ = action_tx.try_send(Action::PersistBatch(vec![crate::journal::Action::Update(
+                            cloned,
+                        )]));
                     }
                 } else {
                     state.message = rust_i18n::t!("error_failed_to_parse_time").to_string();

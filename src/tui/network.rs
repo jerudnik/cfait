@@ -103,10 +103,12 @@ pub async fn run_network_actor(
         // Load tasks for all local calendars
         for cal in &cached_cals {
             if cal.href.starts_with("local://") {
-                if let Ok(tasks) = LocalStorage::load_for_href(ctx.as_ref(), &cal.href) {
+                if let Ok(mut tasks) = LocalStorage::load_for_href(ctx.as_ref(), &cal.href) {
+                    crate::journal::Journal::apply_to_tasks(ctx.as_ref(), &mut tasks, &cal.href);
                     cached_tasks.push((cal.href.clone(), tasks));
                 }
-            } else if let Ok((tasks, _)) = Cache::load(ctx.as_ref(), &cal.href) {
+            } else if let Ok((mut tasks, _)) = Cache::load(ctx.as_ref(), &cal.href) {
+                crate::journal::Journal::apply_to_tasks(ctx.as_ref(), &mut tasks, &cal.href);
                 cached_tasks.push((cal.href.clone(), tasks));
             }
         }
@@ -193,10 +195,12 @@ pub async fn run_network_actor(
     let mut cached_results = Vec::new();
     for cal in &calendars {
         if cal.href.starts_with("local://") {
-            if let Ok(tasks) = LocalStorage::load_for_href(ctx.as_ref(), &cal.href) {
+            if let Ok(mut tasks) = LocalStorage::load_for_href(ctx.as_ref(), &cal.href) {
+                crate::journal::Journal::apply_to_tasks(ctx.as_ref(), &mut tasks, &cal.href);
                 cached_results.push((cal.href.clone(), tasks));
             }
-        } else if let Ok((tasks, _)) = Cache::load(ctx.as_ref(), &cal.href) {
+        } else if let Ok((mut tasks, _)) = Cache::load(ctx.as_ref(), &cal.href) {
+            crate::journal::Journal::apply_to_tasks(ctx.as_ref(), &mut tasks, &cal.href);
             cached_results.push((cal.href.clone(), tasks));
         }
     }
