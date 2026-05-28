@@ -25,6 +25,53 @@ use iced::{Color, Element, Length, Theme, Vector};
 
 pub const COLOR_LOCATION: Color = Color::from_rgb(0.4, 0.4, 0.6);
 
+pub fn is_action_available(
+    action: &crate::config::TaskAction,
+    task: &crate::model::Task,
+    app: &GuiApp,
+) -> bool {
+    let is_done_or_cancelled =
+        task.status.is_done() || task.status == crate::model::TaskStatus::Cancelled;
+    let is_paused = task.is_paused();
+
+    let has_info = !task.description.is_empty()
+        || !task.dependencies.is_empty()
+        || !task.related_to.is_empty()
+        || task.has_blocking_tasks
+        || task.has_related_tasks
+        || task.parent_uid.as_ref().is_some_and(|uid| !uid.is_empty());
+
+    let has_time = !task.sessions.is_empty() || task.time_spent_seconds > 0;
+
+    match action {
+        crate::config::TaskAction::Move => {
+            let enabled_cal_count = app
+                .calendars
+                .iter()
+                .filter(|c| !app.disabled_calendars.contains(&c.href))
+                .count();
+            enabled_cal_count > 1
+        }
+        crate::config::TaskAction::OpenUrl => task.url.is_some(),
+        crate::config::TaskAction::DeleteTree => task.has_subtasks,
+        crate::config::TaskAction::OpenCoordinates => task.geo.is_some(),
+        crate::config::TaskAction::OpenLocations => app.store.count_tree_locations(&task.uid) > 1,
+        crate::config::TaskAction::ToggleDetails => has_info || has_time,
+        crate::config::TaskAction::CompleteAndShift => {
+            task.rrule.is_some() && !is_done_or_cancelled && !task.is_relative_recurrence()
+        }
+        crate::config::TaskAction::Promote => task.parent_uid.is_some(),
+        crate::config::TaskAction::Yank => app.yanked_uid.is_none(),
+        crate::config::TaskAction::StopTimer => {
+            task.status == crate::model::TaskStatus::InProcess || is_paused
+        }
+        crate::config::TaskAction::ToggleTimer
+        | crate::config::TaskAction::AddSession
+        | crate::config::TaskAction::Cancel => !is_done_or_cancelled,
+        _ => true,
+    }
+}
+
 pub fn tooltip_style(theme: &Theme) -> container::Style {
     let palette = theme.extended_palette();
     container::Style {
@@ -317,68 +364,20 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             }
         };
 
-        let has_info = !task.description.is_empty()
-            || !task.dependencies.is_empty()
-            || task.has_blocking_tasks;
-        let has_time = !task.sessions.is_empty() || task.time_spent_seconds > 0;
-
         let build_btn = |action: &TaskAction| -> Option<Element<'_, Message>> {
             let idx = app.find_task_index_by_uid(uid).unwrap();
-            let is_done_or_cancelled = task.status == crate::model::TaskStatus::Completed
-                || task.status == crate::model::TaskStatus::Cancelled;
 
-            let enabled_cal_count = app
-                .calendars
-                .iter()
-                .filter(|c| !app.disabled_calendars.contains(&c.href))
-                .count();
+            if !crate::gui::view::is_action_available(action, task, app) {
+                return None;
+            }
 
-            // <--- ADD THIS BLOCK --->
-            if *action == TaskAction::Move && enabled_cal_count <= 1 {
-                return None;
-            }
-            // <--- END ADD BLOCK --->
-
-            if *action == TaskAction::OpenUrl && task.url.is_none() {
-                return None;
-            }
-            if *action == TaskAction::DeleteTree && !task.has_subtasks {
-                return None;
-            }
-            if *action == TaskAction::OpenCoordinates && task.geo.is_none() {
-                return None;
-            }
-            if *action == TaskAction::OpenLocations
-                && app.store.count_tree_locations(&task.uid) <= 1
-            {
-                return None;
-            }
-            if *action == TaskAction::ToggleDetails && !(has_info || has_time) {
-                return None;
-            }
-            if *action == TaskAction::CompleteAndShift
-                && (task.rrule.is_none() || is_done_or_cancelled || task.is_relative_recurrence())
-            {
-                return None;
-            }
-            if *action == TaskAction::Promote && task.parent_uid.is_none() {
-                return None;
-            }
-            if *action == TaskAction::Yank && app.yanked_uid.is_some() {
-                return None;
-            }
-            if *action == TaskAction::StopTimer
-                && !(task.status == crate::model::TaskStatus::InProcess || task.is_paused())
-            {
-                return None;
-            }
-            if (*action == TaskAction::ToggleTimer
-                || *action == TaskAction::AddSession
-                || *action == TaskAction::Cancel)
-                && is_done_or_cancelled
-            {
-                return None;
-            }
+            let has_info = !task.description.is_empty()
+                || !task.dependencies.is_empty()
+                || !task.related_to.is_empty()
+                || task.has_blocking_tasks
+                || task.has_related_tasks
+                || task.parent_uid.as_ref().is_some_and(|uid| !uid.is_empty());
+            let has_time = !task.sessions.is_empty() || task.time_spent_seconds > 0;
 
             let mut label = action.label();
             if *action == TaskAction::DuplicateTree && !task.has_subtasks {

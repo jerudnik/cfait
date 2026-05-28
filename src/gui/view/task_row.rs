@@ -132,7 +132,6 @@ pub fn view_task_row<'a>(
             let visible_tags = &task.visible_categories;
             let visible_location = &task.visible_location;
 
-            let is_done = task.status.is_done();
             let is_paused = task.is_paused();
 
             let has_active_alarm = task.alarms.iter().any(|a| a.acknowledged.is_none());
@@ -752,44 +751,7 @@ pub fn view_task_row<'a>(
                 if !app.pinned_actions.contains(action) {
                     continue;
                 }
-                let is_done_or_cancelled = is_done;
-
-                if *action == TaskAction::OpenUrl && task.url.is_none() {
-                    continue;
-                }
-                if *action == TaskAction::ToggleDetails && !(has_info || has_time) {
-                    continue;
-                }
-                if *action == TaskAction::CompleteAndShift && (task.rrule.is_none() || is_done_or_cancelled || task.is_relative_recurrence()) {
-                    continue;
-                }
-                if *action == TaskAction::DeleteTree && !has_subtasks {
-                    continue;
-                }
-                if *action == TaskAction::OpenCoordinates && task.geo.is_none() {
-                    continue;
-                }
-                if *action == TaskAction::OpenLocations
-                    && app.store.count_tree_locations(&task.uid) <= 1
-                {
-                    continue;
-                }
-                if *action == TaskAction::Promote && task.parent_uid.is_none() {
-                    continue;
-                }
-                if *action == TaskAction::Yank && app.yanked_uid.is_some() {
-                    continue;
-                }
-                if *action == TaskAction::StopTimer
-                    && !(task.status == crate::model::TaskStatus::InProcess || is_paused)
-                {
-                    continue;
-                }
-                if (*action == TaskAction::ToggleTimer
-                    || *action == TaskAction::AddSession
-                    || *action == TaskAction::Cancel)
-                    && is_done_or_cancelled
-                {
+                if !crate::gui::view::is_action_available(action, task, app) {
                     continue;
                 }
 
