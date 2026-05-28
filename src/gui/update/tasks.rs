@@ -12,30 +12,58 @@ use iced::Task;
 use iced::widget::text_editor;
 
 fn dispatch_and_maintain_selection(app: &mut GuiApp, intent: AppIntent, focus_uid: &str) {
+    let was_selected = app.selected_uid.as_deref() == Some(focus_uid);
     let old_idx = app.find_task_index_by_uid(focus_uid);
+    
     common::dispatch_intent(app, intent);
-    if let Some(idx) = old_idx
-        && app.find_task_index_by_uid(focus_uid).is_none() {
-            let new_idx = idx.min(app.tasks.len().saturating_sub(1));
-            let mut fallback = None;
-            for i in new_idx..app.tasks.len() {
-                if let Some(t) = app.get_task_at_index(i) {
-                    fallback = Some(t.uid.clone());
-                    break;
-                }
-            }
-            if fallback.is_none() {
-                for i in (0..new_idx).rev() {
+    
+    if was_selected
+        && let Some(idx) = old_idx
+            && app.find_task_index_by_uid(focus_uid).is_none() {
+                let new_idx = idx.min(app.tasks.len().saturating_sub(1));
+                let mut fallback = None;
+                for i in new_idx..app.tasks.len() {
                     if let Some(t) = app.get_task_at_index(i) {
                         fallback = Some(t.uid.clone());
                         break;
                     }
                 }
+                if fallback.is_none() {
+                    for i in (0..new_idx).rev() {
+                        if let Some(t) = app.get_task_at_index(i) {
+                            fallback = Some(t.uid.clone());
+                            break;
+                        }
+                    }
+                }
+                if fallback.is_some() {
+                    app.selected_uid = fallback;
+                }
             }
-            if fallback.is_some() {
-                app.selected_uid = fallback;
+}
+
+/// Dispatch an intent that re-sorts the focused task, then keep selection on the row below it instead of following that task.
+fn dispatch_and_select_next_row(app: &mut GuiApp, intent: AppIntent, uid: String) {
+    let was_selected = app.selected_uid.as_ref() == Some(&uid);
+    
+    let next_uid = if was_selected {
+        app.find_task_index_by_uid(&uid)
+            .and_then(|idx| {
+                app.get_task_at_index(idx + 1)
+                   .or_else(|| if idx > 0 { app.get_task_at_index(idx - 1) } else { None })
+            })
+            .map(|task| task.uid.clone())
+    } else {
+        None
+    };
+
+    dispatch_and_maintain_selection(app, intent, &uid);
+
+    if was_selected
+        && let Some(next_uid) = next_uid
+            && app.find_task_index_by_uid(&next_uid).is_some() {
+                app.selected_uid = Some(next_uid);
             }
-        }
 }
 
 pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
@@ -121,28 +149,32 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
 
         Message::ToggleTaskShift(uid) => {
-            dispatch_and_maintain_selection(app, AppIntent::ToggleTaskShift { uid: uid.clone() }, &uid);
+            dispatch_and_select_next_row(app, AppIntent::ToggleTaskShift { uid: uid.clone() }, uid);
             Task::none()
         }
 
         Message::ToggleTaskShiftSelected => {
             if let Some(uid) = app.selected_uid.clone() {
-                dispatch_and_maintain_selection(app, AppIntent::ToggleTaskShift { uid: uid.clone() }, &uid);
+                dispatch_and_select_next_row(app, AppIntent::ToggleTaskShift { uid: uid.clone() }, uid);
             }
             Task::none()
         }
 
         Message::ToggleTask(index, _) => {
-            let data = app.get_task_at_index(index).map(|t| (t.uid.clone(), t.etag == "pending_refresh"));
-            if let Some((uid, is_pending)) = data {
+            let data = app.get_task_at_index(index).map(|t| (t.uid.clone(), t.etag == "pending_refresh", t.status.is_done()));
+            if let Some((uid, is_pending, is_done)) = data {
                 if is_pending {
                     return Task::none();
                 }
-                dispatch_and_maintain_selection(
-                    app,
-                    AppIntent::ToggleTask { uid: uid.clone() },
-                    &uid
-                );
+                if is_done {
+                    dispatch_and_maintain_selection(
+                        app,
+                        AppIntent::ToggleTask { uid: uid.clone() },
+                        &uid
+                    );
+                } else {
+                    dispatch_and_select_next_row(app, AppIntent::ToggleTask { uid: uid.clone() }, uid);
+                }
             }
             Task::none()
         }
@@ -367,7 +399,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
         Message::CancelSelected => {
             if let Some(uid) = app.selected_uid.clone() {
-                dispatch_and_maintain_selection(app, AppIntent::CancelTask { uid: uid.clone() }, &uid);
+                dispatch_and_select_next_row(app, AppIntent::CancelTask { uid: uid.clone() }, uid);
             }
             Task::none()
         }
@@ -397,9 +429,9 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             if let Some(uid) = app.get_task_at_index(index).map(|t| t.uid.clone()) {
                 app.selected_uid = Some(uid.clone());
                 if new_status == crate::model::TaskStatus::Cancelled {
-                    dispatch_and_maintain_selection(app, AppIntent::CancelTask { uid: uid.clone() }, &uid);
+                    dispatch_and_select_next_row(app, AppIntent::CancelTask { uid: uid.clone() }, uid);
                 } else if new_status.is_done() {
-                    dispatch_and_maintain_selection(app, AppIntent::ToggleTask { uid: uid.clone() }, &uid);
+                    dispatch_and_select_next_row(app, AppIntent::ToggleTask { uid: uid.clone() }, uid);
                 }
             }
             Task::none()
@@ -659,7 +691,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 if task.etag == "pending_refresh" {
                     return Task::none();
                 }
-                dispatch_and_maintain_selection(app, AppIntent::ToggleTask { uid: t_uid.clone() }, &t_uid);
+                dispatch_and_select_next_row(app, AppIntent::ToggleTask { uid: t_uid.clone() }, t_uid.clone());
             }
             Task::none()
         }
@@ -669,7 +701,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 .retain(|(t, a)| !(t.uid == t_uid && a.uid == a_uid));
 
             if app.find_task_index_by_uid(&t_uid).is_some() {
-                dispatch_and_maintain_selection(app, AppIntent::CancelTask { uid: t_uid.clone() }, &t_uid);
+                dispatch_and_select_next_row(app, AppIntent::CancelTask { uid: t_uid.clone() }, t_uid.clone());
             }
             Task::none()
         }
