@@ -23,7 +23,12 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             let locals = LocalCalendarRegistry::load(app.ctx.as_ref()).unwrap_or_default();
             app.local_cals_editing = locals.clone();
 
-            app.remote_cals_editing = app.calendars.iter().filter(|c| !c.href.starts_with("local://")).cloned().collect();
+            app.remote_cals_editing = app
+                .calendars
+                .iter()
+                .filter(|c| !c.href.starts_with("local://"))
+                .cloned()
+                .collect();
 
             app.hidden_calendars = config.hidden_calendars.clone().into_iter().collect();
             app.disabled_calendars = config.disabled_calendars.clone().into_iter().collect();
@@ -205,7 +210,12 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.ob_user = cfg.username.clone();
             // app.ob_pass is already securely held in memory from startup
 
-            app.remote_cals_editing = app.calendars.iter().filter(|c| !c.href.starts_with("local://")).cloned().collect();
+            app.remote_cals_editing = app
+                .calendars
+                .iter()
+                .filter(|c| !c.href.starts_with("local://"))
+                .cloned()
+                .collect();
 
             let mut target_href = cfg.default_calendar.clone();
             if let Some(ref def) = target_href
@@ -805,7 +815,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
         Message::SubmitColorPicker(color) => {
             if let Some(active_href) = &app.color_picker_active_href.clone() {
-                if let Some(cal) = app.local_cals_editing.iter_mut().find(|c| c.href == *active_href)
+                if let Some(cal) = app
+                    .local_cals_editing
+                    .iter_mut()
+                    .find(|c| c.href == *active_href)
                 {
                     let r = (color.r * 255.0) as u8;
                     let g = (color.g * 255.0) as u8;
@@ -814,11 +827,17 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                     cal.color = Some(hex.clone());
                     let _ = LocalCalendarRegistry::save(app.ctx.as_ref(), &app.local_cals_editing);
 
-                    if let Some(main_cal) = app.calendars.iter_mut().find(|c| c.href == *active_href) {
+                    if let Some(main_cal) =
+                        app.calendars.iter_mut().find(|c| c.href == *active_href)
+                    {
                         main_cal.color = Some(hex.clone());
                     }
                 }
-                if let Some(cal) = app.remote_cals_editing.iter_mut().find(|c| c.href == *active_href) {
+                if let Some(cal) = app
+                    .remote_cals_editing
+                    .iter_mut()
+                    .find(|c| c.href == *active_href)
+                {
                     let r = (color.r * 255.0) as u8;
                     let g = (color.g * 255.0) as u8;
                     let b = (color.b * 255.0) as u8;
@@ -848,30 +867,45 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
         Message::SubmitRemoteCalendar(href) => {
             if let Some(cal) = app.remote_cals_editing.iter().find(|c| c.href == href)
-                && let Some(client) = &app.client {
-                    let name = cal.name.clone();
-                    let color = cal.color.clone();
-                    let old_href = href.clone();
-                    app.loading = true;
-                    if href.starts_with("new_remote_") {
-                        return Task::perform(
-                            async_create_remote_calendar_wrapper(client.clone(), name, color),
-                            move |res| Message::RemoteCalendarCreated(old_href.clone(), res.map_err(|e| e.to_string())),
-                        );
-                    } else {
-                        let h = href.clone();
-                        return Task::perform(
-                            async_update_remote_calendar_wrapper(client.clone(), h, name, color),
-                            move |res| Message::RemoteCalendarUpdated(old_href.clone(), res.map_err(|e| e.to_string())),
-                        );
-                    }
+                && let Some(client) = &app.client
+            {
+                let name = cal.name.clone();
+                let color = cal.color.clone();
+                let old_href = href.clone();
+                app.loading = true;
+                if href.starts_with("new_remote_") {
+                    return Task::perform(
+                        async_create_remote_calendar_wrapper(client.clone(), name, color),
+                        move |res| {
+                            Message::RemoteCalendarCreated(
+                                old_href.clone(),
+                                res.map_err(|e| e.to_string()),
+                            )
+                        },
+                    );
+                } else {
+                    let h = href.clone();
+                    return Task::perform(
+                        async_update_remote_calendar_wrapper(client.clone(), h, name, color),
+                        move |res| {
+                            Message::RemoteCalendarUpdated(
+                                old_href.clone(),
+                                res.map_err(|e| e.to_string()),
+                            )
+                        },
+                    );
                 }
+            }
             Task::none()
         }
         Message::RemoteCalendarCreated(old_href, Ok(new_href)) => {
             app.loading = false;
             app.error_msg = Some(rust_i18n::t!("collection_created").to_string());
-            if let Some(cal) = app.remote_cals_editing.iter_mut().find(|c| c.href == old_href) {
+            if let Some(cal) = app
+                .remote_cals_editing
+                .iter_mut()
+                .find(|c| c.href == old_href)
+            {
                 cal.href = new_href.clone();
                 app.calendars.push(cal.clone()); // Optimistic update
             }
@@ -882,7 +916,8 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.loading = false;
             app.error_msg = Some(rust_i18n::t!("collection_updated").to_string());
             if let Some(cal) = app.remote_cals_editing.iter().find(|c| c.href == href)
-                && let Some(main_cal) = app.calendars.iter_mut().find(|c| c.href == href) {
+                && let Some(main_cal) = app.calendars.iter_mut().find(|c| c.href == href)
+            {
                 main_cal.name = cal.name.clone();
                 main_cal.color = cal.color.clone();
             }
@@ -901,7 +936,12 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.ics_import_file_path = Some(file_path);
             app.ics_import_content = Some(content);
             app.ics_import_task_count = Some(task_count);
-            app.ics_import_selected_calendar = app.calendars.iter().filter(|c| !app.disabled_calendars.contains(&c.href)).map(|c| c.href.clone()).next();
+            app.ics_import_selected_calendar = app
+                .calendars
+                .iter()
+                .filter(|c| !app.disabled_calendars.contains(&c.href))
+                .map(|c| c.href.clone())
+                .next();
 
             Task::none()
         }

@@ -39,9 +39,10 @@ impl TaskController {
         for action in actions {
             // Prevent Data-Loss: Ensure Trash calendar is registered on disk during a trash-create event
             if let Action::Create(ref t) | Action::Update(ref t) = action
-                && t.calendar_href == crate::storage::LOCAL_TRASH_HREF {
-                    let _ = LocalCalendarRegistry::ensure_trash_calendar_exists(self.ctx.as_ref());
-                }
+                && t.calendar_href == crate::storage::LOCAL_TRASH_HREF
+            {
+                let _ = LocalCalendarRegistry::ensure_trash_calendar_exists(self.ctx.as_ref());
+            }
 
             let is_local = match &action {
                 Action::Create(t) | Action::Update(t) | Action::Delete(t) => {
@@ -54,29 +55,47 @@ impl TaskController {
                 match &action {
                     Action::Create(t) | Action::Update(t) => {
                         let task_clone = t.clone();
-                        let _ = LocalStorage::modify_for_href(self.ctx.as_ref(), &t.calendar_href, |all| {
-                            if let Some(idx) = all.iter().position(|item| item.uid == task_clone.uid) {
-                                all[idx] = task_clone;
-                            } else {
-                                all.push(task_clone);
-                            }
-                        });
+                        let _ = LocalStorage::modify_for_href(
+                            self.ctx.as_ref(),
+                            &t.calendar_href,
+                            |all| {
+                                if let Some(idx) =
+                                    all.iter().position(|item| item.uid == task_clone.uid)
+                                {
+                                    all[idx] = task_clone;
+                                } else {
+                                    all.push(task_clone);
+                                }
+                            },
+                        );
                     }
                     Action::Delete(t) => {
-                        let _ = LocalStorage::modify_for_href(self.ctx.as_ref(), &t.calendar_href, |all| {
-                            all.retain(|item| item.uid != t.uid);
-                        });
+                        let _ = LocalStorage::modify_for_href(
+                            self.ctx.as_ref(),
+                            &t.calendar_href,
+                            |all| {
+                                all.retain(|item| item.uid != t.uid);
+                            },
+                        );
                     }
                     Action::Move(t, target_href) => {
-                        let _ = LocalStorage::modify_for_href(self.ctx.as_ref(), &t.calendar_href, |all| {
-                            all.retain(|item| item.uid != t.uid);
-                        });
+                        let _ = LocalStorage::modify_for_href(
+                            self.ctx.as_ref(),
+                            &t.calendar_href,
+                            |all| {
+                                all.retain(|item| item.uid != t.uid);
+                            },
+                        );
                         if target_href.starts_with("local://") {
                             let mut moved = t.clone();
                             moved.calendar_href = target_href.clone();
-                            let _ = LocalStorage::modify_for_href(self.ctx.as_ref(), target_href, |all| {
-                                all.push(moved);
-                            });
+                            let _ = LocalStorage::modify_for_href(
+                                self.ctx.as_ref(),
+                                target_href,
+                                |all| {
+                                    all.push(moved);
+                                },
+                            );
                         }
                     }
                 }
@@ -97,18 +116,22 @@ impl TaskController {
                     Action::Move(t, _) => &t.uid,
                 };
                 if let Some((existing, _)) = store.get_task_mut(uid)
-                    && existing.etag.is_empty() {
-                        existing.etag = "pending_refresh".to_string();
-                    }
+                    && existing.etag.is_empty()
+                {
+                    existing.etag = "pending_refresh".to_string();
+                }
             }
         }
 
         Journal::modify(self.ctx.as_ref(), |queue| {
             queue.extend(remote_actions);
-            let mut tmp_j = Journal { queue: std::mem::take(queue) };
+            let mut tmp_j = Journal {
+                queue: std::mem::take(queue),
+            };
             tmp_j.compact();
             *queue = tmp_j.queue;
-        }).map_err(|e| e.to_string())?;
+        })
+        .map_err(|e| e.to_string())?;
 
         Ok(())
     }
@@ -159,7 +182,9 @@ impl TaskController {
             task.href = full_href;
         }
         self.store.lock().await.add_task(task.clone());
-        let _ = self.persist_changes(vec![Action::Create(task.clone())]).await;
+        let _ = self
+            .persist_changes(vec![Action::Create(task.clone())])
+            .await;
         Ok(task.uid)
     }
 

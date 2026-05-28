@@ -292,7 +292,8 @@ pub async fn handle_key_event(
                 if !new_aliases.is_empty() {
                     for (key, tags) in new_aliases {
                         if let Err(e) = validate_alias_integrity(&key, &tags, &state.tag_aliases) {
-                            state.message = rust_i18n::t!("error_general", error = e.to_string()).to_string();
+                            state.message =
+                                rust_i18n::t!("error_general", error = e.to_string()).to_string();
                             return None;
                         }
 
@@ -302,7 +303,11 @@ pub async fn handle_key_event(
                         for t in modified {
                             let tx = action_tx.clone();
                             tokio::spawn(async move {
-                                let _ = tx.send(Action::PersistBatch(vec![crate::journal::Action::Update(t)])).await;
+                                let _ = tx
+                                    .send(Action::PersistBatch(vec![
+                                        crate::journal::Action::Update(t),
+                                    ]))
+                                    .await;
                             });
                         }
                     }
@@ -358,7 +363,9 @@ pub async fn handle_key_event(
                     state.mode = InputMode::Normal;
                     state.reset_input();
                     state.creating_child_of = None;
-                    return Some(Action::PersistBatch(vec![crate::journal::Action::Create(task)]));
+                    return Some(Action::PersistBatch(vec![crate::journal::Action::Create(
+                        task,
+                    )]));
                 }
                 state.message = if state.local_mode_enabled {
                     rust_i18n::t!("error_no_calendar_available").to_string()
@@ -388,7 +395,8 @@ pub async fn handle_key_event(
                 if !new_aliases.is_empty() {
                     for (k, v) in new_aliases {
                         if let Err(e) = validate_alias_integrity(&k, &v, &state.tag_aliases) {
-                            state.message = rust_i18n::t!("error_general", error = e.to_string()).to_string();
+                            state.message =
+                                rust_i18n::t!("error_general", error = e.to_string()).to_string();
                             return None;
                         }
 
@@ -397,7 +405,11 @@ pub async fn handle_key_event(
                         for mod_t in modified {
                             let tx = action_tx.clone();
                             tokio::spawn(async move {
-                                let _ = tx.send(Action::PersistBatch(vec![crate::journal::Action::Update(mod_t)])).await;
+                                let _ = tx
+                                    .send(Action::PersistBatch(vec![
+                                        crate::journal::Action::Update(mod_t),
+                                    ]))
+                                    .await;
                             });
                         }
                     }
@@ -427,7 +439,11 @@ pub async fn handle_key_event(
                     // Send via PersistBatch
                     let tx = action_tx.clone();
                     tokio::spawn(async move {
-                        let _ = tx.send(Action::PersistBatch(vec![crate::journal::Action::Update(clone)])).await;
+                        let _ = tx
+                            .send(Action::PersistBatch(vec![crate::journal::Action::Update(
+                                clone,
+                            )]))
+                            .await;
                     });
                 }
                 state.mode = InputMode::Normal;
@@ -512,7 +528,11 @@ pub async fn handle_key_event(
                     tokio::spawn({
                         let tx = action_tx.clone();
                         async move {
-                            let _ = tx.send(Action::PersistBatch(vec![crate::journal::Action::Create(parent)])).await;
+                            let _ = tx
+                                .send(Action::PersistBatch(vec![crate::journal::Action::Create(
+                                    parent,
+                                )]))
+                                .await;
                         }
                     });
 
@@ -540,7 +560,11 @@ pub async fn handle_key_event(
                         tokio::spawn({
                             let tx = action_tx.clone();
                             async move {
-                                let _ = tx.send(Action::PersistBatch(vec![crate::journal::Action::Create(sub)])).await;
+                                let _ = tx
+                                    .send(Action::PersistBatch(vec![
+                                        crate::journal::Action::Create(sub),
+                                    ]))
+                                    .await;
                             }
                         });
                     }
@@ -578,7 +602,11 @@ pub async fn handle_key_event(
                         // Send via PersistBatch
                         let tx = action_tx.clone();
                         tokio::spawn(async move {
-                            let _ = tx.send(Action::PersistBatch(vec![crate::journal::Action::Update(clone)])).await;
+                            let _ = tx
+                                .send(Action::PersistBatch(vec![crate::journal::Action::Update(
+                                    clone,
+                                )]))
+                                .await;
                         });
                     }
                     state.mode = InputMode::Normal;
@@ -1038,7 +1066,10 @@ pub async fn handle_key_event(
             KeyCode::Char('+') => {
                 if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone()) {
                     let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                    let intent = AppIntent::ChangePriority { uid: uid.clone(), delta: 1 };
+                    let intent = AppIntent::ChangePriority {
+                        uid: uid.clone(),
+                        delta: 1,
+                    };
 
                     let actions = state.store.apply_task_intent(&intent, &config);
                     state.refresh_filtered_view();
@@ -1053,7 +1084,10 @@ pub async fn handle_key_event(
             KeyCode::Char('-') => {
                 if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone()) {
                     let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                    let intent = AppIntent::ChangePriority { uid: uid.clone(), delta: -1 };
+                    let intent = AppIntent::ChangePriority {
+                        uid: uid.clone(),
+                        delta: -1,
+                    };
 
                     let actions = state.store.apply_task_intent(&intent, &config);
                     state.refresh_filtered_view();
@@ -1095,7 +1129,10 @@ pub async fn handle_key_event(
 
                 if let Some((child_uid, parent_uid)) = data {
                     let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                    let intent = AppIntent::MakeChild { uid: child_uid.clone(), parent_uid: parent_uid.clone() };
+                    let intent = AppIntent::MakeChild {
+                        uid: child_uid.clone(),
+                        parent_uid: parent_uid.clone(),
+                    };
 
                     let actions = state.store.apply_task_intent(&intent, &config);
                     state.yanked_uid = None;
@@ -1135,8 +1172,7 @@ pub async fn handle_key_event(
                     state.creating_with_desc = false;
                     state.new_task_title.clear();
                     state.creating_child_of = Some(uid);
-                    state.message =
-                        rust_i18n::t!("new_child_of", name = summary).to_string();
+                    state.message = rust_i18n::t!("new_child_of", name = summary).to_string();
                 }
             }
             KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -1296,7 +1332,10 @@ pub async fn handle_key_event(
                         state.message = rust_i18n::t!("error_cannot_depend_on_self").to_string();
                     } else {
                         let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                        let intent = AppIntent::AddDependency { uid: curr_uid.clone(), blocker_uid: yanked_uid.clone() };
+                        let intent = AppIntent::AddDependency {
+                            uid: curr_uid.clone(),
+                            blocker_uid: yanked_uid.clone(),
+                        };
 
                         let actions = state.store.apply_task_intent(&intent, &config);
                         state.yanked_uid = None;
@@ -1324,7 +1363,10 @@ pub async fn handle_key_event(
                         state.message = rust_i18n::t!("error_cannot_relate_to_self").to_string();
                     } else {
                         let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                        let intent = AppIntent::AddRelatedTo { uid: curr_uid.clone(), related_uid: yanked_uid.clone() };
+                        let intent = AppIntent::AddRelatedTo {
+                            uid: curr_uid.clone(),
+                            related_uid: yanked_uid.clone(),
+                        };
 
                         let actions = state.store.apply_task_intent(&intent, &config);
                         state.yanked_uid = None;
@@ -1351,7 +1393,10 @@ pub async fn handle_key_event(
                     let parent_uid = parent_task.uid.clone();
                     let current_uid = current_task.uid.clone();
                     let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                    let intent = AppIntent::MakeChild { uid: current_uid.clone(), parent_uid: parent_uid.clone() };
+                    let intent = AppIntent::MakeChild {
+                        uid: current_uid.clone(),
+                        parent_uid: parent_uid.clone(),
+                    };
 
                     let actions = state.store.apply_task_intent(&intent, &config);
                     state.refresh_filtered_view();
@@ -1504,8 +1549,7 @@ pub async fn handle_key_event(
                         state.relationship_items = items;
                         state.relationship_selection_state.select(Some(0));
                         state.mode = InputMode::RelationshipBrowsing;
-                        state.message =
-                            rust_i18n::t!("tui_select_task_jump").to_string();
+                        state.message = rust_i18n::t!("tui_select_task_jump").to_string();
                     } else {
                         state.message = rust_i18n::t!("error_no_related_tasks").to_string();
                     }
@@ -1723,7 +1767,11 @@ pub async fn handle_key_event(
                         // Send via PersistBatch
                         let tx = action_tx.clone();
                         tokio::spawn(async move {
-                            let _ = tx.send(Action::PersistBatch(vec![crate::journal::Action::Update(cloned)])).await;
+                            let _ = tx
+                                .send(Action::PersistBatch(vec![crate::journal::Action::Update(
+                                    cloned,
+                                )]))
+                                .await;
                         });
                     }
                 } else {
@@ -1776,7 +1824,11 @@ pub async fn handle_key_event(
                     // Send via PersistBatch
                     let tx = action_tx.clone();
                     tokio::spawn(async move {
-                        let _ = tx.send(Action::PersistBatch(vec![crate::journal::Action::Update(cloned)])).await;
+                        let _ = tx
+                            .send(Action::PersistBatch(vec![crate::journal::Action::Update(
+                                cloned,
+                            )]))
+                            .await;
                     });
                 }
             }
@@ -1806,7 +1858,10 @@ pub async fn handle_key_event(
 
                 if let Some((uid, target_href)) = data {
                     let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                    let intent = AppIntent::MoveTask { uid: uid.clone(), target_href: target_href.clone() };
+                    let intent = AppIntent::MoveTask {
+                        uid: uid.clone(),
+                        target_href: target_href.clone(),
+                    };
 
                     let actions = state.store.apply_task_intent(&intent, &config);
                     state.refresh_filtered_view();

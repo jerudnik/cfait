@@ -43,7 +43,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             // We only need to trigger a heavy UI rebuild if a completely new task
             // was introduced (like a Conflict Copy), otherwise ETags updating in the
             // background are invisible to the user.
-            if synced_tasks.iter().any(|t| t.summary.ends_with("(Conflict Copy)")) {
+            if synced_tasks
+                .iter()
+                .any(|t| t.summary.ends_with("(Conflict Copy)"))
+            {
                 crate::gui::update::common::refresh_filtered_tasks(app);
             }
 
@@ -207,8 +210,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                                 );
                                 app.store.insert(cal.href.clone(), tasks);
                             }
-                        } else if let Ok((mut tasks, _)) =
-                            Cache::load(app.ctx.as_ref(), &cal.href)
+                        } else if let Ok((mut tasks, _)) = Cache::load(app.ctx.as_ref(), &cal.href)
                         {
                             crate::journal::Journal::apply_to_tasks(
                                 app.ctx.as_ref(),

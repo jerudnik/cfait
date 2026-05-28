@@ -62,11 +62,17 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
         if rest.starts_with("- ") || rest.starts_with("* ") || rest.starts_with("+ ") {
             let after_marker = &rest[2..];
             if let Some(stripped) = after_marker.strip_prefix("[ ] ") {
-                is_task = true; is_completed = false; raw_text = stripped;
+                is_task = true;
+                is_completed = false;
+                raw_text = stripped;
             } else if let Some(stripped) = after_marker.strip_prefix("[x] ") {
-                is_task = true; is_completed = true; raw_text = stripped;
+                is_task = true;
+                is_completed = true;
+                raw_text = stripped;
             } else if let Some(stripped) = after_marker.strip_prefix("[X] ") {
-                is_task = true; is_completed = true; raw_text = stripped;
+                is_task = true;
+                is_completed = true;
+                raw_text = stripped;
             }
         } else {
             // Check for numbered lists (e.g., "1. [ ] ")
@@ -81,11 +87,20 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
             if digit_bytes > 0 && rest[digit_bytes..].starts_with(". ") {
                 let after_marker = &rest[digit_bytes + 2..];
                 if let Some(stripped) = after_marker.strip_prefix("[ ] ") {
-                    is_task = true; is_numbered = true; is_completed = false; raw_text = stripped;
+                    is_task = true;
+                    is_numbered = true;
+                    is_completed = false;
+                    raw_text = stripped;
                 } else if let Some(stripped) = after_marker.strip_prefix("[x] ") {
-                    is_task = true; is_numbered = true; is_completed = true; raw_text = stripped;
+                    is_task = true;
+                    is_numbered = true;
+                    is_completed = true;
+                    raw_text = stripped;
                 } else if let Some(stripped) = after_marker.strip_prefix("[X] ") {
-                    is_task = true; is_numbered = true; is_completed = true; raw_text = stripped;
+                    is_task = true;
+                    is_numbered = true;
+                    is_completed = true;
+                    raw_text = stripped;
                 }
             }
         }
@@ -127,7 +142,6 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
                 is_completed,
             });
             active_task_idx = Some(extracted.len() - 1);
-
         } else {
             // Not a task line. Append it to the relevant description.
             if indent == 0 {
@@ -143,7 +157,9 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
                 cleaned_root_desc.push('\n');
             } else if let Some(idx) = active_task_idx {
                 // Belongs to the active subtask's notes
-                if !extracted[idx].description.is_empty() && !extracted[idx].description.ends_with('\n') {
+                if !extracted[idx].description.is_empty()
+                    && !extracted[idx].description.ends_with('\n')
+                {
                     extracted[idx].description.push('\n');
                 }
                 extracted[idx].description.push_str(rest);

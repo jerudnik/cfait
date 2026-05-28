@@ -66,7 +66,10 @@ fn resolve_uid(store: &TaskStore, partial: &str) -> Option<String> {
     match matches.len() {
         1 => Some(matches.into_iter().next().unwrap()),
         0 => {
-            eprintln!("{}", rust_i18n::t!("error_no_task_matches_uid", uid = partial));
+            eprintln!(
+                "{}",
+                rust_i18n::t!("error_no_task_matches_uid", uid = partial)
+            );
             None
         }
         _ => {
@@ -172,7 +175,14 @@ async fn main() -> Result<()> {
                 None
             };
             let ics_content = std::fs::read_to_string(file_path).unwrap_or_else(|e| {
-                eprintln!("{}", rust_i18n::t!("error_reading_file", path = file_path, error = e.to_string()));
+                eprintln!(
+                    "{}",
+                    rust_i18n::t!(
+                        "error_reading_file",
+                        path = file_path,
+                        error = e.to_string()
+                    )
+                );
                 std::process::exit(1);
             });
             let href = if let Some(col_id) = collection_id {
@@ -267,7 +277,10 @@ async fn main() -> Result<()> {
                             .await;
                         }
                         Ok(None) => {}
-                        Err(e) => eprintln!("{}", rust_i18n::t!("daemon_lock_failed", error = e.to_string())),
+                        Err(e) => eprintln!(
+                            "{}",
+                            rust_i18n::t!("daemon_lock_failed", error = e.to_string())
+                        ),
                     }
                 }
                 tokio::time::sleep(tokio::time::Duration::from_secs(interval as u64 * 60)).await;
@@ -341,12 +354,18 @@ async fn main() -> Result<()> {
                 .map_err(|e| anyhow::anyhow!(e))?;
             println!(
                 "{}",
-                rust_i18n::t!("task_added_successfully", uid = &uid[..std::cmp::min(8, uid.len())])
+                rust_i18n::t!(
+                    "task_added_successfully",
+                    uid = &uid[..std::cmp::min(8, uid.len())]
+                )
             );
 
             // Best-effort background sync of the journal
             if let Err(e) = maybe_sync(ctx.clone()).await {
-                eprintln!("{}", rust_i18n::t!("warning_background_sync_failed", error = e.to_string()));
+                eprintln!(
+                    "{}",
+                    rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
+                );
             }
             return Ok(());
         }
@@ -448,26 +467,43 @@ async fn main() -> Result<()> {
         "view" | "show" => {
             let store = build_store_cli(&ctx).await;
             let partial = args.get(2).map(|s| s.as_str()).unwrap_or("");
-            let uid =
-                resolve_uid(&store, partial).ok_or_else(|| anyhow::anyhow!(rust_i18n::t!("error_uid_required")))?;
+            let uid = resolve_uid(&store, partial)
+                .ok_or_else(|| anyhow::anyhow!(rust_i18n::t!("error_uid_required")))?;
             let t = store
                 .get_task_ref(&uid)
                 .ok_or_else(|| anyhow::anyhow!(rust_i18n::t!("error_task_not_found")))?;
 
             println!("{}:  {}", rust_i18n::t!("cli_view_summary"), t.summary);
-            println!("{}:   {:?} {}", rust_i18n::t!("cli_view_status"), t.status, t.checkbox_symbol());
+            println!(
+                "{}:   {:?} {}",
+                rust_i18n::t!("cli_view_status"),
+                t.status,
+                t.checkbox_symbol()
+            );
             println!("{}:      {}", rust_i18n::t!("cli_view_uid"), t.uid);
             if let Some(d) = &t.due {
-                println!("{}:      {}", rust_i18n::t!("cli_view_due"), d.format_smart());
+                println!(
+                    "{}:      {}",
+                    rust_i18n::t!("cli_view_due"),
+                    d.format_smart()
+                );
             }
             if !t.categories.is_empty() {
-                println!("{}:     {}", rust_i18n::t!("cli_view_tags"), t.categories.join(", "));
+                println!(
+                    "{}:     {}",
+                    rust_i18n::t!("cli_view_tags"),
+                    t.categories.join(", ")
+                );
             }
             if let Some(l) = &t.location {
                 println!("{}: {}", rust_i18n::t!("cli_view_location"), l);
             }
             if !t.description.is_empty() {
-                println!("\n{}:\n{}", rust_i18n::t!("cli_view_description"), t.description);
+                println!(
+                    "\n{}:\n{}",
+                    rust_i18n::t!("cli_view_description"),
+                    t.description
+                );
             }
             return Ok(());
         }
@@ -534,7 +570,10 @@ async fn main() -> Result<()> {
 
             // Best-effort background sync
             if let Err(e) = maybe_sync(ctx.clone()).await {
-                eprintln!("{}", rust_i18n::t!("warning_background_sync_failed", error = e.to_string()));
+                eprintln!(
+                    "{}",
+                    rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
+                );
             }
             return Ok(());
         }
@@ -544,8 +583,16 @@ async fn main() -> Result<()> {
                 std::process::exit(1);
             }
             let sub = &args[2];
-            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
-            let client = match cfait::client::RustyClient::new(ctx.clone(), &config.url, &config.username, &config.password, config.allow_insecure_certs, Some("CLI")) {
+            let config =
+                cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+            let client = match cfait::client::RustyClient::new(
+                ctx.clone(),
+                &config.url,
+                &config.username,
+                &config.password,
+                config.allow_insecure_certs,
+                Some("CLI"),
+            ) {
                 Ok(c) => c,
                 Err(e) => {
                     eprintln!("Failed to initialize client: {}", e);
@@ -575,10 +622,10 @@ async fn main() -> Result<()> {
                     let mut i = 4;
                     while i < args.len() {
                         if args[i] == "--name" && i + 1 < args.len() {
-                            name = Some(args[i+1].as_str());
+                            name = Some(args[i + 1].as_str());
                             i += 2;
                         } else if args[i] == "--color" && i + 1 < args.len() {
-                            color = Some(args[i+1].as_str());
+                            color = Some(args[i + 1].as_str());
                             i += 2;
                         } else {
                             i += 1;
@@ -638,7 +685,10 @@ async fn main() -> Result<()> {
 
             // Best-effort background sync
             if let Err(e) = maybe_sync(ctx.clone()).await {
-                eprintln!("{}", rust_i18n::t!("warning_background_sync_failed", error = e.to_string()));
+                eprintln!(
+                    "{}",
+                    rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
+                );
             }
             return Ok(());
         }
@@ -646,7 +696,10 @@ async fn main() -> Result<()> {
             // No non-interactive command provided; fall through to start the interactive TUI.
         }
         _ => {
-            eprintln!("{}", rust_i18n::t!("error_unknown_command", command = command));
+            eprintln!(
+                "{}",
+                rust_i18n::t!("error_unknown_command", command = command)
+            );
             std::process::exit(1);
         }
     }

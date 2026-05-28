@@ -69,7 +69,7 @@ fn test_reproduce_android_local_revert_bug() {
         // Newly required fields in FilterOptions:
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -117,7 +117,7 @@ fn test_cross_calendar_deduplication() {
     let mut store = TaskStore::new(ctx.clone());
 
     let uid = "split-brain-uid";
-    
+
     // Simulate an older ghost task left behind in cal1
     let mut t_old = Task::new("Old Task", &HashMap::new(), None);
     t_old.uid = uid.to_string();
@@ -132,7 +132,7 @@ fn test_cross_calendar_deduplication() {
 
     // The startup flow inserts collections sequentially
     store.insert("cal1".to_string(), vec![t_old.clone()]);
-    
+
     // During this insert, the store should detect `split-brain-uid` already exists in `cal1`
     // It will compare sequences, see `t_new` is newer, and evict the ghost from `cal1`.
     store.insert("cal2".to_string(), vec![t_new.clone()]);
@@ -142,12 +142,12 @@ fn test_cross_calendar_deduplication() {
         store.calendars.get("cal1").unwrap().is_empty(),
         "Ghost task should have been evicted from the incorrect collection"
     );
-    
+
     // Verify the correct one was retained
     let retained_task = store.calendars.get("cal2").unwrap().get(uid).unwrap();
     assert_eq!(retained_task.summary, "New Task");
     assert_eq!(retained_task.calendar_href, "cal2");
-    
+
     // Verify the index is consistent
     assert_eq!(
         store.index.get(uid).unwrap(),

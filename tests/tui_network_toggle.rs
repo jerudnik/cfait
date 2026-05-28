@@ -64,7 +64,9 @@ async fn test_tui_toggle_task_does_not_revert_status() {
     let _ = event_rx.recv().await;
 
     action_tx
-        .send(Action::PersistBatch(vec![cfait::journal::Action::Update(task)]))
+        .send(Action::PersistBatch(vec![cfait::journal::Action::Update(
+            task,
+        )]))
         .await
         .expect("Failed to send action");
 

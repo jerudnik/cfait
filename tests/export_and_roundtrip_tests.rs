@@ -115,7 +115,12 @@ fn test_export_task_with_relative_recurrence() {
 
     // Roundtrip verification
     let parsed = Task::from_ics(&ics, "etag".into(), "href".into(), "cal".into()).unwrap();
-    assert!(parsed.unmapped_properties.iter().any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION" && p.value == "TRUE"));
+    assert!(
+        parsed
+            .unmapped_properties
+            .iter()
+            .any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION" && p.value == "TRUE")
+    );
 
     // Display string verification
     let smart = parsed.to_smart_string();

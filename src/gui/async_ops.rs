@@ -248,9 +248,10 @@ pub async fn async_backfill_events_wrapper(
 ) -> Result<usize, String> {
     match tokio::time::timeout(
         std::time::Duration::from_secs(120),
-        client.sync_multiple_companion_events(&tasks, global_enabled, delete_on_completion)
+        client.sync_multiple_companion_events(&tasks, global_enabled, delete_on_completion),
     )
-    .await {
+    .await
+    {
         Ok(Ok(count)) => Ok(count),
         _ => Err("Batch creation timed out or failed".to_string()),
     }

@@ -28,11 +28,11 @@ use crate::journal::{Action, Journal};
 use crate::model::{CalendarListEntry, IcsAdapter, Task};
 use crate::storage::{LocalCalendarRegistry, LocalStorage};
 
+use http::{Request, StatusCode};
 use libdav::caldav::{FindCalendarHomeSet, FindCalendars, GetCalendarResources};
 use libdav::dav::{Delete, GetProperty, ListResources, Propfind, PutResource};
 use libdav::dav::{WebDavClient, WebDavError};
 use libdav::{CalDavClient, PropertyName, names};
-use http::{Request, StatusCode};
 use roxmltree::Document;
 
 use anyhow;
@@ -231,7 +231,9 @@ impl RustyClient {
             }
             // Fallback to principal/home-set discovery
             if let Ok(Some(principal)) = client.find_current_user_principal().await
-                && let Ok(response) = client.request(FindCalendarHomeSet::new(principal.path())).await
+                && let Ok(response) = client
+                    .request(FindCalendarHomeSet::new(principal.path()))
+                    .await
                 && let Some(home_url) = response.home_sets.first()
                 && let Ok(cals_resp) = client.request(FindCalendars::new(home_url.path())).await
                 && let Some(first) = cals_resp.calendars.first()
@@ -387,10 +389,14 @@ impl RustyClient {
 
         let principal_res = client.find_current_user_principal().await?;
         let Some(principal) = principal_res else {
-            return Err(anyhow::anyhow!(rust_i18n::t!("error_no_principal").to_string()));
+            return Err(anyhow::anyhow!(
+                rust_i18n::t!("error_no_principal").to_string()
+            ));
         };
 
-        let home_set_resp = client.request(FindCalendarHomeSet::new(principal.path())).await?;
+        let home_set_resp = client
+            .request(FindCalendarHomeSet::new(principal.path()))
+            .await?;
 
         let home_url = home_set_resp
             .home_sets
@@ -547,10 +553,17 @@ impl RustyClient {
         }
     }
 
-    pub async fn get_companion_events(&self, calendar_href: &str, task_uid: Option<&str>) -> anyhow::Result<Vec<String>> {
-        let client = self.client.as_ref().ok_or_else(|| anyhow::anyhow!("Offline"))?;
+    pub async fn get_companion_events(
+        &self,
+        calendar_href: &str,
+        task_uid: Option<&str>,
+    ) -> anyhow::Result<Vec<String>> {
+        let client = self
+            .client
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Offline"))?;
         let path = strip_host(calendar_href);
-        
+
         let body = if let Some(uid) = task_uid {
             format!(
                 r#"<?xml version="1.0" encoding="utf-8" ?>
@@ -585,13 +598,14 @@ impl RustyClient {
       </C:comp-filter>
     </C:comp-filter>
   </C:filter>
-</C:calendar-query>"#.to_string()
+</C:calendar-query>"#
+                .to_string()
         };
 
         let base = client.base_url();
         let scheme = base.scheme_str().unwrap_or("https");
         let authority = base.authority().map(|a| a.as_str()).unwrap_or("");
-        
+
         let clean_path = if path.starts_with('/') {
             path.clone()
         } else {
@@ -607,8 +621,12 @@ impl RustyClient {
             .body(body)
             .map_err(|e| anyhow::anyhow!("Request build failed: {}", e))?;
 
-        let (parts, body_bytes) = client.webdav_client.request_raw(req).await.map_err(|e| anyhow::anyhow!("REPORT failed: {:?}", e))?;
-        
+        let (parts, body_bytes) = client
+            .webdav_client
+            .request_raw(req)
+            .await
+            .map_err(|e| anyhow::anyhow!("REPORT failed: {:?}", e))?;
+
         // Fallback: Strict CalDAV servers might reject REPORT with custom X-properties with 403 or 400.
         if !parts.status.is_success() && parts.status != StatusCode::MULTI_STATUS {
             let list_resp = client.request(ListResources::new(&path)).await?;
@@ -630,13 +648,14 @@ impl RustyClient {
 
         let xml_str = std::str::from_utf8(&body_bytes).unwrap_or("");
         let mut hrefs = Vec::new();
-        
+
         if let Ok(doc) = roxmltree::Document::parse(xml_str) {
             for node in doc.descendants() {
                 if node.tag_name().name().eq_ignore_ascii_case("href")
-                    && let Some(text) = node.text() {
-                        hrefs.push(text.to_string());
-                    }
+                    && let Some(text) = node.text()
+                {
+                    hrefs.push(text.to_string());
+                }
             }
         }
 
@@ -683,12 +702,19 @@ impl RustyClient {
             || (!has_calendar_data && !keep_completed)
             || !should_create_events;
 
-        if !should_create_events && !is_delete_intent && !delete_on_completion && task.create_event.is_none() {
+        if !should_create_events
+            && !is_delete_intent
+            && !delete_on_completion
+            && task.create_event.is_none()
+        {
             return true;
         }
 
         // Use REPORT to find ground truth of companion events
-        let existing_hrefs = self.get_companion_events(&cal_path, Some(&task.uid)).await.unwrap_or_default();
+        let existing_hrefs = self
+            .get_companion_events(&cal_path, Some(&task.uid))
+            .await
+            .unwrap_or_default();
         let mut existing_filenames: std::collections::HashSet<String> = existing_hrefs
             .iter()
             .map(|h| h.split('/').next_back().unwrap_or("").to_string())
@@ -705,14 +731,14 @@ impl RustyClient {
         // 1. PUT all generated events
         for (suffix, ics_body) in generated_events.iter() {
             let event_filename = format!("{}{}.ics", base_uid, suffix);
-            
+
             // Remove from existing so we know what's left over to delete
             existing_filenames.remove(&event_filename);
 
             let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
             let c = client.clone();
             let body_clone = ics_body.clone();
-            
+
             futures.push(Box::pin(async move {
                 let create_req = PutResource::new(&event_path)
                     .create(body_clone.clone(), "text/calendar; charset=utf-8");
@@ -748,7 +774,7 @@ impl RustyClient {
                 }
             }));
         }
-        
+
         // 3. FALLBACK FOR LEGACY EVENTS
         // Check old static suffixes just in case they lack the X-CFAIT-TASK-UID property
         let static_suffixes = ["", "-start", "-due"];
@@ -791,8 +817,11 @@ impl RustyClient {
         config_enabled: bool,
         delete_on_completion: bool,
     ) -> anyhow::Result<usize> {
-        let client = self.client.as_ref().ok_or_else(|| anyhow::anyhow!("Offline"))?;
-        
+        let client = self
+            .client
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Offline"))?;
+
         let mut by_calendar: HashMap<String, Vec<&Task>> = HashMap::new();
         for task in tasks {
             if !task.calendar_href.starts_with("local://") {
@@ -813,8 +842,11 @@ impl RustyClient {
         let mut success_count = 0;
 
         for (cal_path, cal_tasks) in by_calendar {
-            let existing_hrefs = self.get_companion_events(&cal_path, None).await.unwrap_or_default();
-            
+            let existing_hrefs = self
+                .get_companion_events(&cal_path, None)
+                .await
+                .unwrap_or_default();
+
             let mut all_existing_filenames: std::collections::HashSet<String> = existing_hrefs
                 .into_iter()
                 .map(|h| h.split('/').next_back().unwrap_or("").to_string())
@@ -863,7 +895,7 @@ impl RustyClient {
                     let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
                     let c = client.clone();
                     let body_clone = ics_body.clone();
-                    
+
                     futures.push(Box::pin(async move {
                         let create_req = PutResource::new(&event_path)
                             .create(body_clone.clone(), "text/calendar; charset=utf-8");
@@ -895,7 +927,7 @@ impl RustyClient {
                         }
                     }));
                 }
-                
+
                 // Fallback for legacy events
                 let static_suffixes = ["", "-start", "-due"];
                 for suffix in static_suffixes {
@@ -920,7 +952,7 @@ impl RustyClient {
                 }
             }
         }
-        
+
         Ok(success_count)
     }
 
@@ -931,12 +963,15 @@ impl RustyClient {
             return Ok(0);
         }
 
-        let client = self.client.as_ref().ok_or_else(|| anyhow::anyhow!("Offline"))?;
+        let client = self
+            .client
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Offline"))?;
         let path = strip_host(calendar_href);
 
         let hrefs = self.get_companion_events(&path, None).await?;
         let count = hrefs.len();
-        
+
         if count == 0 {
             return Ok(0);
         }
@@ -1367,12 +1402,20 @@ impl RustyClient {
     }
 
     pub async fn create_calendar(&self, name: &str, color: Option<&str>) -> anyhow::Result<String> {
-        let client = self.client.as_ref().ok_or_else(|| anyhow::anyhow!("Offline"))?;
+        let client = self
+            .client
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Offline"))?;
 
         let principal_res = client.find_current_user_principal().await?;
         let principal = principal_res.ok_or_else(|| anyhow::anyhow!("No principal found"))?;
-        let home_set_resp = client.request(libdav::caldav::FindCalendarHomeSet::new(principal.path())).await?;
-        let home_url = home_set_resp.home_sets.first().ok_or_else(|| anyhow::anyhow!("No home set found"))?;
+        let home_set_resp = client
+            .request(libdav::caldav::FindCalendarHomeSet::new(principal.path()))
+            .await?;
+        let home_url = home_set_resp
+            .home_sets
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("No home set found"))?;
 
         let new_uuid = uuid::Uuid::new_v4().to_string();
         let home_path = home_url.path();
@@ -1384,10 +1427,14 @@ impl RustyClient {
 
         let mut color_xml = String::new();
         if let Some(c) = color {
-            color_xml = format!(r#"<IC:calendar-color xmlns:IC="http://apple.com/ns/ical/">{}</IC:calendar-color>"#, xml_escape(c));
+            color_xml = format!(
+                r#"<IC:calendar-color xmlns:IC="http://apple.com/ns/ical/">{}</IC:calendar-color>"#,
+                xml_escape(c)
+            );
         }
 
-        let body = format!(r#"<?xml version="1.0" encoding="utf-8" ?>
+        let body = format!(
+            r#"<?xml version="1.0" encoding="utf-8" ?>
 <C:mkcalendar xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
   <D:set>
     <D:prop>
@@ -1400,7 +1447,10 @@ impl RustyClient {
       {}
     </D:prop>
   </D:set>
-</C:mkcalendar>"#, xml_escape(name), color_xml);
+</C:mkcalendar>"#,
+            xml_escape(name),
+            color_xml
+        );
 
         let req = http::Request::builder()
             .method("MKCALENDAR")
@@ -1413,15 +1463,30 @@ impl RustyClient {
             Ok(new_path)
         } else {
             let err_body = String::from_utf8_lossy(&body_bytes);
-            Err(anyhow::anyhow!("MKCALENDAR failed: {} - {}", parts.status, err_body))
+            Err(anyhow::anyhow!(
+                "MKCALENDAR failed: {} - {}",
+                parts.status,
+                err_body
+            ))
         }
     }
 
-    pub async fn update_calendar(&self, href: &str, name: &str, color: Option<&str>) -> anyhow::Result<()> {
-        let client = self.client.as_ref().ok_or_else(|| anyhow::anyhow!("Offline"))?;
+    pub async fn update_calendar(
+        &self,
+        href: &str,
+        name: &str,
+        color: Option<&str>,
+    ) -> anyhow::Result<()> {
+        let client = self
+            .client
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Offline"))?;
 
         let color_set = if let Some(c) = color {
-            format!(r#"<IC:calendar-color xmlns:IC="http://apple.com/ns/ical/">{}</IC:calendar-color>"#, xml_escape(c))
+            format!(
+                r#"<IC:calendar-color xmlns:IC="http://apple.com/ns/ical/">{}</IC:calendar-color>"#,
+                xml_escape(c)
+            )
         } else {
             String::new()
         };
@@ -1436,7 +1501,8 @@ impl RustyClient {
             ""
         };
 
-        let body = format!(r#"<?xml version="1.0" encoding="utf-8" ?>
+        let body = format!(
+            r#"<?xml version="1.0" encoding="utf-8" ?>
 <D:propertyupdate xmlns:D="DAV:" xmlns:IC="http://apple.com/ns/ical/">
   <D:set>
     <D:prop>
@@ -1445,7 +1511,11 @@ impl RustyClient {
     </D:prop>
   </D:set>
   {}
-</D:propertyupdate>"#, xml_escape(name), color_set, color_remove);
+</D:propertyupdate>"#,
+            xml_escape(name),
+            color_set,
+            color_remove
+        );
 
         let req = http::Request::builder()
             .method("PROPPATCH")
@@ -1458,7 +1528,11 @@ impl RustyClient {
             Ok(())
         } else {
             let err_body = String::from_utf8_lossy(&body_bytes);
-            Err(anyhow::anyhow!("PROPPATCH failed: {} - {}", parts.status, err_body))
+            Err(anyhow::anyhow!(
+                "PROPPATCH failed: {} - {}",
+                parts.status,
+                err_body
+            ))
         }
     }
 

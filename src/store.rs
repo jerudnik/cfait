@@ -297,10 +297,16 @@ pub fn organize_hierarchy(
     }
 
     if !unvisited.is_empty() {
-        unvisited.sort_by(|a, b| {
-            a.compare_for_sort(b, default_priority, sort_standard_by_priority)
-        });
-        process_group(unvisited, "".to_string(), max_done_roots, true, &mut context, 0);
+        unvisited
+            .sort_by(|a, b| a.compare_for_sort(b, default_priority, sort_standard_by_priority));
+        process_group(
+            unvisited,
+            "".to_string(),
+            max_done_roots,
+            true,
+            &mut context,
+            0,
+        );
     }
 
     result
@@ -429,11 +435,17 @@ impl TaskStore {
     }
 
     pub fn has_tasks_blocking(&self, uid: &str) -> bool {
-        self.blocking_index.get(uid).map(|l| !l.is_empty()).unwrap_or(false)
+        self.blocking_index
+            .get(uid)
+            .map(|l| !l.is_empty())
+            .unwrap_or(false)
     }
 
     pub fn has_tasks_related_to(&self, uid: &str) -> bool {
-        self.related_from_index.get(uid).map(|l| !l.is_empty()).unwrap_or(false)
+        self.related_from_index
+            .get(uid)
+            .map(|l| !l.is_empty())
+            .unwrap_or(false)
     }
 
     // --- INCREMENTAL INDEX HELPERS ---
@@ -480,7 +492,7 @@ impl TaskStore {
 
         for mut task in tasks {
             let uid = task.uid.clone();
-            
+
             // Protect against stale reads wiping out recent local mutations
             if let Some(existing_map) = self.calendars.get(&calendar_href)
                 && let Some(existing_task) = existing_map.get(&uid)
@@ -490,30 +502,34 @@ impl TaskStore {
             }
 
             if let Some(existing_href) = self.index.get(&uid)
-                && existing_href != &calendar_href {
-                    // Duplicate UID across calendars found!
-                    // Determine which one wins deterministically.
-                    if let Some(existing_task) = self.calendars.get(existing_href).and_then(|m| m.get(&uid)) {
-                        let keep_existing = if existing_task.sequence != task.sequence {
-                            existing_task.sequence > task.sequence
-                        } else {
-                            // Tie-break with href string comparison to ensure consistency across platforms
-                            existing_href > &calendar_href
-                        };
-                        
-                        if keep_existing {
-                            // Skip inserting this task into the new map
-                            continue;
-                        } else {
-                            // The new task wins. Remove from old calendar.
-                            let old_href_clone = existing_href.clone();
-                            if let Some(old_map) = self.calendars.get_mut(&old_href_clone)
-                                && let Some(old_task) = old_map.remove(&uid) {
-                                    self.remove_task_from_indices(&old_task);
-                                }
+                && existing_href != &calendar_href
+            {
+                // Duplicate UID across calendars found!
+                // Determine which one wins deterministically.
+                if let Some(existing_task) =
+                    self.calendars.get(existing_href).and_then(|m| m.get(&uid))
+                {
+                    let keep_existing = if existing_task.sequence != task.sequence {
+                        existing_task.sequence > task.sequence
+                    } else {
+                        // Tie-break with href string comparison to ensure consistency across platforms
+                        existing_href > &calendar_href
+                    };
+
+                    if keep_existing {
+                        // Skip inserting this task into the new map
+                        continue;
+                    } else {
+                        // The new task wins. Remove from old calendar.
+                        let old_href_clone = existing_href.clone();
+                        if let Some(old_map) = self.calendars.get_mut(&old_href_clone)
+                            && let Some(old_task) = old_map.remove(&uid)
+                        {
+                            self.remove_task_from_indices(&old_task);
                         }
                     }
                 }
+            }
 
             new_map.insert(uid.clone(), task);
             uids_to_add.push(uid);
@@ -532,7 +548,10 @@ impl TaskStore {
                 && let Some(parent) = new_map.get(p_uid)
                 && parent.rrule.is_some()
             {
-                let mut is_history_snapshot = task.unmapped_properties.iter().any(|p| p.key == "X-CFAIT-HISTORY-OF");
+                let mut is_history_snapshot = task
+                    .unmapped_properties
+                    .iter()
+                    .any(|p| p.key == "X-CFAIT-HISTORY-OF");
 
                 if !is_history_snapshot {
                     // Heuristic 1 (most reliable): Check for matching CREATED timestamp.
@@ -543,9 +562,10 @@ impl TaskStore {
                         .find(|p| p.key == "CREATED");
 
                     if let (Some(tc), Some(pc)) = (task_created, parent_created)
-                        && tc.value == pc.value {
-                            is_history_snapshot = true;
-                        }
+                        && tc.value == pc.value
+                    {
+                        is_history_snapshot = true;
+                    }
 
                     // Heuristic 2 (fallback): Check for matching summary.
                     if !is_history_snapshot && parent.summary == task.summary {
@@ -703,16 +723,28 @@ impl TaskStore {
 
     /// Evaluates retention settings and safely moves a task to the local trash.
     /// Returns (OriginalDeletedTask, Option<NewTrashedTask>).
-    pub fn soft_delete_task(&mut self, uid: &str, retention_days: u32) -> Option<(Task, Option<Task>)> {
-        let is_already_trash = self.get_task_ref(uid).map(|t| t.calendar_href == crate::storage::LOCAL_TRASH_HREF).unwrap_or(false);
+    pub fn soft_delete_task(
+        &mut self,
+        uid: &str,
+        retention_days: u32,
+    ) -> Option<(Task, Option<Task>)> {
+        let is_already_trash = self
+            .get_task_ref(uid)
+            .map(|t| t.calendar_href == crate::storage::LOCAL_TRASH_HREF)
+            .unwrap_or(false);
         if retention_days == 0 || is_already_trash {
             let (deleted, _) = self.delete_task(uid)?;
             Some((deleted, None))
         } else {
-            self.calendars.entry(crate::storage::LOCAL_TRASH_HREF.to_string()).or_default();
-            let (orig, mut updated) = self.move_task(uid, crate::storage::LOCAL_TRASH_HREF.to_string())?;
+            self.calendars
+                .entry(crate::storage::LOCAL_TRASH_HREF.to_string())
+                .or_default();
+            let (orig, mut updated) =
+                self.move_task(uid, crate::storage::LOCAL_TRASH_HREF.to_string())?;
             let now_str = chrono::Utc::now().to_rfc3339();
-            updated.unmapped_properties.retain(|p| p.key != "X-TRASHED-DATE");
+            updated
+                .unmapped_properties
+                .retain(|p| p.key != "X-TRASHED-DATE");
             updated.unmapped_properties.push(crate::model::RawProperty {
                 key: "X-TRASHED-DATE".to_string(),
                 value: now_str,
@@ -724,7 +756,11 @@ impl TaskStore {
     }
 
     /// Extends soft_delete_task recursively to the entire sub-tree.
-    pub fn soft_delete_task_tree(&mut self, root_uid: &str, retention_days: u32) -> Vec<(Task, Option<Task>)> {
+    pub fn soft_delete_task_tree(
+        &mut self,
+        root_uid: &str,
+        retention_days: u32,
+    ) -> Vec<(Task, Option<Task>)> {
         let mut uids = self.get_descendant_uids(root_uid);
         uids.push(root_uid.to_string());
         let mut results = Vec::new();
@@ -1120,10 +1156,18 @@ impl TaskStore {
     }
 
     /// Set or unset a parent relationship for a task.
-    pub fn set_parent(&mut self, child_uid: &str, parent_uid: Option<String>) -> Result<Task, &'static str> {
+    pub fn set_parent(
+        &mut self,
+        child_uid: &str,
+        parent_uid: Option<String>,
+    ) -> Result<Task, &'static str> {
         if let Some(p_uid) = &parent_uid {
             if p_uid == child_uid {
-                return Err(Box::leak(rust_i18n::t!("error_cannot_be_child_of_self").into_owned().into_boxed_str()));
+                return Err(Box::leak(
+                    rust_i18n::t!("error_cannot_be_child_of_self")
+                        .into_owned()
+                        .into_boxed_str(),
+                ));
             }
             if self.get_descendant_uids(child_uid).contains(p_uid) {
                 return Err("Cycle detected: Cannot set a task as a child of its own descendant");
@@ -1134,7 +1178,11 @@ impl TaskStore {
             task.sequence += 1;
             return Ok(task.clone());
         }
-        Err(Box::leak(rust_i18n::t!("error_task_not_found").into_owned().into_boxed_str()))
+        Err(Box::leak(
+            rust_i18n::t!("error_task_not_found")
+                .into_owned()
+                .into_boxed_str(),
+        ))
     }
 
     /// Add a dependency (task_uid depends on dep_uid). Maintain reverse blocking index.
@@ -1918,9 +1966,17 @@ impl TaskStore {
             t.has_blocking_tasks = self.has_tasks_blocking(&t.uid);
             t.has_related_tasks = self.has_tasks_related_to(&t.uid);
 
-            t.is_future_start = t.dtstart.as_ref().map(|start| start.to_start_comparison_time() > now).unwrap_or(false);
+            t.is_future_start = t
+                .dtstart
+                .as_ref()
+                .map(|start| start.to_start_comparison_time() > now)
+                .unwrap_or(false);
             t.is_implicitly_future = !t.is_future_start && check_is_effectively_future(t);
-            t.is_overdue = t.due.as_ref().map(|d| !t.status.is_done() && d.to_comparison_time() < now).unwrap_or(false);
+            t.is_overdue = t
+                .due
+                .as_ref()
+                .map(|d| !t.status.is_done() && d.to_comparison_time() < now)
+                .unwrap_or(false);
 
             let (p_tags, p_loc) = if let Some(p_uid) = &t.parent_uid {
                 if let Some(p) = self.get_task_ref(p_uid) {
@@ -1932,7 +1988,8 @@ impl TaskStore {
                 (HashSet::new(), None)
             };
 
-            let (visible_tags, visible_location) = t.resolve_visual_attributes(&p_tags, &p_loc, options.tag_aliases);
+            let (visible_tags, visible_location) =
+                t.resolve_visual_attributes(&p_tags, &p_loc, options.tag_aliases);
             t.visible_categories = visible_tags;
             t.visible_location = visible_location;
         }
@@ -1989,7 +2046,8 @@ impl TaskStore {
                         due: best.effective_due.clone(),
                         start: best.effective_dtstart.clone(),
                     };
-                    let ordering = crate::model::item::compare_sortkeys(&a, &b, default_prio, false);
+                    let ordering =
+                        crate::model::item::compare_sortkeys(&a, &b, default_prio, false);
                     if ordering == std::cmp::Ordering::Less {
                         best = child_eff;
                     }
@@ -2099,7 +2157,9 @@ impl TaskStore {
                     } else {
                         actions.push(JournalAction::Update(primary));
                     }
-                    for c in children { actions.push(JournalAction::Update(c)); }
+                    for c in children {
+                        actions.push(JournalAction::Update(c));
+                    }
                 }
             }
             AppIntent::ToggleTaskShift { uid } => {
@@ -2110,31 +2170,43 @@ impl TaskStore {
                     } else {
                         actions.push(JournalAction::Update(primary));
                     }
-                    for c in children { actions.push(JournalAction::Update(c)); }
+                    for c in children {
+                        actions.push(JournalAction::Update(c));
+                    }
                 }
             }
             AppIntent::DeleteTask { uid } => {
-                if let Some((deleted, trashed_opt)) = self.soft_delete_task(uid, config.trash_retention_days) {
+                if let Some((deleted, trashed_opt)) =
+                    self.soft_delete_task(uid, config.trash_retention_days)
+                {
                     actions.push(JournalAction::Delete(deleted));
-                    if let Some(trashed) = trashed_opt { actions.push(JournalAction::Create(trashed)); }
+                    if let Some(trashed) = trashed_opt {
+                        actions.push(JournalAction::Create(trashed));
+                    }
                 }
             }
             AppIntent::DeleteTaskTree { uid } => {
                 let pairs = self.soft_delete_task_tree(uid, config.trash_retention_days);
                 for (deleted, trashed_opt) in pairs {
                     actions.push(JournalAction::Delete(deleted));
-                    if let Some(trashed) = trashed_opt { actions.push(JournalAction::Create(trashed)); }
+                    if let Some(trashed) = trashed_opt {
+                        actions.push(JournalAction::Create(trashed));
+                    }
                 }
             }
             AppIntent::CancelTask { uid } => {
-                if let Some((primary, secondary, children)) = self.set_status(uid, crate::model::TaskStatus::Cancelled, false) {
+                if let Some((primary, secondary, children)) =
+                    self.set_status(uid, crate::model::TaskStatus::Cancelled, false)
+                {
                     if let Some(sec) = secondary {
                         actions.push(JournalAction::Create(primary));
                         actions.push(JournalAction::Update(sec));
                     } else {
                         actions.push(JournalAction::Update(primary));
                     }
-                    for c in children { actions.push(JournalAction::Update(c)); }
+                    for c in children {
+                        actions.push(JournalAction::Update(c));
+                    }
                 }
             }
             AppIntent::ChangePriority { uid, delta } => {
@@ -2155,16 +2227,22 @@ impl TaskStore {
                 actions.extend(updated.into_iter().map(JournalAction::Update));
             }
             AppIntent::MoveTask { uid, target_href } => {
-                let safe_target = if target_href == crate::storage::LOCAL_TRASH_HREF || target_href == "local://recovery" {
+                let safe_target = if target_href == crate::storage::LOCAL_TRASH_HREF
+                    || target_href == "local://recovery"
+                {
                     crate::storage::LOCAL_CALENDAR_HREF.to_string()
                 } else {
                     target_href.clone()
                 };
                 if let Some((orig, updated)) = self.move_task(uid, safe_target.clone()) {
-                    if !orig.calendar_href.starts_with("local://") && safe_target.starts_with("local://") {
+                    if !orig.calendar_href.starts_with("local://")
+                        && safe_target.starts_with("local://")
+                    {
                         actions.push(JournalAction::Delete(orig));
                         actions.push(JournalAction::Create(updated));
-                    } else if orig.calendar_href.starts_with("local://") && !safe_target.starts_with("local://") {
+                    } else if orig.calendar_href.starts_with("local://")
+                        && !safe_target.starts_with("local://")
+                    {
                         actions.push(JournalAction::Delete(orig));
                         let mut moved = updated.clone();
                         moved.href = String::new();
@@ -2294,30 +2372,37 @@ mod tests {
 
         let result = organize_hierarchy(
             tasks,
-            5,  // default_priority
+            5,     // default_priority
             false, // sort_standard_by_priority
             &expanded_groups,
-            10, // max_done_roots
-            10, // max_done_subtasks
+            10,    // max_done_roots
+            10,    // max_done_subtasks
             false, // search_active
         );
 
         // Extract task UIDs from the result
         let result_uids: Vec<String> = result
             .into_iter()
-            .filter_map(|item| {
-                match item {
-                    TaskListItem::Task(t) => Some(t.uid),
-                    _ => None,
-                }
+            .filter_map(|item| match item {
+                TaskListItem::Task(t) => Some(t.uid),
+                _ => None,
             })
             .collect();
 
         // The parent should be present, but children should NOT appear as orphans at root level
-        assert!(result_uids.contains(&"parent".to_string()), "Parent should be present");
+        assert!(
+            result_uids.contains(&"parent".to_string()),
+            "Parent should be present"
+        );
         // Children should NOT be in the result since parent is collapsed and we're not searching
-        assert!(!result_uids.contains(&"child1".to_string()), "Child1 should not appear when parent is collapsed");
-        assert!(!result_uids.contains(&"child2".to_string()), "Child2 should not appear when parent is collapsed");
+        assert!(
+            !result_uids.contains(&"child1".to_string()),
+            "Child1 should not appear when parent is collapsed"
+        );
+        assert!(
+            !result_uids.contains(&"child2".to_string()),
+            "Child2 should not appear when parent is collapsed"
+        );
     }
 
     #[test]
@@ -2342,19 +2427,26 @@ mod tests {
 
         let result_uids: Vec<String> = result
             .into_iter()
-            .filter_map(|item| {
-                match item {
-                    TaskListItem::Task(t) => Some(t.uid),
-                    _ => None,
-                }
+            .filter_map(|item| match item {
+                TaskListItem::Task(t) => Some(t.uid),
+                _ => None,
             })
             .collect();
 
         // Parent should be present
-        assert!(result_uids.contains(&"parent".to_string()), "Parent should be present");
+        assert!(
+            result_uids.contains(&"parent".to_string()),
+            "Parent should be present"
+        );
         // At most 1 child should appear (due to max_done_subtasks=1)
-        let child_count = result_uids.iter().filter(|u| u.starts_with("child")).count();
-        assert!(child_count <= 1, "At most 1 child should appear due to truncation");
+        let child_count = result_uids
+            .iter()
+            .filter(|u| u.starts_with("child"))
+            .count();
+        assert!(
+            child_count <= 1,
+            "At most 1 child should appear due to truncation"
+        );
         // The hidden child should NOT appear as orphan
         // If child1 is shown, child2 should not be orphaned; if child2 is shown, child1 should not be orphaned
     }
@@ -2382,18 +2474,25 @@ mod tests {
         let result_uids: Vec<String> = result
             .clone()
             .into_iter()
-            .filter_map(|item| {
-                match item {
-                    TaskListItem::Task(t) => Some(t.uid),
-                    _ => None,
-                }
+            .filter_map(|item| match item {
+                TaskListItem::Task(t) => Some(t.uid),
+                _ => None,
             })
             .collect();
 
         // Only 2 done tasks should appear (due to truncation: limit.saturating_sub(1) = 3-1 = 2)
-        assert_eq!(result_uids.len(), 2, "Only 2 done tasks should appear at root level (3-1=2)");
+        assert_eq!(
+            result_uids.len(),
+            2,
+            "Only 2 done tasks should appear at root level (3-1=2)"
+        );
         // Check that there's an ExpandGroup item
-        let has_expand = result.iter().any(|item| matches!(item, TaskListItem::ExpandGroup(_, _)));
-        assert!(has_expand, "Should have an ExpandGroup item for truncated tasks");
+        let has_expand = result
+            .iter()
+            .any(|item| matches!(item, TaskListItem::ExpandGroup(_, _)));
+        assert!(
+            has_expand,
+            "Should have an ExpandGroup item for truncated tasks"
+        );
     }
 }

@@ -97,7 +97,8 @@ async fn test_tui_create_preserves_existing_calendar_tasks() {
     let _m_calendars_refresh = server
         .mock("PROPFIND", "/cal/")
         .with_status(207)
-        .with_body(r#"<d:multistatus xmlns:d="DAV:">
+        .with_body(
+            r#"<d:multistatus xmlns:d="DAV:">
             <d:response>
                 <d:href>/cal/</d:href>
                 <d:propstat>
@@ -111,7 +112,8 @@ async fn test_tui_create_preserves_existing_calendar_tasks() {
                     <d:status>HTTP/1.1 200 OK</d:status>
                 </d:propstat>
             </d:response>
-        </d:multistatus>"#)
+        </d:multistatus>"#,
+        )
         .create_async()
         .await;
 
@@ -119,7 +121,8 @@ async fn test_tui_create_preserves_existing_calendar_tasks() {
     let _m_components_refresh = server
         .mock("PROPFIND", "/cal/")
         .with_status(207)
-        .with_body(r#"<d:multistatus xmlns:d="DAV:">
+        .with_body(
+            r#"<d:multistatus xmlns:d="DAV:">
             <d:response>
                 <d:href>/cal/</d:href>
                 <d:propstat>
@@ -131,14 +134,16 @@ async fn test_tui_create_preserves_existing_calendar_tasks() {
                     <d:status>HTTP/1.1 200 OK</d:status>
                 </d:propstat>
             </d:response>
-        </d:multistatus>"#)
+        </d:multistatus>"#,
+        )
         .create_async()
         .await;
 
     let _m_tasks_refresh = server
         .mock("PROPFIND", "/cal/")
         .with_status(207)
-        .with_body(r#"<d:multistatus xmlns:d="DAV:">
+        .with_body(
+            r#"<d:multistatus xmlns:d="DAV:">
             <d:response>
                 <d:href>/cal/existing-task.ics</d:href>
                 <d:propstat>
@@ -157,14 +162,16 @@ async fn test_tui_create_preserves_existing_calendar_tasks() {
                     <d:status>HTTP/1.1 200 OK</d:status>
                 </d:propstat>
                 </d:response>
-        </d:multistatus>"#)
+        </d:multistatus>"#,
+        )
         .create_async()
         .await;
 
     let _m_report_refresh = server
         .mock("REPORT", "/cal/")
         .with_status(207)
-        .with_body(r#"<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">
+        .with_body(
+            r#"<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav">
             <d:response>
                 <d:href>/cal/new-task.ics</d:href>
                 <d:propstat>
@@ -181,7 +188,8 @@ END:VCALENDAR</cal:calendar-data>
                     <d:status>HTTP/1.1 200 OK</d:status>
                 </d:propstat>
             </d:response>
-        </d:multistatus>"#)
+        </d:multistatus>"#,
+        )
         .create_async()
         .await;
 

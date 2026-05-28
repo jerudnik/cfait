@@ -1115,10 +1115,34 @@ pub fn prettify_recurrence(rrule: &str, is_relative: bool) -> String {
     // 3. Handle Custom Intervals (e.g. @every 3 days or @after 3d)
     if !freq.is_empty() && !interval.is_empty() && interval != "1" {
         let unit = match freq {
-            "DAILY" => if is_relative { "d" } else { "days" },
-            "WEEKLY" => if is_relative { "w" } else { "weeks" },
-            "MONTHLY" => if is_relative { "mo" } else { "months" },
-            "YEARLY" => if is_relative { "y" } else { "years" },
+            "DAILY" => {
+                if is_relative {
+                    "d"
+                } else {
+                    "days"
+                }
+            }
+            "WEEKLY" => {
+                if is_relative {
+                    "w"
+                } else {
+                    "weeks"
+                }
+            }
+            "MONTHLY" => {
+                if is_relative {
+                    "mo"
+                } else {
+                    "months"
+                }
+            }
+            "YEARLY" => {
+                if is_relative {
+                    "y"
+                } else {
+                    "years"
+                }
+            }
             _ => "",
         };
         if !unit.is_empty() {
@@ -1605,7 +1629,8 @@ pub fn apply_smart_input(
 ) {
     let mut summary_words = Vec::new();
     // Reset fields
-    task.unmapped_properties.retain(|p| p.key != "X-CFAIT-RECUR-FROM-COMPLETION");
+    task.unmapped_properties
+        .retain(|p| p.key != "X-CFAIT-RECUR-FROM-COMPLETION");
     task.priority = 0;
     task.due = None;
     task.dtstart = None;
@@ -1655,7 +1680,8 @@ pub fn apply_smart_input(
         let token_lower = token.to_lowercase();
 
         // 1. Recurrence
-        if (token == "rec:every" || token == "@every" || token == "@after") && i + 1 < stream.len() {
+        if (token == "rec:every" || token == "@every" || token == "@after") && i + 1 < stream.len()
+        {
             let next_token_str = stream[i + 1].as_str();
             let next_next = if i + 2 < stream.len() {
                 Some(stream[i + 2].as_str())
@@ -1668,7 +1694,12 @@ pub fn apply_smart_input(
                 let freq = parse_freq_from_unit(&unit);
                 if !freq.is_empty() {
                     task.rrule = Some(format!("FREQ={};INTERVAL={}", freq, interval));
-                    if token == "@after" && !task.unmapped_properties.iter().any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION") {
+                    if token == "@after"
+                        && !task
+                            .unmapped_properties
+                            .iter()
+                            .any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION")
+                    {
                         task.unmapped_properties.push(crate::model::RawProperty {
                             key: "X-CFAIT-RECUR-FROM-COMPLETION".to_string(),
                             value: "TRUE".to_string(),
@@ -1691,7 +1722,12 @@ pub fn apply_smart_input(
                 if !weekday_codes.is_empty() && weekday_codes.len() == parts.len() {
                     // All parts were valid weekdays
                     task.rrule = Some(format!("FREQ=WEEKLY;BYDAY={}", weekday_codes.join(",")));
-                    if token == "@after" && !task.unmapped_properties.iter().any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION") {
+                    if token == "@after"
+                        && !task
+                            .unmapped_properties
+                            .iter()
+                            .any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION")
+                    {
                         task.unmapped_properties.push(crate::model::RawProperty {
                             key: "X-CFAIT-RECUR-FROM-COMPLETION".to_string(),
                             value: "TRUE".to_string(),

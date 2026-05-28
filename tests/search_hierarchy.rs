@@ -43,7 +43,7 @@ fn test_search_includes_non_matching_children() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -110,7 +110,7 @@ fn test_search_includes_deep_hierarchy() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -157,7 +157,7 @@ fn test_child_match_does_not_force_parent_if_parent_does_not_match() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -220,7 +220,7 @@ fn test_multiple_parents_with_children() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -287,7 +287,7 @@ fn test_sibling_match_only_includes_matching_sibling() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -339,7 +339,7 @@ fn test_empty_search_shows_all_tasks() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -387,7 +387,7 @@ fn test_hierarchy_expansion_with_completed_tasks() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -415,7 +415,7 @@ fn test_hierarchy_expansion_with_completed_tasks() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),

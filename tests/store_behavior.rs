@@ -200,7 +200,10 @@ fn test_toggle_task_shift_advances_from_today() {
     };
 
     let diff = next_due - now;
-    assert!(diff.num_days() >= 6 && diff.num_days() <= 7, "Task should be shifted to next week from today");
+    assert!(
+        diff.num_days() >= 6 && diff.num_days() <= 7,
+        "Task should be shifted to next week from today"
+    );
 }
 
 #[test]
@@ -340,14 +343,18 @@ fn test_task_time_tracking_intents() {
     store.add_task(task);
 
     // Start
-    let intent_start = cfait::model::AppIntent::StartTask { uid: "123".to_string() };
+    let intent_start = cfait::model::AppIntent::StartTask {
+        uid: "123".to_string(),
+    };
     store.apply_task_intent(&intent_start, &config);
     let t = store.get_task_ref("123").unwrap();
     assert_eq!(t.status, TaskStatus::InProcess);
     assert!(t.last_started_at.is_some());
 
     // Pause
-    let intent_pause = cfait::model::AppIntent::PauseTask { uid: "123".to_string() };
+    let intent_pause = cfait::model::AppIntent::PauseTask {
+        uid: "123".to_string(),
+    };
     store.apply_task_intent(&intent_pause, &config);
     let t2 = store.get_task_ref("123").unwrap();
     assert_eq!(t2.status, TaskStatus::NeedsAction);
@@ -357,7 +364,9 @@ fn test_task_time_tracking_intents() {
     store.apply_task_intent(&intent_start, &config);
 
     // Stop
-    let intent_stop = cfait::model::AppIntent::StopTask { uid: "123".to_string() };
+    let intent_stop = cfait::model::AppIntent::StopTask {
+        uid: "123".to_string(),
+    };
     store.apply_task_intent(&intent_stop, &config);
     let t3 = store.get_task_ref("123").unwrap();
     assert_eq!(t3.status, TaskStatus::NeedsAction);
@@ -384,56 +393,158 @@ fn test_apply_task_intent_comprehensive() {
     store.add_task(t2);
 
     // MakeChild
-    store.apply_task_intent(&cfait::model::AppIntent::MakeChild { uid: "2".to_string(), parent_uid: "1".to_string() }, &config);
-    assert_eq!(store.get_task_ref("2").unwrap().parent_uid, Some("1".to_string()));
+    store.apply_task_intent(
+        &cfait::model::AppIntent::MakeChild {
+            uid: "2".to_string(),
+            parent_uid: "1".to_string(),
+        },
+        &config,
+    );
+    assert_eq!(
+        store.get_task_ref("2").unwrap().parent_uid,
+        Some("1".to_string())
+    );
 
     // RemoveParent
-    store.apply_task_intent(&cfait::model::AppIntent::RemoveParent { uid: "2".to_string() }, &config);
+    store.apply_task_intent(
+        &cfait::model::AppIntent::RemoveParent {
+            uid: "2".to_string(),
+        },
+        &config,
+    );
     assert_eq!(store.get_task_ref("2").unwrap().parent_uid, None);
 
     // AddDependency
-    store.apply_task_intent(&cfait::model::AppIntent::AddDependency { uid: "1".to_string(), blocker_uid: "2".to_string() }, &config);
-    assert!(store.get_task_ref("1").unwrap().dependencies.contains(&"2".to_string()));
+    store.apply_task_intent(
+        &cfait::model::AppIntent::AddDependency {
+            uid: "1".to_string(),
+            blocker_uid: "2".to_string(),
+        },
+        &config,
+    );
+    assert!(
+        store
+            .get_task_ref("1")
+            .unwrap()
+            .dependencies
+            .contains(&"2".to_string())
+    );
 
     // RemoveDependency
-    store.apply_task_intent(&cfait::model::AppIntent::RemoveDependency { uid: "1".to_string(), blocker_uid: "2".to_string() }, &config);
-    assert!(!store.get_task_ref("1").unwrap().dependencies.contains(&"2".to_string()));
+    store.apply_task_intent(
+        &cfait::model::AppIntent::RemoveDependency {
+            uid: "1".to_string(),
+            blocker_uid: "2".to_string(),
+        },
+        &config,
+    );
+    assert!(
+        !store
+            .get_task_ref("1")
+            .unwrap()
+            .dependencies
+            .contains(&"2".to_string())
+    );
 
     // AddRelatedTo
-    store.apply_task_intent(&cfait::model::AppIntent::AddRelatedTo { uid: "1".to_string(), related_uid: "2".to_string() }, &config);
-    assert!(store.get_task_ref("1").unwrap().related_to.contains(&"2".to_string()));
+    store.apply_task_intent(
+        &cfait::model::AppIntent::AddRelatedTo {
+            uid: "1".to_string(),
+            related_uid: "2".to_string(),
+        },
+        &config,
+    );
+    assert!(
+        store
+            .get_task_ref("1")
+            .unwrap()
+            .related_to
+            .contains(&"2".to_string())
+    );
 
     // RemoveRelatedTo
-    store.apply_task_intent(&cfait::model::AppIntent::RemoveRelatedTo { uid: "1".to_string(), related_uid: "2".to_string() }, &config);
-    assert!(!store.get_task_ref("1").unwrap().related_to.contains(&"2".to_string()));
+    store.apply_task_intent(
+        &cfait::model::AppIntent::RemoveRelatedTo {
+            uid: "1".to_string(),
+            related_uid: "2".to_string(),
+        },
+        &config,
+    );
+    assert!(
+        !store
+            .get_task_ref("1")
+            .unwrap()
+            .related_to
+            .contains(&"2".to_string())
+    );
 
     // ChangePriority
-    store.apply_task_intent(&cfait::model::AppIntent::ChangePriority { uid: "1".to_string(), delta: 1 }, &config);
+    store.apply_task_intent(
+        &cfait::model::AppIntent::ChangePriority {
+            uid: "1".to_string(),
+            delta: 1,
+        },
+        &config,
+    );
 
     // ToggleTreeCollapse
-    store.apply_task_intent(&cfait::model::AppIntent::ToggleTreeCollapse { uid: "1".to_string() }, &config);
+    store.apply_task_intent(
+        &cfait::model::AppIntent::ToggleTreeCollapse {
+            uid: "1".to_string(),
+        },
+        &config,
+    );
     assert!(store.get_task_ref("1").unwrap().collapsed);
 
     // MoveTask
-    store.apply_task_intent(&cfait::model::AppIntent::MoveTask { uid: "1".to_string(), target_href: "cal2".to_string() }, &config);
+    store.apply_task_intent(
+        &cfait::model::AppIntent::MoveTask {
+            uid: "1".to_string(),
+            target_href: "cal2".to_string(),
+        },
+        &config,
+    );
     assert_eq!(store.get_task_ref("1").unwrap().calendar_href, "cal2");
 
     // CancelTask
-    store.apply_task_intent(&cfait::model::AppIntent::CancelTask { uid: "2".to_string() }, &config);
-    assert_eq!(store.get_task_ref("2").unwrap().status, TaskStatus::Cancelled);
+    store.apply_task_intent(
+        &cfait::model::AppIntent::CancelTask {
+            uid: "2".to_string(),
+        },
+        &config,
+    );
+    assert_eq!(
+        store.get_task_ref("2").unwrap().status,
+        TaskStatus::Cancelled
+    );
 
     // DuplicateTaskTree
-    store.apply_task_intent(&cfait::model::AppIntent::DuplicateTaskTree { uid: "1".to_string() }, &config);
+    store.apply_task_intent(
+        &cfait::model::AppIntent::DuplicateTaskTree {
+            uid: "1".to_string(),
+        },
+        &config,
+    );
 
     // DeleteTask
-    store.apply_task_intent(&cfait::model::AppIntent::DeleteTask { uid: "1".to_string() }, &config);
+    store.apply_task_intent(
+        &cfait::model::AppIntent::DeleteTask {
+            uid: "1".to_string(),
+        },
+        &config,
+    );
     assert!(store.get_task_ref("1").is_none());
 
     // DeleteTaskTree
     let mut t3 = Task::new("T3", &HashMap::new(), None);
     t3.uid = "3".to_string();
     store.add_task(t3);
-    store.apply_task_intent(&cfait::model::AppIntent::DeleteTaskTree { uid: "3".to_string() }, &config);
+    store.apply_task_intent(
+        &cfait::model::AppIntent::DeleteTaskTree {
+            uid: "3".to_string(),
+        },
+        &config,
+    );
     assert!(store.get_task_ref("3").is_none());
 }
 
@@ -505,16 +616,24 @@ fn test_color_utils_hex_parsing() {
 fn test_session_state_intents() {
     let mut session = cfait::model::SessionState::default();
 
-    session.apply_session_intent(&cfait::model::AppIntent::SetSearchTerm { term: "test".to_string() });
+    session.apply_session_intent(&cfait::model::AppIntent::SetSearchTerm {
+        term: "test".to_string(),
+    });
     assert_eq!(session.search_term, "test");
 
-    session.apply_session_intent(&cfait::model::AppIntent::ToggleTagFilter { tag: "work".to_string() });
+    session.apply_session_intent(&cfait::model::AppIntent::ToggleTagFilter {
+        tag: "work".to_string(),
+    });
     assert!(session.selected_categories.contains(&"work".to_string()));
 
-    session.apply_session_intent(&cfait::model::AppIntent::ToggleTagFilter { tag: "work".to_string() });
+    session.apply_session_intent(&cfait::model::AppIntent::ToggleTagFilter {
+        tag: "work".to_string(),
+    });
     assert!(!session.selected_categories.contains(&"work".to_string()));
 
-    session.apply_session_intent(&cfait::model::AppIntent::ToggleLocationFilter { location: "home".to_string() });
+    session.apply_session_intent(&cfait::model::AppIntent::ToggleLocationFilter {
+        location: "home".to_string(),
+    });
     assert!(session.selected_locations.contains(&"home".to_string()));
 
     session.apply_session_intent(&cfait::model::AppIntent::ToggleMatchAllCategories);
@@ -525,7 +644,9 @@ fn test_session_state_intents() {
     assert!(session.selected_categories.is_empty());
     assert!(session.selected_locations.is_empty());
 
-    session.apply_session_intent(&cfait::model::AppIntent::ToggleDoneGroup { key: "group".to_string() });
+    session.apply_session_intent(&cfait::model::AppIntent::ToggleDoneGroup {
+        key: "group".to_string(),
+    });
     assert!(session.expanded_done_groups.contains(&"group".to_string()));
 }
 
@@ -565,7 +686,10 @@ fn test_config_errors_and_save() {
     let loaded_cred = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap();
     assert_eq!(loaded_cred.url, "http://example.com");
 
-    assert_eq!(cfait::config::LogLevel::Debug.to_level_filter(), log::LevelFilter::Debug);
+    assert_eq!(
+        cfait::config::LogLevel::Debug.to_level_filter(),
+        log::LevelFilter::Debug
+    );
 
     assert!(!cfait::config::TaskAction::OpenUrl.label().is_empty());
 }
@@ -574,7 +698,11 @@ fn test_config_errors_and_save() {
 fn test_system_logging_and_keyring() {
     let ctx = Arc::new(TestContext::new());
 
-    cfait::system::init_logging(ctx.as_ref(), false, Some(cfait::config::LogLevel::Debug.to_level_filter()));
+    cfait::system::init_logging(
+        ctx.as_ref(),
+        false,
+        Some(cfait::config::LogLevel::Debug.to_level_filter()),
+    );
     cfait::system::set_log_level(log::LevelFilter::Trace);
 
     cfait::system::init_keyring();
@@ -593,14 +721,22 @@ async fn test_companion_events_batching() {
     task1.calendar_href = format!("{}/cal/", url);
     task1.href = format!("{}/cal/t1.ics", url);
 
-    let _mock_report = server.mock("REPORT", "/cal/")
+    let _mock_report = server
+        .mock("REPORT", "/cal/")
         .with_status(207)
         .with_body(r#"<d:multistatus xmlns:d="DAV:"></d:multistatus>"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
-    let count = client.delete_all_companion_events(&task1.calendar_href).await.unwrap();
+    let count = client
+        .delete_all_companion_events(&task1.calendar_href)
+        .await
+        .unwrap();
     assert_eq!(count, 0);
 
-    let count = client.sync_multiple_companion_events(&[task1], true, false).await.unwrap();
+    let count = client
+        .sync_multiple_companion_events(&[task1], true, false)
+        .await
+        .unwrap();
     assert_eq!(count, 3); // 3 deletion futures for legacy suffixes
 }

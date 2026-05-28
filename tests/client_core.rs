@@ -166,18 +166,28 @@ async fn test_calendar_creation_and_updating() {
         .with_body(r#"<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:response><d:href>/user/</d:href><d:propstat><d:prop><c:calendar-home-set><d:href>/cal/</d:href></c:calendar-home-set></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>"#)
         .create_async().await;
 
-    let _mock_mkcal = server.mock("MKCALENDAR", mockito::Matcher::Any)
+    let _mock_mkcal = server
+        .mock("MKCALENDAR", mockito::Matcher::Any)
         .with_status(201)
-        .create_async().await;
+        .create_async()
+        .await;
 
-    let _mock_proppatch = server.mock("PROPPATCH", mockito::Matcher::Any)
+    let _mock_proppatch = server
+        .mock("PROPPATCH", mockito::Matcher::Any)
         .with_status(200)
-        .create_async().await;
+        .create_async()
+        .await;
 
-    let new_cal = client.create_calendar("New Cal", Some("#FF0000")).await.unwrap();
+    let new_cal = client
+        .create_calendar("New Cal", Some("#FF0000"))
+        .await
+        .unwrap();
     assert!(new_cal.starts_with("/cal/"));
 
-    client.update_calendar(&new_cal, "Updated Cal", None).await.unwrap();
+    client
+        .update_calendar(&new_cal, "Updated Cal", None)
+        .await
+        .unwrap();
 }
 
 // --- MOVE TASK TESTS (updated to use TaskController) ---
@@ -207,13 +217,19 @@ async fn test_controller_move_local_to_remote() {
     let controller = cfait::controller::TaskController::new(store.clone(), client_arc, ctx.clone());
 
     let dest = "https://example.com/cal/dest/";
-    let (orig, mut updated) = store.lock().await.move_task(&task.uid, dest.to_string()).unwrap();
+    let (orig, mut updated) = store
+        .lock()
+        .await
+        .move_task(&task.uid, dest.to_string())
+        .unwrap();
     updated.href = String::new();
     updated.etag = String::new();
-    let res = controller.persist_changes(vec![
-        cfait::journal::Action::Delete(orig),
-        cfait::journal::Action::Create(updated)
-    ]).await;
+    let res = controller
+        .persist_changes(vec![
+            cfait::journal::Action::Delete(orig),
+            cfait::journal::Action::Create(updated),
+        ])
+        .await;
     assert!(
         res.is_ok(),
         "Expected controller persist_changes to succeed in queuing migration"

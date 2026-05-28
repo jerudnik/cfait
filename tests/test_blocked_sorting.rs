@@ -52,7 +52,7 @@ fn test_blocked_tasks_skip_urgent_rank() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -132,7 +132,7 @@ fn test_blocked_tasks_skip_due_soon_rank() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -210,7 +210,7 @@ fn test_blocked_tasks_skip_started_rank() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -289,7 +289,7 @@ fn test_dependency_blocked_tasks_also_skip_ranks() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -373,7 +373,7 @@ fn test_is_ready_filters_manually_blocked_tasks() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -443,7 +443,7 @@ fn test_is_blocked_filter_shows_only_blocked() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),

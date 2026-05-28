@@ -14,43 +14,49 @@ use iced::widget::text_editor;
 fn dispatch_and_maintain_selection(app: &mut GuiApp, intent: AppIntent, focus_uid: &str) {
     let was_selected = app.selected_uid.as_deref() == Some(focus_uid);
     let old_idx = app.find_task_index_by_uid(focus_uid);
-    
+
     common::dispatch_intent(app, intent);
-    
+
     if was_selected
         && let Some(idx) = old_idx
-            && app.find_task_index_by_uid(focus_uid).is_none() {
-                let new_idx = idx.min(app.tasks.len().saturating_sub(1));
-                let mut fallback = None;
-                for i in new_idx..app.tasks.len() {
-                    if let Some(t) = app.get_task_at_index(i) {
-                        fallback = Some(t.uid.clone());
-                        break;
-                    }
-                }
-                if fallback.is_none() {
-                    for i in (0..new_idx).rev() {
-                        if let Some(t) = app.get_task_at_index(i) {
-                            fallback = Some(t.uid.clone());
-                            break;
-                        }
-                    }
-                }
-                if fallback.is_some() {
-                    app.selected_uid = fallback;
+        && app.find_task_index_by_uid(focus_uid).is_none()
+    {
+        let new_idx = idx.min(app.tasks.len().saturating_sub(1));
+        let mut fallback = None;
+        for i in new_idx..app.tasks.len() {
+            if let Some(t) = app.get_task_at_index(i) {
+                fallback = Some(t.uid.clone());
+                break;
+            }
+        }
+        if fallback.is_none() {
+            for i in (0..new_idx).rev() {
+                if let Some(t) = app.get_task_at_index(i) {
+                    fallback = Some(t.uid.clone());
+                    break;
                 }
             }
+        }
+        if fallback.is_some() {
+            app.selected_uid = fallback;
+        }
+    }
 }
 
 /// Dispatch an intent that re-sorts the focused task, then keep selection on the row below it instead of following that task.
 fn dispatch_and_select_next_row(app: &mut GuiApp, intent: AppIntent, uid: String) {
     let was_selected = app.selected_uid.as_ref() == Some(&uid);
-    
+
     let next_uid = if was_selected {
         app.find_task_index_by_uid(&uid)
             .and_then(|idx| {
-                app.get_task_at_index(idx + 1)
-                   .or_else(|| if idx > 0 { app.get_task_at_index(idx - 1) } else { None })
+                app.get_task_at_index(idx + 1).or_else(|| {
+                    if idx > 0 {
+                        app.get_task_at_index(idx - 1)
+                    } else {
+                        None
+                    }
+                })
             })
             .map(|task| task.uid.clone())
     } else {
@@ -61,9 +67,10 @@ fn dispatch_and_select_next_row(app: &mut GuiApp, intent: AppIntent, uid: String
 
     if was_selected
         && let Some(next_uid) = next_uid
-            && app.find_task_index_by_uid(&next_uid).is_some() {
-                app.selected_uid = Some(next_uid);
-            }
+        && app.find_task_index_by_uid(&next_uid).is_some()
+    {
+        app.selected_uid = Some(next_uid);
+    }
 }
 
 pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
@@ -120,11 +127,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::SubmitTask => handle_submit(app),
 
         Message::EditTaskStart(index) => {
-            let data = app.get_task_at_index(index).map(|t| {
-                (t.uid.clone(), t.to_smart_string(), t.description.clone())
-            });
+            let data = app
+                .get_task_at_index(index)
+                .map(|t| (t.uid.clone(), t.to_smart_string(), t.description.clone()));
             if let Some((task_uid, task_summary, task_description)) = data {
-
                 app.input_value = text_editor::Content::with_text(&task_summary);
                 app.input_value
                     .perform(text_editor::Action::Move(text_editor::Motion::DocumentEnd));
@@ -155,13 +161,23 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
         Message::ToggleTaskShiftSelected => {
             if let Some(uid) = app.selected_uid.clone() {
-                dispatch_and_select_next_row(app, AppIntent::ToggleTaskShift { uid: uid.clone() }, uid);
+                dispatch_and_select_next_row(
+                    app,
+                    AppIntent::ToggleTaskShift { uid: uid.clone() },
+                    uid,
+                );
             }
             Task::none()
         }
 
         Message::ToggleTask(index, _) => {
-            let data = app.get_task_at_index(index).map(|t| (t.uid.clone(), t.etag == "pending_refresh", t.status.is_done()));
+            let data = app.get_task_at_index(index).map(|t| {
+                (
+                    t.uid.clone(),
+                    t.etag == "pending_refresh",
+                    t.status.is_done(),
+                )
+            });
             if let Some((uid, is_pending, is_done)) = data {
                 if is_pending {
                     return Task::none();
@@ -170,10 +186,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                     dispatch_and_maintain_selection(
                         app,
                         AppIntent::ToggleTask { uid: uid.clone() },
-                        &uid
+                        &uid,
                     );
                 } else {
-                    dispatch_and_select_next_row(app, AppIntent::ToggleTask { uid: uid.clone() }, uid);
+                    dispatch_and_select_next_row(
+                        app,
+                        AppIntent::ToggleTask { uid: uid.clone() },
+                        uid,
+                    );
                 }
             }
             Task::none()
@@ -212,7 +232,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 dispatch_and_maintain_selection(
                     app,
                     AppIntent::DeleteTask { uid: uid.clone() },
-                    &uid
+                    &uid,
                 );
             }
             Task::none()
@@ -281,7 +301,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         uid: selected_uid.clone(),
                         parent_uid,
                     },
-                    &selected_uid
+                    &selected_uid,
                 );
             }
             Task::none()
@@ -372,7 +392,11 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::DeleteTaskTree(uid) => {
             app.yanked_uid = None;
             app.yank_lock_active = false;
-            dispatch_and_maintain_selection(app, AppIntent::DeleteTaskTree { uid: uid.clone() }, &uid);
+            dispatch_and_maintain_selection(
+                app,
+                AppIntent::DeleteTaskTree { uid: uid.clone() },
+                &uid,
+            );
             Task::none()
         }
 
@@ -414,13 +438,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::ChangePriority(index, delta) => {
             if let Some(uid) = app.get_task_at_index(index).map(|t| t.uid.clone()) {
                 app.selected_uid = Some(uid.clone());
-                common::dispatch_intent(
-                    app,
-                    AppIntent::ChangePriority {
-                        uid,
-                        delta,
-                    },
-                );
+                common::dispatch_intent(app, AppIntent::ChangePriority { uid, delta });
             }
             Task::none()
         }
@@ -429,9 +447,17 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             if let Some(uid) = app.get_task_at_index(index).map(|t| t.uid.clone()) {
                 app.selected_uid = Some(uid.clone());
                 if new_status == crate::model::TaskStatus::Cancelled {
-                    dispatch_and_select_next_row(app, AppIntent::CancelTask { uid: uid.clone() }, uid);
+                    dispatch_and_select_next_row(
+                        app,
+                        AppIntent::CancelTask { uid: uid.clone() },
+                        uid,
+                    );
                 } else if new_status.is_done() {
-                    dispatch_and_select_next_row(app, AppIntent::ToggleTask { uid: uid.clone() }, uid);
+                    dispatch_and_select_next_row(
+                        app,
+                        AppIntent::ToggleTask { uid: uid.clone() },
+                        uid,
+                    );
                 }
             }
             Task::none()
@@ -440,7 +466,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::MoveTask(uid, target_href) => {
             app.selected_uid = Some(uid.clone());
             app.moving_task_uid = None;
-            dispatch_and_maintain_selection(app, AppIntent::MoveTask { uid: uid.clone(), target_href }, &uid);
+            dispatch_and_maintain_selection(
+                app,
+                AppIntent::MoveTask {
+                    uid: uid.clone(),
+                    target_href,
+                },
+                &uid,
+            );
             Task::none()
         }
 
@@ -568,24 +601,44 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         uid: target_uid.clone(),
                         parent_uid,
                     },
-                    &target_uid
+                    &target_uid,
                 );
             }
             Task::none()
         }
 
         Message::RemoveParent(child_uid) => {
-            dispatch_and_maintain_selection(app, AppIntent::RemoveParent { uid: child_uid.clone() }, &child_uid);
+            dispatch_and_maintain_selection(
+                app,
+                AppIntent::RemoveParent {
+                    uid: child_uid.clone(),
+                },
+                &child_uid,
+            );
             Task::none()
         }
 
         Message::RemoveDependency(uid, blocker_uid) => {
-            dispatch_and_maintain_selection(app, AppIntent::RemoveDependency { uid: uid.clone(), blocker_uid }, &uid);
+            dispatch_and_maintain_selection(
+                app,
+                AppIntent::RemoveDependency {
+                    uid: uid.clone(),
+                    blocker_uid,
+                },
+                &uid,
+            );
             Task::none()
         }
 
         Message::RemoveRelatedTo(uid, related_uid) => {
-            dispatch_and_maintain_selection(app, AppIntent::RemoveRelatedTo { uid: uid.clone(), related_uid }, &uid);
+            dispatch_and_maintain_selection(
+                app,
+                AppIntent::RemoveRelatedTo {
+                    uid: uid.clone(),
+                    related_uid,
+                },
+                &uid,
+            );
             Task::none()
         }
 
@@ -600,7 +653,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         uid: target_uid.clone(),
                         blocker_uid,
                     },
-                    &target_uid
+                    &target_uid,
                 );
             }
             Task::none()
@@ -617,7 +670,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         uid: target_uid.clone(),
                         related_uid,
                     },
-                    &target_uid
+                    &target_uid,
                 );
             }
             Task::none()
@@ -691,7 +744,11 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 if task.etag == "pending_refresh" {
                     return Task::none();
                 }
-                dispatch_and_select_next_row(app, AppIntent::ToggleTask { uid: t_uid.clone() }, t_uid.clone());
+                dispatch_and_select_next_row(
+                    app,
+                    AppIntent::ToggleTask { uid: t_uid.clone() },
+                    t_uid.clone(),
+                );
             }
             Task::none()
         }
@@ -701,7 +758,11 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 .retain(|(t, a)| !(t.uid == t_uid && a.uid == a_uid));
 
             if app.find_task_index_by_uid(&t_uid).is_some() {
-                dispatch_and_select_next_row(app, AppIntent::CancelTask { uid: t_uid.clone() }, t_uid.clone());
+                dispatch_and_select_next_row(
+                    app,
+                    AppIntent::CancelTask { uid: t_uid.clone() },
+                    t_uid.clone(),
+                );
             }
             Task::none()
         }
@@ -880,9 +941,10 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
                     actions.push(crate::journal::Action::Update(t));
                 }
                 if !actions.is_empty()
-                    && let Some(tx) = &app.bg_tx {
-                        let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
-                    }
+                    && let Some(tx) = &app.bg_tx
+                {
+                    let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
+                }
             }
             return Task::none();
         }
@@ -907,9 +969,10 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
                     actions.push(crate::journal::Action::Update(t));
                 }
                 if !actions.is_empty()
-                    && let Some(tx) = &app.bg_tx {
-                        let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
-                    }
+                    && let Some(tx) = &app.bg_tx
+                {
+                    let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
+                }
             }
             return Task::none();
         }
@@ -942,9 +1005,10 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
             }
 
             if !actions.is_empty()
-                && let Some(tx) = &app.bg_tx {
-                    let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
-                }
+                && let Some(tx) = &app.bg_tx
+            {
+                let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
+            }
 
             return Task::none();
         }
@@ -1032,9 +1096,10 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
             }
 
             if !actions.is_empty()
-                && let Some(tx) = &app.bg_tx {
-                    let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
-                }
+                && let Some(tx) = &app.bg_tx
+            {
+                let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
+            }
 
             return Task::batch(vec![scroll_cmd, focus_cmd]);
         }
@@ -1046,9 +1111,10 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
             actions.push(crate::journal::Action::Update(t));
         }
         if !actions.is_empty()
-            && let Some(tx) = &app.bg_tx {
-                let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
-            }
+            && let Some(tx) = &app.bg_tx
+        {
+            let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
+        }
     }
 
     Task::none()

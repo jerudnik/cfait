@@ -702,7 +702,9 @@ impl Config {
                 out.push_str(" # Boolean: Hide tags in sidebar if all their tasks are completed.");
             } else if trimmed.starts_with("ui_scale =") {
                 out.push_str(line);
-                out.push_str(" # Float: Global UI scale factor (0.5–3.0). Ctrl+/Ctrl-/scroll to change.");
+                out.push_str(
+                    " # Float: Global UI scale factor (0.5–3.0). Ctrl+/Ctrl-/scroll to change.",
+                );
             } else if trimmed.starts_with("theme =") {
                 out.push_str(line);
                 out.push_str(" # String: GUI Theme (RustyDark, Light, Dark, Dracula, Nord, etc).");

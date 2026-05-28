@@ -102,8 +102,8 @@ fn fix_and_encode_path(
         }
 
         // --- APPLIED FIX: IGNORE MEANINGLESS "/" OVERLAPS ---
-        // If the overlap is just "/", it means the paths share no directories 
-        // (e.g., "/dav/" and "/calendars/"). In this case, they are disjoint, 
+        // If the overlap is just "/", it means the paths share no directories
+        // (e.g., "/dav/" and "/calendars/"). In this case, they are disjoint,
         // and we must trust the absolute path provided by the server.
         if !best_overlap.is_empty() && best_overlap != "/" {
             let mut fixed = base_path[..base_path.len() - best_overlap.len()].to_string();
@@ -181,16 +181,29 @@ impl RustyClient {
                     href: None,
                     refresh_path: Some(path),
                 })
-                .with_warning(rust_i18n::t!("sync_conflict_creation", summary = task.summary.clone()).to_string()))
+                .with_warning(
+                    rust_i18n::t!("sync_conflict_creation", summary = task.summary.clone())
+                        .to_string(),
+                ))
             }
             Err(e) => {
                 let msg = format!("{:?}", e);
                 let is_fatal = match &e {
                     WebDavError::BadStatusCode(status) => {
                         let code = status.as_u16();
-                        code == 400 || code == 403 || code == 404 || code == 405 || code == 409 || code == 415
+                        code == 400
+                            || code == 403
+                            || code == 404
+                            || code == 405
+                            || code == 409
+                            || code == 415
                     }
-                    _ => msg.contains("NotFound") || msg.contains("Conflict") || msg.contains("InvalidInput") || msg.contains("invalid uri character"),
+                    _ => {
+                        msg.contains("NotFound")
+                            || msg.contains("Conflict")
+                            || msg.contains("InvalidInput")
+                            || msg.contains("invalid uri character")
+                    }
                 };
 
                 if is_fatal {
@@ -283,7 +296,10 @@ impl RustyClient {
                         StepResult::new(StepOutcome::RetryWith(Box::new(Action::Create(
                             conflict_copy,
                         ))))
-                        .with_warning(rust_i18n::t!("sync_conflict_412", summary = task.summary.clone()).to_string()),
+                        .with_warning(
+                            rust_i18n::t!("sync_conflict_412", summary = task.summary.clone())
+                                .to_string(),
+                        ),
                     )
                 }
             }
@@ -292,7 +308,7 @@ impl RustyClient {
             )),
             Err(e) => {
                 let msg = format!("{:?}", e);
-                
+
                 let is_conflict = match &e {
                     WebDavError::BadStatusCode(status) => status.as_u16() == 412,
                     _ => msg.contains("412") || msg.contains("PreconditionFailed"),
@@ -308,7 +324,13 @@ impl RustyClient {
                         StepResult::new(StepOutcome::RetryWith(Box::new(Action::Create(
                             conflict_copy,
                         ))))
-                        .with_warning(rust_i18n::t!("sync_conflict_412_fallback", summary = task.summary.clone()).to_string()),
+                        .with_warning(
+                            rust_i18n::t!(
+                                "sync_conflict_412_fallback",
+                                summary = task.summary.clone()
+                            )
+                            .to_string(),
+                        ),
                     )
                 } else {
                     let is_fatal = match &e {
@@ -316,7 +338,11 @@ impl RustyClient {
                             let code = status.as_u16();
                             code == 400 || code == 403 || code == 405 || code == 409 || code == 415
                         }
-                        _ => msg.contains("Conflict") || msg.contains("InvalidInput") || msg.contains("invalid uri character"),
+                        _ => {
+                            msg.contains("Conflict")
+                                || msg.contains("InvalidInput")
+                                || msg.contains("invalid uri character")
+                        }
                     };
 
                     if is_fatal {
@@ -381,7 +407,10 @@ impl RustyClient {
                 retry_task.etag = String::new(); // clear etag to force delete on next attempt
                 Ok(
                     StepResult::new(StepOutcome::RetryWith(Box::new(Action::Delete(retry_task))))
-                        .with_warning(rust_i18n::t!("sync_conflict_delete", summary = task.summary.clone()).to_string()),
+                        .with_warning(
+                            rust_i18n::t!("sync_conflict_delete", summary = task.summary.clone())
+                                .to_string(),
+                        ),
                 )
             }
             Err(e) => {
@@ -391,9 +420,13 @@ impl RustyClient {
                         let code = status.as_u16();
                         code == 400 || code == 403 || code == 405 || code == 409 || code == 415
                     }
-                    _ => msg.contains("Conflict") || msg.contains("InvalidInput") || msg.contains("invalid uri character"),
+                    _ => {
+                        msg.contains("Conflict")
+                            || msg.contains("InvalidInput")
+                            || msg.contains("invalid uri character")
+                    }
                 };
-                
+
                 if is_fatal {
                     Ok(StepResult::new(StepOutcome::Discard).with_warning(msg))
                 } else {
@@ -462,7 +495,9 @@ impl RustyClient {
                     Action::Create(moved),
                     Action::Delete(task.clone()),
                 ]))
-                .with_warning(rust_i18n::t!("sync_move_failed_fallback", error = e.to_string()).to_string()))
+                .with_warning(
+                    rust_i18n::t!("sync_move_failed_fallback", error = e.to_string()).to_string(),
+                ))
             }
         }
     }
@@ -617,9 +652,8 @@ impl RustyClient {
                                         existing.push(task_clone);
                                     },
                                 );
-                                warnings.push(
-                                    rust_i18n::t!("sync_fatal_error_recovery").to_string(),
-                                );
+                                warnings
+                                    .push(rust_i18n::t!("sync_fatal_error_recovery").to_string());
                             }
                         }
                     }
@@ -676,14 +710,14 @@ impl RustyClient {
                             }
                         }
 
-			if let Some((old_href, new_href)) = &new_href_to_propagate {
-			    let (target_uid, target_cal_href) = match &next_action {
-				Action::Move(t, target) => (t.uid.clone(), target.clone()),
-				Action::Create(t) => (t.uid.clone(), t.calendar_href.clone()),
-				Action::Update(t) => (t.uid.clone(), t.calendar_href.clone()),
-				_ => (String::new(), String::new()),
-			    };
-			    for item in queue.iter_mut() {
+                        if let Some((old_href, new_href)) = &new_href_to_propagate {
+                            let (target_uid, target_cal_href) = match &next_action {
+                                Action::Move(t, target) => (t.uid.clone(), target.clone()),
+                                Action::Create(t) => (t.uid.clone(), t.calendar_href.clone()),
+                                Action::Update(t) => (t.uid.clone(), t.calendar_href.clone()),
+                                _ => (String::new(), String::new()),
+                            };
+                            for item in queue.iter_mut() {
                                 match item {
                                     Action::Update(t) | Action::Delete(t)
                                         if (t.uid == target_uid
@@ -692,8 +726,7 @@ impl RustyClient {
                                     {
                                         t.href = new_href.clone();
                                         if let Some(last_slash) = new_href.rfind('/') {
-                                            t.calendar_href =
-                                                new_href[..=last_slash].to_string();
+                                            t.calendar_href = new_href[..=last_slash].to_string();
                                         }
                                     }
                                     Action::Move(t, _)

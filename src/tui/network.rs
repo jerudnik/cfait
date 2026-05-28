@@ -75,7 +75,9 @@ pub async fn run_network_actor(
     // PRUNE TRASH on startup (best-effort; report error to event channel)
     if let Err(e) = controller.prune_trash().await {
         let _ = event_tx
-            .send(AppEvent::Error(rust_i18n::t!("error_trash_prune", error = e.to_string()).to_string()))
+            .send(AppEvent::Error(
+                rust_i18n::t!("error_trash_prune", error = e.to_string()).to_string(),
+            ))
             .await;
     }
 
@@ -138,7 +140,9 @@ pub async fn run_network_actor(
         Err(e) => {
             let err_str = e.to_string();
             if err_str.contains("InvalidCertificate") {
-                let mut helpful_msg = rust_i18n::t!("error_invalid_tls_detailed").trim().to_string();
+                let mut helpful_msg = rust_i18n::t!("error_invalid_tls_detailed")
+                    .trim()
+                    .to_string();
                 let config_path = crate::config::Config::get_path_string(ctx.as_ref())
                     .unwrap_or_else(|_| "path unknown".to_string());
                 let config_advice = rust_i18n::t!("error_tls_config_advice").trim().to_string();
@@ -256,7 +260,9 @@ pub async fn run_network_actor(
                 }
                 Err(e) => {
                     let _ = event_tx
-                        .send(AppEvent::Error(rust_i18n::t!("error_fetch_failed", error = e.to_string()).to_string()))
+                        .send(AppEvent::Error(
+                            rust_i18n::t!("error_fetch_failed", error = e.to_string()).to_string(),
+                        ))
                         .await;
                 }
             },
@@ -286,18 +292,22 @@ pub async fn run_network_actor(
                     Ok(_) => {
                         let controller_clone = controller.clone();
                         let event_tx_clone = event_tx.clone();
-                        
+
                         tokio::spawn(async move {
-                            if let Ok((_warns, synced_tasks)) = controller_clone.sync_and_update_store().await {
+                            if let Ok((_warns, synced_tasks)) =
+                                controller_clone.sync_and_update_store().await
+                            {
                                 // Send TaskSynced events instead of TasksLoaded to update metadata
                                 // without overwriting the UI's optimistic state!
                                 for sync_task in synced_tasks {
-                                    let _ = event_tx_clone.send(AppEvent::TaskSynced {
-                                        uid: sync_task.uid,
-                                        href: sync_task.href,
-                                        etag: sync_task.etag,
-                                        sequence: sync_task.sequence,
-                                    }).await;
+                                    let _ = event_tx_clone
+                                        .send(AppEvent::TaskSynced {
+                                            uid: sync_task.uid,
+                                            href: sync_task.href,
+                                            etag: sync_task.etag,
+                                            sequence: sync_task.sequence,
+                                        })
+                                        .await;
                                 }
 
                                 let _ = event_tx_clone
@@ -377,7 +387,8 @@ pub async fn run_network_actor(
                             let human = if count == 1 {
                                 rust_i18n::t!("migration_complete_moved.one").to_string()
                             } else {
-                                rust_i18n::t!("migration_complete_moved.other", count = count).to_string()
+                                rust_i18n::t!("migration_complete_moved.other", count = count)
+                                    .to_string()
                             };
                             let _ = event_tx
                                 .send(AppEvent::Status {

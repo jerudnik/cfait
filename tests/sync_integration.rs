@@ -37,7 +37,10 @@ async fn test_sync_recovers_from_412() {
 
     // 3. Mock the successful creation of the "Conflict Copy"
     let mock_conflict_copy = server
-        .mock("PUT", mockito::Matcher::Regex(r"^/cal/.*\.ics$".to_string()))
+        .mock(
+            "PUT",
+            mockito::Matcher::Regex(r"^/cal/.*\.ics$".to_string()),
+        )
         .match_header("If-None-Match", "*")
         .match_body(mockito::Matcher::Regex(r"Conflict Copy".to_string()))
         .with_status(201)

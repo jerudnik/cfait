@@ -92,7 +92,10 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
                 // CalDAV Setup Loop
                 loop {
                     let title = rust_i18n::t!("tui_caldav_setup_title");
-                    println!("\n--- {} ---", title.trim_matches(|c| c == '\n' || c == '-' || c == ' '));
+                    println!(
+                        "\n--- {} ---",
+                        title.trim_matches(|c| c == '\n' || c == '-' || c == ' ')
+                    );
 
                     print!("{}", rust_i18n::t!("tui_caldav_url_prompt"));
                     io::stdout().flush()?;
@@ -141,12 +144,21 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
                             if count == 1 {
                                 println!("{}", rust_i18n::t!("tui_success_found_calendars.one"));
                             } else {
-                                println!("{}", rust_i18n::t!("tui_success_found_calendars.other", count = count));
+                                println!(
+                                    "{}",
+                                    rust_i18n::t!(
+                                        "tui_success_found_calendars.other",
+                                        count = count
+                                    )
+                                );
                             }
                             break;
                         }
                         Err(e) => {
-                            eprintln!("{}", rust_i18n::t!("connection_failed", error = e.to_string()));
+                            eprintln!(
+                                "{}",
+                                rust_i18n::t!("connection_failed", error = e.to_string())
+                            );
                             println!("{}", rust_i18n::t!("tui_retry_config_prompt"));
                             let mut retry = String::new();
                             io::stdin().read_line(&mut retry)?;
@@ -160,7 +172,10 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
             }
 
             if let Err(e) = new_config.save_with_credentials(ctx.as_ref()) {
-                eprintln!("{}", rust_i18n::t!("tui_warning_save_config", error = e.to_string()));
+                eprintln!(
+                    "{}",
+                    rust_i18n::t!("tui_warning_save_config", error = e.to_string())
+                );
             } else if let Ok(path) = config::Config::get_path_string(ctx.as_ref()) {
                 println!("{}", rust_i18n::t!("tui_config_saved", path = path));
             }

@@ -171,7 +171,7 @@ fn test_is_ready_filters_future_start_dates() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -250,7 +250,7 @@ fn test_is_ready_filters_blocked_tasks() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -335,7 +335,7 @@ fn test_is_ready_combines_with_other_filters() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
-        
+
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
         tag_aliases: &HashMap::new(),
@@ -367,7 +367,10 @@ fn test_is_ready_filters_implicitly_future_tasks() {
 
     // Parent task with future start date
     let mut parent = Task::new(
-        &format!("Parent Project ^{}", (now + Duration::days(5)).format("%Y-%m-%d")),
+        &format!(
+            "Parent Project ^{}",
+            (now + Duration::days(5)).format("%Y-%m-%d")
+        ),
         &aliases,
         None,
     );
@@ -481,9 +484,15 @@ fn test_is_ready_filters_implicitly_future_tasks() {
     assert!(child_task.is_some(), "Child task should exist in all tasks");
     if let Some(child) = child_task {
         // Child has no explicit start date, so is_future_start should be false
-        assert!(!child.is_future_start, "Child should not have explicit future start");
+        assert!(
+            !child.is_future_start,
+            "Child should not have explicit future start"
+        );
         // But it should have is_implicitly_future set to true due to parent
-        assert!(child.is_implicitly_future, "Child should be implicitly future via parent");
+        assert!(
+            child.is_implicitly_future,
+            "Child should be implicitly future via parent"
+        );
     }
 }
 
@@ -497,7 +506,10 @@ fn test_random_selector_skips_implicitly_future_tasks() {
 
     // Parent task with future start date
     let mut parent = Task::new(
-        &format!("Parent Project ^{}", (now + Duration::days(5)).format("%Y-%m-%d")),
+        &format!(
+            "Parent Project ^{}",
+            (now + Duration::days(5)).format("%Y-%m-%d")
+        ),
         &aliases,
         None,
     );
@@ -527,12 +539,18 @@ fn test_random_selector_skips_implicitly_future_tasks() {
     let iterations = 100;
     for _ in 0..iterations {
         if let Some(idx) = select_weighted_random_index(&tasks, 5) {
-            assert_ne!(idx, 0, "Should not select parent task (explicit future start)");
+            assert_ne!(
+                idx, 0,
+                "Should not select parent task (explicit future start)"
+            );
             assert_ne!(idx, 1, "Should not select child task (implicitly future)");
             assert_eq!(idx, 2, "Should only select ready task");
             ready_count += 1;
         }
     }
 
-    assert_eq!(ready_count, iterations, "Should have selected ready task every time");
+    assert_eq!(
+        ready_count, iterations,
+        "Should have selected ready task every time"
+    );
 }

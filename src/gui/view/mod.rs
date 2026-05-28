@@ -645,10 +645,9 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
 
         let max_available_height = (app.current_window_size.height - 20.0).max(100.0);
 
-        let menu_scrollable = scrollable(menu_actions)
-            .direction(Direction::Vertical(
-                Scrollbar::new().width(6).scroller_width(6).margin(0),
-            ));
+        let menu_scrollable = scrollable(menu_actions).direction(Direction::Vertical(
+            Scrollbar::new().width(6).scroller_width(6).margin(0),
+        ));
 
         let menu_container = container(menu_scrollable)
             .width(Length::Fixed(180.0))
@@ -736,9 +735,11 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
 
             let mut cal_button = button(
                 row![
-                    icon::icon(icon::CALENDAR)
-                        .size(14)
-                        .color(if is_selected { Color::from_rgb(1.0, 1.0, 1.0) } else { Color::from_rgb(0.6, 0.6, 0.6) }),
+                    icon::icon(icon::CALENDAR).size(14).color(if is_selected {
+                        Color::from_rgb(1.0, 1.0, 1.0)
+                    } else {
+                        Color::from_rgb(0.6, 0.6, 0.6)
+                    }),
                     text(&cal.name).size(14)
                 ]
                 .spacing(8)
@@ -757,13 +758,12 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             cal_list = cal_list.push(cal_button);
         }
 
-        let calendar_scroll =
-            scrollable(cal_list)
-                .id(iced::widget::Id::new("move_modal_scrollable"))
-                .height(Length::Fixed(250.0))
-                .direction(Direction::Vertical(
-                    Scrollbar::new().width(8).scroller_width(8),
-                ));
+        let calendar_scroll = scrollable(cal_list)
+            .id(iced::widget::Id::new("move_modal_scrollable"))
+            .height(Length::Fixed(250.0))
+            .direction(Direction::Vertical(
+                Scrollbar::new().width(8).scroller_width(8),
+            ));
 
         let cancel_btn = button(text(rust_i18n::t!("cancel")).size(14))
             .style(iced::widget::button::secondary)

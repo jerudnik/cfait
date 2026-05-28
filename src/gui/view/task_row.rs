@@ -15,8 +15,7 @@ use std::time::Duration;
 
 use super::tooltip_style;
 use iced::widget::{
-    Space, button, column, container, responsive, rich_text, row, span, text,
-    text_editor, tooltip,
+    Space, button, column, container, responsive, rich_text, row, span, text, text_editor, tooltip,
 };
 use iced::{Color, Element, Length, Theme};
 
@@ -516,9 +515,7 @@ pub fn view_task_row<'a>(
                         } else {
                             Color::from_rgb(0.5, 0.5, 0.5)
                         };
-                        let recurrence_icon = icon::icon(icon::REPEAT)
-                            .size(14)
-                            .color(r_color);
+                        let recurrence_icon = icon::icon(icon::REPEAT).size(14).color(r_color);
                         tags_row = tags_row.push(container(recurrence_icon).padding(0));
                     }
 
@@ -541,26 +538,27 @@ pub fn view_task_row<'a>(
                     color
                 };
 
-                let summary_text: Element<'a, Message> =
-                    if (app.strikethrough_completed && task.status.is_done()) || task.calendar_href == "local://trash" {
-                        Into::<Element<'a, Message>>::into(
-                            rich_text![
-                                span::<Message, iced::Font>(task.summary.clone())
-                                    .strikethrough(true)
-                            ]
+                let summary_text: Element<'a, Message> = if (app.strikethrough_completed
+                    && task.status.is_done())
+                    || task.calendar_href == "local://trash"
+                {
+                    Into::<Element<'a, Message>>::into(
+                        rich_text![
+                            span::<Message, iced::Font>(task.summary.clone()).strikethrough(true)
+                        ]
+                        .size(20)
+                        .color(title_color)
+                        .width(Length::Fill),
+                    )
+                } else {
+                    Into::<Element<'a, Message>>::into(
+                        text(&task.summary)
                             .size(20)
                             .color(title_color)
-                            .width(Length::Fill),
-                        )
-                    } else {
-                        Into::<Element<'a, Message>>::into(
-                            text(&task.summary)
-                                .size(20)
-                                .color(title_color)
-                                .width(Length::Fill)
-                                .wrapping(iced::widget::text::Wrapping::Word),
-                        )
-                    };
+                            .width(Length::Fill)
+                            .wrapping(iced::widget::text::Wrapping::Word),
+                    )
+                };
 
                 if place_inline {
                     row![
@@ -612,9 +610,9 @@ pub fn view_task_row<'a>(
 
                 // Generate random green shade from hash
                 // G is dominant (0.6-0.9), R and B add variety (0.0-0.2)
-                let r = ((hash >> 16) % 20) as f32 / 100.0;  // 0.0-0.19
+                let r = ((hash >> 16) % 20) as f32 / 100.0; // 0.0-0.19
                 let g = 0.6 + ((hash >> 8) % 30) as f32 / 100.0; // 0.6-0.89
-                let b = (hash % 20) as f32 / 100.0;  // 0.0-0.19
+                let b = (hash % 20) as f32 / 100.0; // 0.0-0.19
 
                 let (icon_char, tooltip_text) = if is_tree_collapsed {
                     (

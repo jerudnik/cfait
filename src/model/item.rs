@@ -452,7 +452,9 @@ pub fn compare_sortkeys(
 // Bundles the children map, result vector and other parameters so recursive helpers
 impl Task {
     pub fn is_relative_recurrence(&self) -> bool {
-        self.unmapped_properties.iter().any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION")
+        self.unmapped_properties
+            .iter()
+            .any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION")
     }
 
     /// Return the explicit COMPLETED date parsed from unmapped properties, if present.
@@ -734,8 +736,13 @@ impl Task {
             due: other.due.clone(),
             start: other.dtstart.clone(),
         };
-        compare_sortkeys(&a, &b, opts.default_priority, opts.sort_standard_by_priority)
-            .then_with(|| self.summary.cmp(&other.summary))
+        compare_sortkeys(
+            &a,
+            &b,
+            opts.default_priority,
+            opts.sort_standard_by_priority,
+        )
+        .then_with(|| self.summary.cmp(&other.summary))
     }
 
     /// Build a flattened, display-ordered list that respects parent/child hierarchy
@@ -1096,16 +1103,18 @@ impl Task {
             if is_relative && target_status == TaskStatus::Completed {
                 let now = Utc::now();
                 let today = now.date_naive();
-                let update_date = |d: &mut DateType| {
-                    match d {
-                        DateType::Specific(_) => *d = DateType::Specific(now),
-                        DateType::AllDay(_) => *d = DateType::AllDay(today),
-                        DateType::Month(_, _) => *d = DateType::Month(today.year(), today.month()),
-                        DateType::Year(_) => *d = DateType::Year(today.year()),
-                    }
+                let update_date = |d: &mut DateType| match d {
+                    DateType::Specific(_) => *d = DateType::Specific(now),
+                    DateType::AllDay(_) => *d = DateType::AllDay(today),
+                    DateType::Month(_, _) => *d = DateType::Month(today.year(), today.month()),
+                    DateType::Year(_) => *d = DateType::Year(today.year()),
                 };
-                if let Some(ref mut d) = next_task.dtstart { update_date(d); }
-                if let Some(ref mut d) = next_task.due { update_date(d); }
+                if let Some(ref mut d) = next_task.dtstart {
+                    update_date(d);
+                }
+                if let Some(ref mut d) = next_task.due {
+                    update_date(d);
+                }
             }
 
             // Add EXDATE for the current instance if this is a cancellation

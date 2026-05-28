@@ -27,7 +27,7 @@ pub enum Action {
     MigrateLocal(String, String), // (source_calendar_href, target_calendar_href)
     ToggleCalendarVisibility(String),
     IsolateCalendar(String),
-    ToggleTask(String),       // UID
+    ToggleTask(String), // UID
     DuplicateTask(String),
     DeleteTaskTree(String),
     PersistBatch(Vec<crate::journal::Action>), // <-- ADD THIS

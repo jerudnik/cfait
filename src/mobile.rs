@@ -1095,7 +1095,9 @@ impl CfaitMobile {
                     if let Some(due) = &task.due {
                         let dt = match due {
                             DateType::Specific(t) => *t,
-                            DateType::AllDay(d) => crate::model::item::safe_local_to_utc(*d, default_time),
+                            DateType::AllDay(d) => {
+                                crate::model::item::safe_local_to_utc(*d, default_time)
+                            }
                             DateType::Month(y, m) => {
                                 let d = NaiveDate::from_ymd_opt(*y, *m, 1).unwrap();
                                 crate::model::item::safe_local_to_utc(d, default_time)
@@ -1110,7 +1112,9 @@ impl CfaitMobile {
                     if let Some(start) = &task.dtstart {
                         let dt = match start {
                             DateType::Specific(t) => *t,
-                            DateType::AllDay(d) => crate::model::item::safe_local_to_utc(*d, default_time),
+                            DateType::AllDay(d) => {
+                                crate::model::item::safe_local_to_utc(*d, default_time)
+                            }
                             DateType::Month(y, m) => {
                                 let d = NaiveDate::from_ymd_opt(*y, *m, 1).unwrap();
                                 crate::model::item::safe_local_to_utc(d, default_time)
@@ -1238,7 +1242,9 @@ impl CfaitMobile {
                     if let Some(due) = &task.due {
                         let dt = match due {
                             DateType::Specific(t) => *t,
-                            DateType::AllDay(d) => crate::model::item::safe_local_to_utc(*d, default_time),
+                            DateType::AllDay(d) => {
+                                crate::model::item::safe_local_to_utc(*d, default_time)
+                            }
                             DateType::Month(y, m) => {
                                 let d = NaiveDate::from_ymd_opt(*y, *m, 1).unwrap();
                                 crate::model::item::safe_local_to_utc(d, default_time)
@@ -1254,7 +1260,9 @@ impl CfaitMobile {
                     if let Some(start) = &task.dtstart {
                         let dt = match start {
                             DateType::Specific(t) => *t,
-                            DateType::AllDay(d) => crate::model::item::safe_local_to_utc(*d, default_time),
+                            DateType::AllDay(d) => {
+                                crate::model::item::safe_local_to_utc(*d, default_time)
+                            }
                             DateType::Month(y, m) => {
                                 let d = NaiveDate::from_ymd_opt(*y, *m, 1).unwrap();
                                 crate::model::item::safe_local_to_utc(d, default_time)
@@ -1946,8 +1954,17 @@ impl CfaitMobile {
         name: String,
         color: Option<String>,
     ) -> Result<String, MobileError> {
-        let client = self.controller.client.lock().await.clone().ok_or_else(|| MobileError::from("Offline"))?;
-        let href = client.create_calendar(&name, color.as_deref()).await.map_err(|e| MobileError::from(e.to_string()))?;
+        let client = self
+            .controller
+            .client
+            .lock()
+            .await
+            .clone()
+            .ok_or_else(|| MobileError::from("Offline"))?;
+        let href = client
+            .create_calendar(&name, color.as_deref())
+            .await
+            .map_err(|e| MobileError::from(e.to_string()))?;
 
         // Optimistic update to prevent Android UI jitter
         if let Ok(mut cals) = crate::cache::Cache::load_calendars(self.ctx.as_ref()) {
@@ -1967,12 +1984,22 @@ impl CfaitMobile {
         name: String,
         color: Option<String>,
     ) -> Result<(), MobileError> {
-        let client = self.controller.client.lock().await.clone().ok_or_else(|| MobileError::from("Offline"))?;
-        client.update_calendar(&href, &name, color.as_deref()).await.map_err(|e| MobileError::from(e.to_string()))?;
+        let client = self
+            .controller
+            .client
+            .lock()
+            .await
+            .clone()
+            .ok_or_else(|| MobileError::from("Offline"))?;
+        client
+            .update_calendar(&href, &name, color.as_deref())
+            .await
+            .map_err(|e| MobileError::from(e.to_string()))?;
 
         // Optimistic update to prevent Android UI jitter
         if let Ok(mut cals) = crate::cache::Cache::load_calendars(self.ctx.as_ref())
-            && let Some(c) = cals.iter_mut().find(|c| c.href == href) {
+            && let Some(c) = cals.iter_mut().find(|c| c.href == href)
+        {
             c.name = name;
             c.color = color;
             let _ = crate::cache::Cache::save_calendars(self.ctx.as_ref(), &cals);

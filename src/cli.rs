@@ -165,7 +165,10 @@ pub fn print_help(binary_name: &str) {
             "Create a remote CalDAV collection.".to_string(),
         );
         print_cmd(
-            &format!("{} collection edit <href> --name <name> [--color #hex]", binary_name),
+            &format!(
+                "{} collection edit <href> --name <name> [--color #hex]",
+                binary_name
+            ),
             "Edit a remote CalDAV collection.".to_string(),
         );
         println!();
