@@ -207,11 +207,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                     if item.full_key == UNCATEGORIZED_ID {
                         ListItem::new(Line::from(format!(
                             "{}{} {} ({}){}",
-                            indent,
-                            selected,
-                            item.display_name,
-                            item.count,
-                            tree_icon
+                            indent, selected, item.display_name, item.count, tree_icon
                         )))
                     } else {
                         let (r, g, b) = color_utils::generate_color(&item.full_key);
@@ -221,7 +217,10 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                             Span::raw(indent),
                             Span::raw(format!("{} ", selected)),
                             Span::styled("#", Style::default().fg(color)),
-                            Span::raw(format!("{} ({}){}", item.display_name, item.count, tree_icon)),
+                            Span::raw(format!(
+                                "{} ({}){}",
+                                item.display_name, item.count, tree_icon
+                            )),
                         ];
                         ListItem::new(Line::from(spans))
                     }
@@ -263,7 +262,10 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         Span::raw(indent),
                         Span::raw(format!("{} ", selected)),
                         Span::styled("@@", Style::default().fg(Color::LightCyan)),
-                        Span::raw(format!("{} ({}){}", item.display_name, item.count, tree_icon)),
+                        Span::raw(format!(
+                            "{} ({}){}",
+                            item.display_name, item.count, tree_icon
+                        )),
                     ];
                     ListItem::new(Line::from(spans))
                 })

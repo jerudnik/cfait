@@ -496,12 +496,18 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::ToggleTagCollapse(tag) => {
-            crate::gui::update::common::dispatch_intent(app, crate::model::AppIntent::ToggleTagCollapse { tag });
+            crate::gui::update::common::dispatch_intent(
+                app,
+                crate::model::AppIntent::ToggleTagCollapse { tag },
+            );
             save_config(app);
             Task::none()
         }
         Message::ToggleLocationCollapse(location) => {
-            crate::gui::update::common::dispatch_intent(app, crate::model::AppIntent::ToggleLocationCollapse { location });
+            crate::gui::update::common::dispatch_intent(
+                app,
+                crate::model::AppIntent::ToggleLocationCollapse { location },
+            );
             save_config(app);
             Task::none()
         }

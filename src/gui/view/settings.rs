@@ -8,7 +8,8 @@ use crate::gui::state::{AppState, GuiApp};
 use crate::storage::LOCAL_CALENDAR_HREF;
 
 use iced::widget::{
-    MouseArea, Space, button, checkbox, column, container, row, scrollable, text, text_input, tooltip,
+    MouseArea, Space, button, checkbox, column, container, row, scrollable, text, text_input,
+    tooltip,
 };
 use iced::{Color, Element, Length, Theme};
 #[cfg(feature = "gui")]

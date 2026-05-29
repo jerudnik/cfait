@@ -1565,32 +1565,36 @@ pub async fn handle_key_event(
                         SidebarMode::Categories => {
                             if let Some(idx) = state.cal_state.selected()
                                 && let Some(item) = state.cached_categories.get(idx)
-                                    && item.has_children {
-                                        let key = item.full_key.clone();
-                                        if !state.expanded_tags.remove(&key) {
-                                            state.expanded_tags.insert(key);
-                                        }
-                                        state.refresh_filtered_view();
-                                        if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
-                                            cfg.expanded_tags = state.expanded_tags.iter().cloned().collect();
-                                            let _ = cfg.save(state.ctx.as_ref());
-                                        }
-                                    }
+                                && item.has_children
+                            {
+                                let key = item.full_key.clone();
+                                if !state.expanded_tags.remove(&key) {
+                                    state.expanded_tags.insert(key);
+                                }
+                                state.refresh_filtered_view();
+                                if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                                    cfg.expanded_tags =
+                                        state.expanded_tags.iter().cloned().collect();
+                                    let _ = cfg.save(state.ctx.as_ref());
+                                }
+                            }
                         }
                         SidebarMode::Locations => {
                             if let Some(idx) = state.cal_state.selected()
                                 && let Some(item) = state.cached_locations.get(idx)
-                                    && item.has_children {
-                                        let key = item.full_key.clone();
-                                        if !state.expanded_locations.remove(&key) {
-                                            state.expanded_locations.insert(key);
-                                        }
-                                        state.refresh_filtered_view();
-                                        if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
-                                            cfg.expanded_locations = state.expanded_locations.iter().cloned().collect();
-                                            let _ = cfg.save(state.ctx.as_ref());
-                                        }
-                                    }
+                                && item.has_children
+                            {
+                                let key = item.full_key.clone();
+                                if !state.expanded_locations.remove(&key) {
+                                    state.expanded_locations.insert(key);
+                                }
+                                state.refresh_filtered_view();
+                                if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                                    cfg.expanded_locations =
+                                        state.expanded_locations.iter().cloned().collect();
+                                    let _ = cfg.save(state.ctx.as_ref());
+                                }
+                            }
                         }
                         _ => {}
                     }
@@ -1756,7 +1760,8 @@ pub async fn handle_key_event(
                                 state.expanded_done_groups.insert(key.clone());
                                 state.refresh_filtered_view();
                                 if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
-                                    cfg.expanded_done_groups = state.expanded_done_groups.iter().cloned().collect();
+                                    cfg.expanded_done_groups =
+                                        state.expanded_done_groups.iter().cloned().collect();
                                     let _ = cfg.save(state.ctx.as_ref());
                                 }
                                 return None;
@@ -1765,7 +1770,8 @@ pub async fn handle_key_event(
                                 state.expanded_done_groups.remove(key);
                                 state.refresh_filtered_view();
                                 if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
-                                    cfg.expanded_done_groups = state.expanded_done_groups.iter().cloned().collect();
+                                    cfg.expanded_done_groups =
+                                        state.expanded_done_groups.iter().cloned().collect();
                                     let _ = cfg.save(state.ctx.as_ref());
                                 }
                                 return None;

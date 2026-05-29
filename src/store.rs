@@ -1870,9 +1870,15 @@ impl TaskStore {
                 let parts: Vec<&str> = key.split(':').collect();
                 let depth_val = parts.len() - 1;
                 let depth = depth_val as u32;
-                let original_full = display_names.get(key).map(|s| s.as_str()).unwrap_or(key.as_str());
+                let original_full = display_names
+                    .get(key)
+                    .map(|s| s.as_str())
+                    .unwrap_or(key.as_str());
                 let original_parts: Vec<&str> = original_full.split(':').collect();
-                let display_name = original_parts.last().unwrap_or(parts.last().unwrap()).to_string();
+                let display_name = original_parts
+                    .last()
+                    .unwrap_or(parts.last().unwrap())
+                    .to_string();
 
                 let prefix = format!("{}:", key);
                 let has_children = sorted_keys.iter().any(|k| k.starts_with(&prefix));
@@ -1884,14 +1890,19 @@ impl TaskStore {
                 };
 
                 // Hide leaf aliases if requested
-                if options.hide_aliases_in_sidebar && options.tag_aliases.contains_key(&alias_key_to_check) && !has_children {
+                if options.hide_aliases_in_sidebar
+                    && options.tag_aliases.contains_key(&alias_key_to_check)
+                    && !has_children
+                {
                     continue;
                 }
 
                 let mut visible = true;
                 let mut ancestor = String::new();
                 for (i, part) in parts.iter().enumerate().take(depth_val) {
-                    if i > 0 { ancestor.push(':'); }
+                    if i > 0 {
+                        ancestor.push(':');
+                    }
                     ancestor.push_str(part);
                     if !expanded_set.contains(&ancestor) {
                         visible = false;
@@ -1914,22 +1925,35 @@ impl TaskStore {
         };
 
         // Convert category maps into sorted vectors for UI
-        let categories = build_aggregates(cat_active_counts, cat_display_names, options.expanded_tags, false);
-        
+        let categories = build_aggregates(
+            cat_active_counts,
+            cat_display_names,
+            options.expanded_tags,
+            false,
+        );
+
         let empty_names = HashMap::new(); // Locations use self-display names naturally
-        let locations = build_aggregates(loc_active_counts, empty_names, options.expanded_locations, true);
+        let locations = build_aggregates(
+            loc_active_counts,
+            empty_names,
+            options.expanded_locations,
+            true,
+        );
 
         // Add uncategorized if needed
         let mut final_categories = categories;
         if uncat_any {
-            final_categories.insert(0, AggregateItem {
-                full_key: UNCATEGORIZED_ID.to_string(),
-                display_name: rust_i18n::t!("uncategorized").to_string(),
-                count: uncat_active_count,
-                depth: 0,
-                has_children: false,
-                is_expanded: false,
-            });
+            final_categories.insert(
+                0,
+                AggregateItem {
+                    full_key: UNCATEGORIZED_ID.to_string(),
+                    display_name: rust_i18n::t!("uncategorized").to_string(),
+                    count: uncat_active_count,
+                    depth: 0,
+                    has_children: false,
+                    is_expanded: false,
+                },
+            );
         }
 
         // duplicate aggregates removed (handled above)

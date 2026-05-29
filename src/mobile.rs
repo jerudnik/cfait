@@ -1473,7 +1473,8 @@ impl CfaitMobile {
 
         let expanded_set: HashSet<String> = options.expanded_groups.into_iter().collect();
         let expanded_tags_set: HashSet<String> = options.expanded_tags.into_iter().collect();
-        let expanded_locations_set: HashSet<String> = options.expanded_locations.into_iter().collect();
+        let expanded_locations_set: HashSet<String> =
+            options.expanded_locations.into_iter().collect();
 
         let cutoff_date = config
             .sort_cutoff_months
