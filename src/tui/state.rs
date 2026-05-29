@@ -60,6 +60,7 @@ pub struct AppState {
     pub match_all_categories: bool,
     pub hide_completed: bool,
     pub hide_fully_completed_tags: bool,
+    pub hide_aliases_in_sidebar: bool,
     pub strikethrough_completed: bool,
     pub show_priority_numbers: bool,
     pub sort_cutoff_months: Option<u32>,
@@ -70,8 +71,8 @@ pub struct AppState {
     pub show_quick_filter: bool,
 
     // Cached sidebar values (derived from the last filter result)
-    pub cached_categories: Vec<(String, usize)>,
-    pub cached_locations: Vec<(String, usize)>,
+    pub cached_categories: Vec<crate::store::AggregateItem>,
+    pub cached_locations: Vec<crate::store::AggregateItem>,
 
     pub urgent_days: u32,
     pub urgent_prio: u8,
@@ -117,6 +118,8 @@ pub struct AppState {
 
     // Expanded Done Groups (keys are parent UIDs; empty string for root group)
     pub expanded_done_groups: HashSet<String>,
+    pub expanded_tags: HashSet<String>,
+    pub expanded_locations: HashSet<String>,
 
     pub needs_redraw: bool,
 }
@@ -168,6 +171,7 @@ impl AppState {
             hide_completed: false,
             strikethrough_completed: false,
             hide_fully_completed_tags: false,
+            hide_aliases_in_sidebar: true,
             show_priority_numbers: true,
             quick_filter_term: "is:ready".to_string(),
             quick_filter_icon: "f0fa9".to_string(),
@@ -215,6 +219,8 @@ impl AppState {
 
             // Track expanded completed groups (keys are parent UIDs, empty string for roots)
             expanded_done_groups: HashSet::new(),
+            expanded_tags: HashSet::new(),
+            expanded_locations: HashSet::new(),
             needs_redraw: false,
         }
     }
@@ -269,13 +275,14 @@ impl AppState {
         // both the task list and the sidebar caches for categories/locations.
         let filter_res = self.store.filter(FilterOptions {
             active_cal_href: None, // Logic handled by hidden_calendars
-            selected_categories: &self.selected_categories,
-            selected_locations: &self.selected_locations, // Pass locations
-            match_all_categories: self.match_all_categories,
             hidden_calendars: &effective_hidden,
+            selected_categories: &self.selected_categories,
+            selected_locations: &self.selected_locations,
+            match_all_categories: self.match_all_categories,
             search_term,
             hide_completed_global: self.hide_completed,
             hide_fully_completed_tags: self.hide_fully_completed_tags,
+            hide_aliases_in_sidebar: self.hide_aliases_in_sidebar,
             cutoff_date,
             min_duration: None,
             max_duration: None,
@@ -285,8 +292,9 @@ impl AppState {
             default_priority: self.default_priority,
             start_grace_period_days: self.start_grace_period_days,
             sort_standard_by_priority: self.sort_standard_by_priority,
-            // Pass expanded groups and configured limits
             expanded_done_groups: &self.expanded_done_groups,
+            expanded_tags: &self.expanded_tags,
+            expanded_locations: &self.expanded_locations,
             max_done_roots: config.max_done_roots,
             max_done_subtasks: config.max_done_subtasks,
             tag_aliases: &config.tag_aliases,

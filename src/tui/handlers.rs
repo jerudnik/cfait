@@ -1547,16 +1547,52 @@ pub async fn handle_key_event(
                 state.refresh_filtered_view();
             }
             KeyCode::Char('z') => {
-                if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone()) {
-                    let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                    let intent = AppIntent::ToggleTreeCollapse { uid: uid.clone() };
-                    let actions = state.store.apply_task_intent(&intent, &config);
-                    state.refresh_filtered_view();
-                    if !actions.is_empty() {
-                        let tx = action_tx.clone();
-                        tokio::spawn(async move {
-                            let _ = tx.send(Action::PersistBatch(actions)).await;
-                        });
+                if state.active_focus == Focus::Main {
+                    if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone()) {
+                        let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
+                        let intent = AppIntent::ToggleTreeCollapse { uid: uid.clone() };
+                        let actions = state.store.apply_task_intent(&intent, &config);
+                        state.refresh_filtered_view();
+                        if !actions.is_empty() {
+                            let tx = action_tx.clone();
+                            tokio::spawn(async move {
+                                let _ = tx.send(Action::PersistBatch(actions)).await;
+                            });
+                        }
+                    }
+                } else if state.active_focus == Focus::Sidebar {
+                    match state.sidebar_mode {
+                        SidebarMode::Categories => {
+                            if let Some(idx) = state.cal_state.selected()
+                                && let Some(item) = state.cached_categories.get(idx)
+                                    && item.has_children {
+                                        let key = item.full_key.clone();
+                                        if !state.expanded_tags.remove(&key) {
+                                            state.expanded_tags.insert(key);
+                                        }
+                                        state.refresh_filtered_view();
+                                        if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                                            cfg.expanded_tags = state.expanded_tags.iter().cloned().collect();
+                                            let _ = cfg.save(state.ctx.as_ref());
+                                        }
+                                    }
+                        }
+                        SidebarMode::Locations => {
+                            if let Some(idx) = state.cal_state.selected()
+                                && let Some(item) = state.cached_locations.get(idx)
+                                    && item.has_children {
+                                        let key = item.full_key.clone();
+                                        if !state.expanded_locations.remove(&key) {
+                                            state.expanded_locations.insert(key);
+                                        }
+                                        state.refresh_filtered_view();
+                                        if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                                            cfg.expanded_locations = state.expanded_locations.iter().cloned().collect();
+                                            let _ = cfg.save(state.ctx.as_ref());
+                                        }
+                                    }
+                        }
+                        _ => {}
                     }
                 }
             }
@@ -1686,10 +1722,10 @@ pub async fn handle_key_event(
                             // Use cached categories derived from the last `filter()` call
                             let cats = &state.cached_categories;
                             if let Some(idx) = state.cal_state.selected()
-                                && let Some((c, _)) = cats.get(idx)
+                                && let Some(c) = cats.get(idx)
                             {
                                 state.selected_categories.clear();
-                                state.selected_categories.insert(c.clone());
+                                state.selected_categories.insert(c.full_key.clone());
                                 state.refresh_filtered_view();
                             }
                         }
@@ -1697,10 +1733,10 @@ pub async fn handle_key_event(
                             // Use cached locations derived from the last `filter()` call
                             let locs = &state.cached_locations;
                             if let Some(idx) = state.cal_state.selected()
-                                && let Some((l, _)) = locs.get(idx)
+                                && let Some(l) = locs.get(idx)
                             {
                                 state.selected_locations.clear();
-                                state.selected_locations.insert(l.clone());
+                                state.selected_locations.insert(l.full_key.clone());
                                 state.refresh_filtered_view();
                             }
                         }
@@ -1719,11 +1755,19 @@ pub async fn handle_key_event(
                             TaskListItem::ExpandGroup(key, _) => {
                                 state.expanded_done_groups.insert(key.clone());
                                 state.refresh_filtered_view();
+                                if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                                    cfg.expanded_done_groups = state.expanded_done_groups.iter().cloned().collect();
+                                    let _ = cfg.save(state.ctx.as_ref());
+                                }
                                 return None;
                             }
                             TaskListItem::CollapseGroup(key, _) => {
                                 state.expanded_done_groups.remove(key);
                                 state.refresh_filtered_view();
+                                if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                                    cfg.expanded_done_groups = state.expanded_done_groups.iter().cloned().collect();
+                                    let _ = cfg.save(state.ctx.as_ref());
+                                }
                                 return None;
                             }
                             _ => {}
@@ -1752,9 +1796,9 @@ pub async fn handle_key_event(
                             // Use cached categories derived from the last `filter()` call
                             let cats = &state.cached_categories;
                             if let Some(idx) = state.cal_state.selected()
-                                && let Some((c, _)) = cats.get(idx)
+                                && let Some(c) = cats.get(idx)
                             {
-                                let c_clone = c.clone();
+                                let c_clone = c.full_key.clone();
                                 if state.selected_categories.contains(&c_clone) {
                                     state.selected_categories.remove(&c_clone);
                                 } else {
@@ -1767,9 +1811,9 @@ pub async fn handle_key_event(
                             // Use cached locations derived from the last `filter()` call
                             let locs = &state.cached_locations;
                             if let Some(idx) = state.cal_state.selected()
-                                && let Some((l, _)) = locs.get(idx)
+                                && let Some(l) = locs.get(idx)
                             {
-                                let l_clone = l.clone();
+                                let l_clone = l.full_key.clone();
                                 if state.selected_locations.contains(&l_clone) {
                                     state.selected_locations.remove(&l_clone);
                                 } else {

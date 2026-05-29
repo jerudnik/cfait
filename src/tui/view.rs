@@ -191,27 +191,37 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             let all_cats = &state.cached_categories;
             let items: Vec<ListItem> = all_cats
                 .iter()
-                .map(|(c, count)| {
-                    let selected = if state.selected_categories.contains(c) {
+                .map(|item| {
+                    let selected = if state.selected_categories.contains(&item.full_key) {
                         "[x]"
                     } else {
                         "[ ]"
                     };
-                    if c == UNCATEGORIZED_ID {
+                    let indent = "  ".repeat(item.depth as usize);
+                    let tree_icon = if item.has_children {
+                        if item.is_expanded { " [-]" } else { " [+]" }
+                    } else {
+                        ""
+                    };
+
+                    if item.full_key == UNCATEGORIZED_ID {
                         ListItem::new(Line::from(format!(
-                            "{} {} ({})",
+                            "{}{} {} ({}){}",
+                            indent,
                             selected,
-                            rust_i18n::t!("uncategorized"),
-                            count
+                            item.display_name,
+                            item.count,
+                            tree_icon
                         )))
                     } else {
-                        let (r, g, b) = color_utils::generate_color(c);
+                        let (r, g, b) = color_utils::generate_color(&item.full_key);
                         let color =
                             Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8);
                         let spans = vec![
+                            Span::raw(indent),
                             Span::raw(format!("{} ", selected)),
                             Span::styled("#", Style::default().fg(color)),
-                            Span::raw(format!("{} ({})", c, count)),
+                            Span::raw(format!("{} ({}){}", item.display_name, item.count, tree_icon)),
                         ];
                         ListItem::new(Line::from(spans))
                     }
@@ -237,16 +247,23 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             let all_locs = &state.cached_locations;
             let items: Vec<ListItem> = all_locs
                 .iter()
-                .map(|(loc, count)| {
-                    let selected = if state.selected_locations.contains(loc) {
+                .map(|item| {
+                    let selected = if state.selected_locations.contains(&item.full_key) {
                         "[x]"
                     } else {
                         "[ ]"
                     };
+                    let indent = "  ".repeat(item.depth as usize);
+                    let tree_icon = if item.has_children {
+                        if item.is_expanded { " [-]" } else { " [+]" }
+                    } else {
+                        ""
+                    };
                     let spans = vec![
+                        Span::raw(indent),
                         Span::raw(format!("{} ", selected)),
                         Span::styled("@@", Style::default().fg(Color::LightCyan)),
-                        Span::raw(format!("{} ({})", loc, count)),
+                        Span::raw(format!("{} ({}){}", item.display_name, item.count, tree_icon)),
                     ];
                     ListItem::new(Line::from(spans))
                 })

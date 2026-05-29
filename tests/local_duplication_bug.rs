@@ -58,6 +58,7 @@ fn test_reproduce_android_local_revert_bug() {
         search_term: "",
         hide_completed_global: false, // Don't hide so we can check
         hide_fully_completed_tags: false,
+        hide_aliases_in_sidebar: false,
         cutoff_date: None,
         min_duration: None,
         max_duration: None,
@@ -69,6 +70,8 @@ fn test_reproduce_android_local_revert_bug() {
         // Newly required fields in FilterOptions:
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
+        expanded_tags: &HashSet::new(),
+        expanded_locations: &HashSet::new(),
 
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,

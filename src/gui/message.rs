@@ -132,6 +132,7 @@ pub enum Message {
     CategoryMatchModeChanged(bool),
     ToggleHideCompleted(bool),
     ToggleHideFullyCompletedTags(bool),
+    ToggleHideAliasesInSidebar(bool),
     ToggleSortStandardByPriority(bool),
     TabPressed(bool),
     OpenHelp(crate::help::HelpTab),
@@ -139,6 +140,8 @@ pub enum Message {
     SwitchHelpTab(bool),
     ToggleDoneGroup(String),
     ToggleTreeCollapse(String),
+    ToggleTagCollapse(String),
+    ToggleLocationCollapse(String),
     ToggleHelpSection(String),
 
     // --- Navigation & Actions ---

@@ -329,7 +329,9 @@ pub fn view_sidebar_categories(app: &GuiApp) -> Element<'_, Message> {
         column(
             all_cats
                 .iter()
-                .map(|(cat, count)| {
+                .map(|item| {
+                    let cat = &item.full_key;
+                    let count = item.count;
                     let is_hovered = app.hovered_tag_uid.as_ref() == Some(cat);
                     let is_selected = app.session.selected_categories.contains(cat);
                     let cat_clone_toggle = cat.clone();
@@ -373,7 +375,7 @@ pub fn view_sidebar_categories(app: &GuiApp) -> Element<'_, Message> {
                         } else {
                             app.theme().extended_palette().background.base.text
                         };
-                        text(format!("{} ({})", rust_i18n::t!("uncategorized"), count))
+                        text(format!("{} ({})", item.display_name, count))
                             .size(16)
                             .color(color)
                             .into()
@@ -385,7 +387,7 @@ pub fn view_sidebar_categories(app: &GuiApp) -> Element<'_, Message> {
                         };
                         rich_text![
                             span("#").color(tag_color),
-                            span(format!("{} ({})", cat, count)).color(text_color)
+                            span(format!("{} ({})", item.display_name, count)).color(text_color)
                         ]
                         .size(16)
                         .on_link_click(never)
@@ -414,13 +416,28 @@ pub fn view_sidebar_categories(app: &GuiApp) -> Element<'_, Message> {
                     .style(tooltip_style)
                     .delay(Duration::from_millis(700));
 
+                    let expand_btn: Element<'_, Message> = if item.has_children {
+                        let arrow_char = if item.is_expanded { icon::ARROW_EXPAND_UP } else { icon::ARROW_EXPAND_DOWN };
+                        button(icon::icon(arrow_char).size(14).color(Color::from_rgb(0.5,0.5,0.8)))
+                            .style(button::text)
+                            .padding(2)
+                            .on_press(Message::ToggleTagCollapse(cat.clone()))
+                            .into()
+                    } else {
+                        Space::new().width(Length::Fixed(0.0)).into()
+                    };
+
+                    let indent = Space::new().width(Length::Fixed(item.depth as f32 * 15.0));
+
                     let item_row = row![
+                        indent,
                         icon_btn,
                         label_btn,
                         Space::new().width(Length::Fill),
+                        expand_btn,
                         focus_tooltip
                     ]
-                    .spacing(5)
+                    .spacing(3)
                     .align_y(iced::Alignment::Center)
                     .padding(iced::Padding {
                         right: 15.0,
@@ -513,7 +530,9 @@ pub fn view_sidebar_locations(app: &GuiApp) -> Element<'_, Message> {
         let list = column(
             all_locs
                 .iter()
-                .map(|(loc, count)| {
+                .map(|item| {
+                    let loc = &item.full_key;
+                    let count = item.count;
                     let is_selected = app.session.selected_locations.contains(loc);
                     let loc_clone_toggle = loc.clone();
                     let loc_clone_focus = loc.clone();
@@ -529,7 +548,7 @@ pub fn view_sidebar_locations(app: &GuiApp) -> Element<'_, Message> {
                         .padding(2)
                         .on_press(Message::LocationToggled(loc_clone_toggle.clone()));
 
-                    let label = rich_text![span(format!("{} ({})", loc, count))]
+                    let label = rich_text![span(format!("{} ({})", item.display_name, count))]
                         .size(14)
                         .on_link_click(never);
 
@@ -555,13 +574,28 @@ pub fn view_sidebar_locations(app: &GuiApp) -> Element<'_, Message> {
                     .style(tooltip_style)
                     .delay(Duration::from_millis(700));
 
+                    let expand_btn: Element<'_, Message> = if item.has_children {
+                        let arrow_char = if item.is_expanded { icon::ARROW_EXPAND_UP } else { icon::ARROW_EXPAND_DOWN };
+                        button(icon::icon(arrow_char).size(14).color(Color::from_rgb(0.5,0.5,0.8)))
+                            .style(button::text)
+                            .padding(2)
+                            .on_press(Message::ToggleLocationCollapse(loc.clone()))
+                            .into()
+                    } else {
+                        Space::new().width(Length::Fixed(0.0)).into()
+                    };
+
+                    let indent = Space::new().width(Length::Fixed(item.depth as f32 * 15.0));
+
                     row![
+                        indent,
                         icon_btn,
                         label_btn,
                         Space::new().width(Length::Fill),
+                        expand_btn,
                         focus_tooltip
                     ]
-                    .spacing(5)
+                    .spacing(3)
                     .align_y(iced::Alignment::Center)
                     .padding(iced::Padding {
                         right: 15.0,

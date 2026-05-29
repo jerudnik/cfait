@@ -184,6 +184,7 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::CategoryMatchModeChanged(_)
         | Message::ToggleHideCompleted(_)
         | Message::ToggleHideFullyCompletedTags(_)
+        | Message::ToggleHideAliasesInSidebar(_)
         | Message::ToggleSortStandardByPriority(_)
         | Message::ToggleSortStandardByPriorityToggle
         | Message::SelectCalendar(_)
@@ -231,6 +232,8 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::ZoomReset
         | Message::ToggleQuickFilter
         | Message::ToggleSidebar
+        | Message::ToggleTagCollapse(_)
+        | Message::ToggleLocationCollapse(_)
         | Message::MoveSelected => view::handle(app, message),
 
         Message::Refresh

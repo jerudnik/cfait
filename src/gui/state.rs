@@ -61,8 +61,8 @@ pub struct GuiApp {
     pub bg_tx: Option<tokio::sync::mpsc::Sender<crate::gui::async_ops::WorkerCommand>>,
 
     // Cached Sidebar Data (computed once, not in view())
-    pub cached_categories: Vec<(String, usize)>,
-    pub cached_locations: Vec<(String, usize)>,
+    pub cached_categories: Vec<crate::store::AggregateItem>,
+    pub cached_locations: Vec<crate::store::AggregateItem>,
 
     // --- Stable ID Cache ---
     // Maps Task UID -> Iced Widget ID. Ensures the View and Update loops use the exact same ID instance.
@@ -85,6 +85,7 @@ pub struct GuiApp {
     pub hide_completed: bool,
     pub strikethrough_completed: bool,
     pub hide_fully_completed_tags: bool,
+    pub hide_aliases_in_sidebar: bool,
     pub sort_cutoff_months: Option<u32>,
     pub sort_standard_by_priority: bool,
     pub current_theme: AppTheme,
@@ -367,6 +368,7 @@ impl Default for GuiApp {
 
             hide_completed: false,
             hide_fully_completed_tags: true,
+            hide_aliases_in_sidebar: true,
             sort_cutoff_months: Some(2),
             sort_standard_by_priority: false,
             ob_sort_months_input: "2".to_string(),

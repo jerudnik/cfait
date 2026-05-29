@@ -489,6 +489,22 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             refresh_filtered_tasks(app);
             Task::none()
         }
+        Message::ToggleHideAliasesInSidebar(val) => {
+            app.hide_aliases_in_sidebar = val;
+            save_config(app);
+            refresh_filtered_tasks(app);
+            Task::none()
+        }
+        Message::ToggleTagCollapse(tag) => {
+            crate::gui::update::common::dispatch_intent(app, crate::model::AppIntent::ToggleTagCollapse { tag });
+            save_config(app);
+            Task::none()
+        }
+        Message::ToggleLocationCollapse(location) => {
+            crate::gui::update::common::dispatch_intent(app, crate::model::AppIntent::ToggleLocationCollapse { location });
+            save_config(app);
+            Task::none()
+        }
         Message::ToggleSortStandardByPriority(val) => {
             app.sort_standard_by_priority = val;
             save_config(app);
@@ -754,7 +770,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
             // Auto-scroll logic is kept for JumpTo...
             let all_cats = &app.cached_categories;
-            if let Some(index) = all_cats.iter().position(|(t, _)| t == &tag) {
+            if let Some(index) = all_cats.iter().position(|item| item.full_key == tag) {
                 let total = all_cats.len();
                 if total > 1 {
                     let y_offset = index as f32 / (total - 1) as f32;
@@ -779,7 +795,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             refresh_filtered_tasks(app);
 
             let all_locs = &app.cached_locations;
-            if let Some(index) = all_locs.iter().position(|(l, _)| l == &loc) {
+            if let Some(index) = all_locs.iter().position(|item| item.full_key == loc) {
                 let total = all_locs.len();
                 if total > 1 {
                     let y_offset = index as f32 / (total - 1) as f32;

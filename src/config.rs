@@ -338,6 +338,8 @@ pub struct Config {
     pub strikethrough_completed: bool,
     #[serde(default = "default_true")]
     pub hide_fully_completed_tags: bool,
+    #[serde(default = "default_true")]
+    pub hide_aliases_in_sidebar: bool,
     #[serde(default = "default_ui_scale")]
     pub ui_scale: f32,
     #[serde(default = "default_cutoff")]
@@ -421,6 +423,14 @@ pub struct Config {
     pub hidden_calendars: Vec<String>,
     #[serde(default)]
     pub tag_aliases: HashMap<String, Vec<String>>,
+
+    // UI State
+    #[serde(default)]
+    pub expanded_tags: Vec<String>,
+    #[serde(default)]
+    pub expanded_locations: Vec<String>,
+    #[serde(default)]
+    pub expanded_done_groups: Vec<String>,
 }
 
 impl Default for Config {
@@ -437,6 +447,7 @@ impl Default for Config {
             disabled_calendars: Vec::new(),
             hide_completed: false,
             hide_fully_completed_tags: true,
+            hide_aliases_in_sidebar: true,
             ui_scale: 1.0,
             sort_cutoff_months: Some(2),
             sort_standard_by_priority: false,
@@ -467,6 +478,9 @@ impl Default for Config {
             sidebar_is_hidden: false,
             description_editor: String::new(),
             log_level: default_log_level(),
+            expanded_tags: Vec::new(),
+            expanded_locations: Vec::new(),
+            expanded_done_groups: Vec::new(),
         }
     }
 }
@@ -704,6 +718,9 @@ impl Config {
             } else if trimmed.starts_with("hide_fully_completed_tags =") {
                 out.push_str(line);
                 out.push_str(" # Boolean: Hide tags in sidebar if all their tasks are completed.");
+            } else if trimmed.starts_with("hide_aliases_in_sidebar =") {
+                out.push_str(line);
+                out.push_str(" # Boolean: Hide shorthand aliases from the sidebar (showing only their targets).");
             } else if trimmed.starts_with("ui_scale =") {
                 out.push_str(line);
                 out.push_str(
@@ -791,6 +808,10 @@ impl Config {
                 out.push_str(" # Boolean: Render priority numbers (!X) visually next to tags.");
             } else if trimmed.starts_with("hidden_calendars =") {
                 out.push_str("# List of calendar HREFs currently toggled 'off' in the sidebar.\n");
+                out.push_str(line);
+            } else if trimmed.starts_with("expanded_tags =") {
+                out.push_str("\n# --- UI Memory State ---\n");
+                out.push_str("# Arrays remembering which tree folders are currently expanded.\n");
                 out.push_str(line);
             } else if trimmed.starts_with("trash_retention_days =") {
                 out.push_str(line);

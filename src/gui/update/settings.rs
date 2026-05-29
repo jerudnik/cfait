@@ -41,6 +41,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.tag_aliases = config.tag_aliases.clone();
             app.hide_completed = config.hide_completed;
             app.hide_fully_completed_tags = config.hide_fully_completed_tags;
+            app.hide_aliases_in_sidebar = config.hide_aliases_in_sidebar;
             app.sort_standard_by_priority = config.sort_standard_by_priority;
             app.ui_scale = config.ui_scale;
             app.show_priority_numbers = config.show_priority_numbers;
@@ -83,6 +84,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
             app.ob_max_done_roots_input = config.max_done_roots.to_string();
             app.ob_max_done_subtasks_input = config.max_done_subtasks.to_string();
+
+            app.session.expanded_tags = config.expanded_tags.clone();
+            app.session.expanded_locations = config.expanded_locations.clone();
+            app.session.expanded_done_groups = config.expanded_done_groups.clone();
 
             app.pinned_actions = config.pinned_actions.clone();
             app.log_level = config.log_level;
@@ -240,6 +245,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.ob_default_cal = target_href;
             app.hide_completed = cfg.hide_completed;
             app.hide_fully_completed_tags = cfg.hide_fully_completed_tags;
+            app.hide_aliases_in_sidebar = cfg.hide_aliases_in_sidebar;
             app.ob_insecure = cfg.allow_insecure_certs;
             app.hidden_calendars = cfg.hidden_calendars.iter().cloned().collect();
             app.tag_aliases = cfg.tag_aliases.clone();

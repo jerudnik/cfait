@@ -352,6 +352,9 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .label(rust_i18n::t!("hide_completed_and_canceled_tasks"))
                     .on_toggle(Message::ToggleHideCompleted),
                 hide_fully_ui,
+                checkbox::<Message, iced::Theme, iced::Renderer>(app.hide_aliases_in_sidebar)
+                    .label(rust_i18n::t!("hide_aliases_in_sidebar"))
+                    .on_toggle(Message::ToggleHideAliasesInSidebar),
                 checkbox::<Message, iced::Theme, iced::Renderer>(app.show_priority_numbers)
                     .label(rust_i18n::t!("show_priority_numbers"))
                     .on_toggle(Message::SetShowPriorityNumbers),
@@ -587,9 +590,12 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                 } else {
                     format!("#{}", key)
                 })
-                .width(Length::FillPortion(1)),
+                .width(Length::FillPortion(1))
+                .wrapping(iced::widget::text::Wrapping::Glyph),
                 text("->").width(Length::Fixed(20.0)),
-                text(val_str).width(Length::FillPortion(2)),
+                text(val_str)
+                    .width(Length::FillPortion(2))
+                    .wrapping(iced::widget::text::Wrapping::Glyph),
                 button(icon::icon(icon::CROSS).size(12))
                     .style(button::danger)
                     .padding(5)

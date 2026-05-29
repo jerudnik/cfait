@@ -69,11 +69,21 @@ pub enum TaskListItem {
     CollapseGroup(String, usize), // parent_uid, depth
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct AggregateItem {
+    pub full_key: String,
+    pub display_name: String,
+    pub count: u32,
+    pub depth: u32,
+    pub has_children: bool,
+    pub is_expanded: bool,
+}
+
 /// Result container returned by the `filter` pipeline.
 pub struct FilterResult {
     pub items: Vec<TaskListItem>,
-    pub categories: Vec<(String, usize)>,
-    pub locations: Vec<(String, usize)>,
+    pub categories: Vec<AggregateItem>,
+    pub locations: Vec<AggregateItem>,
 }
 
 /// Context structure used during hierarchy organization
@@ -401,6 +411,7 @@ pub struct FilterOptions<'a> {
     pub search_term: &'a str,
     pub hide_completed_global: bool,
     pub hide_fully_completed_tags: bool,
+    pub hide_aliases_in_sidebar: bool,
     pub cutoff_date: Option<DateTime<Utc>>,
     pub min_duration: Option<u32>,
     pub max_duration: Option<u32>,
@@ -411,6 +422,8 @@ pub struct FilterOptions<'a> {
     pub start_grace_period_days: u32,
     pub sort_standard_by_priority: bool,
     pub expanded_done_groups: &'a HashSet<String>,
+    pub expanded_tags: &'a HashSet<String>,
+    pub expanded_locations: &'a HashSet<String>,
     pub max_done_roots: usize,
     pub max_done_subtasks: usize,
     pub tag_aliases: &'a HashMap<String, Vec<String>>,
@@ -1760,13 +1773,13 @@ impl TaskStore {
         let loc_refs = run_pipeline(false, true);
 
         // 4) Build category and location aggregates
-        let mut cat_active_counts: HashMap<String, usize> = HashMap::new();
+        let mut cat_active_counts: HashMap<String, u32> = HashMap::new();
         let mut cat_display_names: HashMap<String, String> = HashMap::new();
         let mut cat_present_lower: HashSet<String> = HashSet::new();
-        let mut uncat_active_count = 0;
+        let mut uncat_active_count: u32 = 0;
         let mut uncat_any = false;
 
-        let mut loc_active_counts: HashMap<String, usize> = HashMap::new();
+        let mut loc_active_counts: HashMap<String, u32> = HashMap::new();
         let mut loc_present: HashSet<String> = HashSet::new();
 
         // Process tag refs
@@ -1820,6 +1833,7 @@ impl TaskStore {
                         current_hierarchy.push(':');
                     }
                     current_hierarchy.push_str(part);
+
                     if is_active {
                         *loc_active_counts
                             .entry(current_hierarchy.clone())
@@ -1830,25 +1844,93 @@ impl TaskStore {
             }
         }
 
+        let build_aggregates = |counts: HashMap<String, u32>,
+                                display_names: HashMap<String, String>,
+                                expanded_set: &HashSet<String>,
+                                is_location: bool|
+         -> Vec<AggregateItem> {
+            let mut sorted_keys: Vec<String> = counts.keys().cloned().collect();
+            sorted_keys.sort();
+
+            let mut results = Vec::new();
+            for key in &sorted_keys {
+                if key == UNCATEGORIZED_ID {
+                    results.push(AggregateItem {
+                        full_key: key.clone(),
+                        display_name: rust_i18n::t!("uncategorized").to_string(),
+                        count: counts[key],
+                        depth: 0,
+                        has_children: false,
+                        is_expanded: false,
+                    });
+                    continue;
+                }
+
+                let count = counts[key];
+                let parts: Vec<&str> = key.split(':').collect();
+                let depth_val = parts.len() - 1;
+                let depth = depth_val as u32;
+                let original_full = display_names.get(key).map(|s| s.as_str()).unwrap_or(key.as_str());
+                let original_parts: Vec<&str> = original_full.split(':').collect();
+                let display_name = original_parts.last().unwrap_or(parts.last().unwrap()).to_string();
+
+                let prefix = format!("{}:", key);
+                let has_children = sorted_keys.iter().any(|k| k.starts_with(&prefix));
+
+                let alias_key_to_check = if is_location {
+                    format!("@@{}", key)
+                } else {
+                    key.clone()
+                };
+
+                // Hide leaf aliases if requested
+                if options.hide_aliases_in_sidebar && options.tag_aliases.contains_key(&alias_key_to_check) && !has_children {
+                    continue;
+                }
+
+                let mut visible = true;
+                let mut ancestor = String::new();
+                for (i, part) in parts.iter().enumerate().take(depth_val) {
+                    if i > 0 { ancestor.push(':'); }
+                    ancestor.push_str(part);
+                    if !expanded_set.contains(&ancestor) {
+                        visible = false;
+                        break;
+                    }
+                }
+
+                if visible {
+                    results.push(AggregateItem {
+                        full_key: key.clone(),
+                        display_name,
+                        count,
+                        depth,
+                        has_children,
+                        is_expanded: expanded_set.contains(key),
+                    });
+                }
+            }
+            results
+        };
+
         // Convert category maps into sorted vectors for UI
-        let mut categories: Vec<(String, usize)> = cat_active_counts
-            .into_iter()
-            .map(|(k, v)| {
-                // Prefer display name if present
-                let label = cat_display_names.get(&k).cloned().unwrap_or(k.clone());
-                (label, v)
-            })
-            .collect();
+        let categories = build_aggregates(cat_active_counts, cat_display_names, options.expanded_tags, false);
+        
+        let empty_names = HashMap::new(); // Locations use self-display names naturally
+        let locations = build_aggregates(loc_active_counts, empty_names, options.expanded_locations, true);
 
+        // Add uncategorized if needed
+        let mut final_categories = categories;
         if uncat_any {
-            categories.push((UNCATEGORIZED_ID.to_string(), uncat_active_count));
+            final_categories.insert(0, AggregateItem {
+                full_key: UNCATEGORIZED_ID.to_string(),
+                display_name: rust_i18n::t!("uncategorized").to_string(),
+                count: uncat_active_count,
+                depth: 0,
+                has_children: false,
+                is_expanded: false,
+            });
         }
-
-        categories.sort_by_key(|a| a.0.to_lowercase());
-
-        // Convert locations into sorted vector
-        let mut locations: Vec<(String, usize)> = loc_active_counts.into_iter().collect();
-        locations.sort_by_key(|a| a.0.to_lowercase());
 
         // duplicate aggregates removed (handled above)
 
@@ -2103,7 +2185,7 @@ impl TaskStore {
 
         FilterResult {
             items: organized_items,
-            categories,
+            categories: final_categories,
             locations,
         }
     }

@@ -193,6 +193,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         default_cal,
         hide_completed,
         hide_fully_completed_tags,
+        hide_aliases_in_sidebar,
         tag_aliases,
         sort_cutoff,
         allow_insecure,
@@ -205,6 +206,9 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         start_grace_period_days,
         snooze_short_mins,
         snooze_long_mins,
+        expanded_tags,
+        expanded_locations,
+        expanded_done_groups,
     ) = (
         cfg.url,
         cfg.username,
@@ -212,6 +216,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         cfg.default_calendar,
         cfg.hide_completed,
         cfg.hide_fully_completed_tags,
+        cfg.hide_aliases_in_sidebar,
         cfg.tag_aliases,
         cfg.sort_cutoff_months,
         cfg.allow_insecure_certs,
@@ -224,6 +229,9 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         cfg.start_grace_period_days,
         cfg.snooze_short_mins,
         cfg.snooze_long_mins,
+        cfg.expanded_tags,
+        cfg.expanded_locations,
+        cfg.expanded_done_groups,
     );
 
     // --- 2. TERMINAL SETUP ---
@@ -238,6 +246,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
     app_state.hide_completed = hide_completed;
     app_state.strikethrough_completed = cfg.strikethrough_completed;
     app_state.hide_fully_completed_tags = hide_fully_completed_tags;
+    app_state.hide_aliases_in_sidebar = hide_aliases_in_sidebar;
     app_state.sort_cutoff_months = sort_cutoff;
     app_state.sort_standard_by_priority = cfg.sort_standard_by_priority;
     app_state.tag_aliases = tag_aliases;
@@ -250,6 +259,9 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
     app_state.start_grace_period_days = start_grace_period_days;
     app_state.snooze_short_mins = snooze_short_mins;
     app_state.snooze_long_mins = snooze_long_mins;
+    app_state.expanded_tags = expanded_tags.into_iter().collect();
+    app_state.expanded_locations = expanded_locations.into_iter().collect();
+    app_state.expanded_done_groups = expanded_done_groups.into_iter().collect();
 
     // --- START ALARM ACTOR ---
     let (gui_alarm_tx, mut gui_alarm_rx) = tokio::sync::mpsc::channel(100);

@@ -16,6 +16,8 @@ pub struct SessionState {
     pub active_calendar_href: Option<String>,
     pub match_all_categories: bool,
     pub expanded_done_groups: Vec<String>,
+    pub expanded_tags: Vec<String>,
+    pub expanded_locations: Vec<String>,
 }
 
 impl SessionState {
@@ -37,6 +39,8 @@ impl SessionState {
         let selected_locations: HashSet<String> = self.selected_locations.iter().cloned().collect();
         let expanded_done_groups: HashSet<String> =
             self.expanded_done_groups.iter().cloned().collect();
+        let expanded_tags: HashSet<String> = self.expanded_tags.iter().cloned().collect();
+        let expanded_locations: HashSet<String> = self.expanded_locations.iter().cloned().collect();
 
         store.filter(FilterOptions {
             active_cal_href: None, // Logic handled by hidden_calendars
@@ -47,6 +51,7 @@ impl SessionState {
             search_term: &self.search_term,
             hide_completed_global: config.hide_completed,
             hide_fully_completed_tags: config.hide_fully_completed_tags,
+            hide_aliases_in_sidebar: config.hide_aliases_in_sidebar,
             cutoff_date: cutoff,
             min_duration: None,
             max_duration: None,
@@ -57,6 +62,8 @@ impl SessionState {
             start_grace_period_days: config.start_grace_period_days,
             sort_standard_by_priority: config.sort_standard_by_priority,
             expanded_done_groups: &expanded_done_groups,
+            expanded_tags: &expanded_tags,
+            expanded_locations: &expanded_locations,
             max_done_roots: config.max_done_roots,
             max_done_subtasks: config.max_done_subtasks,
             tag_aliases: &config.tag_aliases,
@@ -101,6 +108,20 @@ impl SessionState {
                     self.expanded_done_groups.push(key.clone());
                 }
             }
+            AppIntent::ToggleTagCollapse { tag } => {
+                if let Some(pos) = self.expanded_tags.iter().position(|x| x == tag) {
+                    self.expanded_tags.remove(pos);
+                } else {
+                    self.expanded_tags.push(tag.clone());
+                }
+            }
+            AppIntent::ToggleLocationCollapse { location } => {
+                if let Some(pos) = self.expanded_locations.iter().position(|x| x == location) {
+                    self.expanded_locations.remove(pos);
+                } else {
+                    self.expanded_locations.push(location.clone());
+                }
+            }
             _ => {} // Ignore task-specific intents
         }
     }
@@ -138,4 +159,6 @@ pub enum AppIntent {
     ClearLocationFilters,
     ToggleTreeCollapse { uid: String },
     ToggleDoneGroup { key: String },
+    ToggleTagCollapse { tag: String },
+    ToggleLocationCollapse { location: String },
 }

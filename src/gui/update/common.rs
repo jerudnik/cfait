@@ -92,6 +92,7 @@ pub fn save_config(app: &mut GuiApp) -> Config {
     cfg.disabled_calendars = app.disabled_calendars.iter().cloned().collect();
     cfg.hide_completed = app.hide_completed;
     cfg.hide_fully_completed_tags = app.hide_fully_completed_tags;
+    cfg.hide_aliases_in_sidebar = app.hide_aliases_in_sidebar;
     cfg.sort_standard_by_priority = app.sort_standard_by_priority;
     cfg.ui_scale = app.ui_scale;
     cfg.show_priority_numbers = app.show_priority_numbers;
@@ -121,6 +122,10 @@ pub fn save_config(app: &mut GuiApp) -> Config {
     cfg.show_quick_filter = app.show_quick_filter;
     cfg.sidebar_is_hidden = app.sidebar_is_hidden;
     cfg.log_level = app.log_level;
+
+    cfg.expanded_tags = app.session.expanded_tags.clone();
+    cfg.expanded_locations = app.session.expanded_locations.clone();
+    cfg.expanded_done_groups = app.session.expanded_done_groups.clone();
 
     // Cache the updated config in memory
     app.core_config = cfg.clone();

@@ -412,6 +412,8 @@ async fn main() -> Result<()> {
             let selected_categories: HashSet<String> = HashSet::new();
             let selected_locations: HashSet<String> = HashSet::new();
             let expanded_done_groups: HashSet<String> = HashSet::new();
+            let expanded_tags: HashSet<String> = HashSet::new();
+            let expanded_locations: HashSet<String> = HashSet::new();
 
             let res = store.filter(FilterOptions {
                 active_cal_href: None,
@@ -422,6 +424,7 @@ async fn main() -> Result<()> {
                 search_term: &query,
                 hide_completed_global: hide_completed,
                 hide_fully_completed_tags: !show_all && config.hide_fully_completed_tags,
+                hide_aliases_in_sidebar: config.hide_aliases_in_sidebar,
                 cutoff_date,
                 min_duration: None,
                 max_duration: None,
@@ -432,6 +435,8 @@ async fn main() -> Result<()> {
                 start_grace_period_days: config.start_grace_period_days,
                 sort_standard_by_priority: config.sort_standard_by_priority,
                 expanded_done_groups: &expanded_done_groups,
+                expanded_tags: &expanded_tags,
+                expanded_locations: &expanded_locations,
                 max_done_roots: usize::MAX,
                 max_done_subtasks: usize::MAX,
                 tag_aliases: &config.tag_aliases,

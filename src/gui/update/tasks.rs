@@ -200,17 +200,8 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
 
         Message::ToggleDoneGroup(key) => {
-            if let Some(pos) = app
-                .session
-                .expanded_done_groups
-                .iter()
-                .position(|x| x == &key)
-            {
-                app.session.expanded_done_groups.remove(pos);
-            } else {
-                app.session.expanded_done_groups.push(key);
-            }
-            common::refresh_filtered_tasks(app);
+            common::dispatch_intent(app, crate::model::AppIntent::ToggleDoneGroup { key });
+            common::save_config(app);
             Task::none()
         }
         Message::ToggleTreeCollapse(uid) => {

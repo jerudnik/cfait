@@ -150,6 +150,8 @@ pub struct MobileFilterOptions {
     pub search_query: String,
     pub expanded_groups: Vec<String>,
     pub match_all_categories: bool,
+    pub expanded_tags: Vec<String>,
+    pub expanded_locations: Vec<String>,
 }
 
 #[derive(uniffi::Record)]
@@ -278,7 +280,11 @@ pub struct MobileCalendar {
 #[derive(uniffi::Record)]
 pub struct MobileTag {
     pub name: String,
+    pub display_name: String,
     pub count: u32,
+    pub depth: u32,
+    pub has_children: bool,
+    pub is_expanded: bool,
     pub is_uncategorized: bool,
 }
 
@@ -291,7 +297,11 @@ pub struct MobileRelatedTask {
 #[derive(uniffi::Record)]
 pub struct MobileLocation {
     pub name: String,
+    pub display_name: String,
     pub count: u32,
+    pub depth: u32,
+    pub has_children: bool,
+    pub is_expanded: bool,
 }
 
 #[derive(uniffi::Record)]
@@ -317,6 +327,7 @@ pub struct MobileConfig {
     pub default_calendar: Option<String>,
     pub allow_insecure: bool,
     pub hide_completed: bool,
+    pub hide_aliases_in_sidebar: bool,
     pub tag_aliases: HashMap<String, Vec<String>>,
     pub disabled_calendars: Vec<String>,
     pub sort_cutoff_months: Option<u32>,
@@ -650,6 +661,14 @@ impl CfaitMobile {
         let client = Arc::new(Mutex::new(None));
         let controller = TaskController::new(store, client, ctx.clone());
 
+        let config = crate::config::Config::load(ctx.as_ref()).unwrap_or_default();
+        let session = crate::model::SessionState {
+            expanded_tags: config.expanded_tags,
+            expanded_locations: config.expanded_locations,
+            expanded_done_groups: config.expanded_done_groups,
+            ..Default::default()
+        };
+
         let c_clone = controller.clone();
         if let Some(runtime) = TOKIO_RUNTIME.get() {
             runtime.spawn(async move {
@@ -664,7 +683,7 @@ impl CfaitMobile {
             controller,
             alarm_index_cache: Arc::new(Mutex::new(None)),
             ctx,
-            session: Arc::new(Mutex::new(crate::model::SessionState::default())),
+            session: Arc::new(Mutex::new(session)),
         }
     }
 
@@ -739,6 +758,7 @@ impl CfaitMobile {
             default_calendar: c.default_calendar,
             allow_insecure: c.allow_insecure_certs,
             hide_completed: c.hide_completed,
+            hide_aliases_in_sidebar: c.hide_aliases_in_sidebar,
             tag_aliases: c.tag_aliases,
             disabled_calendars: c.disabled_calendars,
             sort_cutoff_months: c.sort_cutoff_months,
@@ -820,6 +840,7 @@ impl CfaitMobile {
         apply_mobile_credentials_update(&mut c, &config.username, &config.password);
         c.allow_insecure_certs = config.allow_insecure;
         c.hide_completed = config.hide_completed;
+        c.hide_aliases_in_sidebar = config.hide_aliases_in_sidebar;
         c.tag_aliases = config.tag_aliases;
         c.disabled_calendars = config.disabled_calendars;
         c.sort_cutoff_months = config.sort_cutoff_months;
@@ -1451,6 +1472,8 @@ impl CfaitMobile {
         hidden.extend(config.disabled_calendars);
 
         let expanded_set: HashSet<String> = options.expanded_groups.into_iter().collect();
+        let expanded_tags_set: HashSet<String> = options.expanded_tags.into_iter().collect();
+        let expanded_locations_set: HashSet<String> = options.expanded_locations.into_iter().collect();
 
         let cutoff_date = config
             .sort_cutoff_months
@@ -1464,6 +1487,7 @@ impl CfaitMobile {
             search_term: &options.search_query,
             hide_completed_global: config.hide_completed,
             hide_fully_completed_tags: config.hide_fully_completed_tags,
+            hide_aliases_in_sidebar: config.hide_aliases_in_sidebar,
             cutoff_date,
             min_duration: None,
             max_duration: None,
@@ -1474,6 +1498,8 @@ impl CfaitMobile {
             start_grace_period_days: config.start_grace_period_days,
             sort_standard_by_priority: config.sort_standard_by_priority,
             expanded_done_groups: &expanded_set,
+            expanded_tags: &expanded_tags_set,
+            expanded_locations: &expanded_locations_set,
             max_done_roots: config.max_done_roots,
             max_done_subtasks: config.max_done_subtasks,
             tag_aliases: &config.tag_aliases,
@@ -1498,19 +1524,27 @@ impl CfaitMobile {
         let tags = filtered
             .categories
             .into_iter()
-            .map(|(name, count)| MobileTag {
-                name: name.clone(),
-                count: count as u32,
-                is_uncategorized: name == UNCATEGORIZED_ID,
+            .map(|item| MobileTag {
+                name: item.full_key.clone(),
+                display_name: item.display_name,
+                count: item.count,
+                depth: item.depth,
+                has_children: item.has_children,
+                is_expanded: item.is_expanded,
+                is_uncategorized: item.full_key == UNCATEGORIZED_ID,
             })
             .collect();
 
         let locations = filtered
             .locations
             .into_iter()
-            .map(|(name, count)| MobileLocation {
-                name,
-                count: count as u32,
+            .map(|item| MobileLocation {
+                name: item.full_key.clone(),
+                display_name: item.display_name,
+                count: item.count,
+                depth: item.depth,
+                has_children: item.has_children,
+                is_expanded: item.is_expanded,
             })
             .collect();
 
@@ -1527,6 +1561,13 @@ impl CfaitMobile {
         let config = crate::config::Config::load(self.ctx.as_ref()).unwrap_or_default();
 
         session.apply_session_intent(&intent);
+
+        let mut config_to_save = config.clone();
+        config_to_save.expanded_tags = session.expanded_tags.clone();
+        config_to_save.expanded_locations = session.expanded_locations.clone();
+        config_to_save.expanded_done_groups = session.expanded_done_groups.clone();
+        let _ = config_to_save.save(self.ctx.as_ref());
+
         let actions = store.apply_task_intent(&intent, &config);
 
         drop(store);
@@ -1579,6 +1620,7 @@ impl CfaitMobile {
             search_term: &search_query,
             hide_completed_global: config.hide_completed,
             hide_fully_completed_tags: config.hide_fully_completed_tags,
+            hide_aliases_in_sidebar: config.hide_aliases_in_sidebar,
             cutoff_date,
             min_duration: None,
             max_duration: None,
@@ -1589,6 +1631,8 @@ impl CfaitMobile {
             start_grace_period_days: config.start_grace_period_days,
             sort_standard_by_priority: config.sort_standard_by_priority,
             expanded_done_groups: &HashSet::new(),
+            expanded_tags: &HashSet::new(),
+            expanded_locations: &HashSet::new(),
             max_done_roots: config.max_done_roots,
             max_done_subtasks: config.max_done_subtasks,
             tag_aliases: &config.tag_aliases,

@@ -44,6 +44,7 @@ fn test_start_grace_period_keeps_tasks_in_active_section() {
         search_term: "",
         hide_completed_global: false,
         hide_fully_completed_tags: false,
+        hide_aliases_in_sidebar: false,
         cutoff_date: None,
         min_duration: None,
         max_duration: None,
@@ -54,6 +55,8 @@ fn test_start_grace_period_keeps_tasks_in_active_section() {
         start_grace_period_days: 2, // 2-day grace period
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
+        expanded_tags: &HashSet::new(),
+        expanded_locations: &HashSet::new(),
 
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
@@ -127,6 +130,7 @@ fn test_grace_period_zero_pushes_all_future_starts() {
         search_term: "",
         hide_completed_global: false,
         hide_fully_completed_tags: false,
+        hide_aliases_in_sidebar: false,
         cutoff_date: None,
         min_duration: None,
         max_duration: None,
@@ -137,6 +141,8 @@ fn test_grace_period_zero_pushes_all_future_starts() {
         start_grace_period_days: 0, // No grace period
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
+        expanded_tags: &HashSet::new(),
+        expanded_locations: &HashSet::new(),
 
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
@@ -212,6 +218,7 @@ fn test_acknowledged_alarm_keeps_task_in_active_section() {
         search_term: "",
         hide_completed_global: false,
         hide_fully_completed_tags: false,
+        hide_aliases_in_sidebar: false,
         cutoff_date: None,
         min_duration: None,
         max_duration: None,
@@ -222,6 +229,8 @@ fn test_acknowledged_alarm_keeps_task_in_active_section() {
         start_grace_period_days: 1, // 1-day grace period
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
+        expanded_tags: &HashSet::new(),
+        expanded_locations: &HashSet::new(),
 
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
@@ -306,6 +315,7 @@ fn test_any_acknowledged_alarm_keeps_task_active() {
         search_term: "",
         hide_completed_global: false,
         hide_fully_completed_tags: false,
+        hide_aliases_in_sidebar: false,
         cutoff_date: None,
         min_duration: None,
         max_duration: None,
@@ -316,6 +326,8 @@ fn test_any_acknowledged_alarm_keeps_task_active() {
         start_grace_period_days: 1, // 1-day grace period
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
+        expanded_tags: &HashSet::new(),
+        expanded_locations: &HashSet::new(),
 
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
@@ -390,6 +402,7 @@ fn test_recurring_task_with_fresh_dates_goes_to_future() {
         search_term: "",
         hide_completed_global: false,
         hide_fully_completed_tags: false,
+        hide_aliases_in_sidebar: false,
         cutoff_date: None,
         min_duration: None,
         max_duration: None,
@@ -400,6 +413,8 @@ fn test_recurring_task_with_fresh_dates_goes_to_future() {
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
         expanded_done_groups: &HashSet::new(),
+        expanded_tags: &HashSet::new(),
+        expanded_locations: &HashSet::new(),
 
         max_done_roots: usize::MAX,
         max_done_subtasks: usize::MAX,
