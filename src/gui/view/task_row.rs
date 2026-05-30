@@ -780,137 +780,135 @@ pub fn view_task_row<'a>(
                     continue;
                 }
 
-                let (icon_element, msg, style_mode): (
-                    Element<'a, Message>,
-                    Message,
-                    u8,
-                ) = match action {
-                    TaskAction::CompleteAndShift => (
-                        icon::icon(icon::REPEAT).size(14).into(),
-                        Message::ToggleTaskShift(task.uid.clone()),
-                        0,
-                    ),
-                    TaskAction::ToggleDetails => {
-                        let mut icon_row = row![].spacing(2).align_y(iced::Alignment::Center);
-                        if has_info {
-                            icon_row =
-                                icon_row.push(icon::icon(icon::INFO).size(14).line_height(1.0));
-                        }
-                        if has_time {
-                            icon_row = icon_row
-                                .push(icon::icon(icon::TIMER_SETTINGS).size(14).line_height(1.0));
-                        }
-                        let style = if is_expanded { 3 } else { 0 };
-                        (
-                            icon_row.into(),
-                            Message::ToggleDetails(task.uid.clone()),
-                            style,
-                        )
-                    }
-                    TaskAction::ToggleTimer => {
-                        if task.status == crate::model::TaskStatus::InProcess {
+                let (icon_element, msg, style_mode): (Element<'a, Message>, Message, u8) =
+                    match action {
+                        TaskAction::CompleteAndShift => (
+                            icon::icon(icon::REPEAT).size(14).into(),
+                            Message::ToggleTaskShift(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::ToggleDetails => {
+                            let mut icon_row = row![].spacing(2).align_y(iced::Alignment::Center);
+                            if has_info {
+                                icon_row =
+                                    icon_row.push(icon::icon(icon::INFO).size(14).line_height(1.0));
+                            }
+                            if has_time {
+                                icon_row = icon_row.push(
+                                    icon::icon(icon::TIMER_SETTINGS).size(14).line_height(1.0),
+                                );
+                            }
+                            let style = if is_expanded { 3 } else { 0 };
                             (
-                                icon::icon(icon::PAUSE).size(14).into(),
-                                Message::PauseTask(task.uid.clone()),
-                                0,
-                            )
-                        } else {
-                            (
-                                icon::icon(icon::PLAY).size(14).into(),
-                                Message::StartTask(task.uid.clone()),
-                                0,
+                                icon_row.into(),
+                                Message::ToggleDetails(task.uid.clone()),
+                                style,
                             )
                         }
-                    }
-                    TaskAction::StopTimer => (
-                        icon::icon(icon::DEBUG_STOP).size(14).into(),
-                        Message::StopTask(task.uid.clone()),
-                        0,
-                    ),
-                    TaskAction::AddSession => {
-                        let style = if app.adding_session_uid.as_deref() == Some(task.uid.as_str())
-                        {
-                            3
-                        } else {
-                            0
-                        };
-                        (
-                            icon::icon(icon::TIMER_PLUS).size(14).into(),
-                            Message::StartAddSession(task.uid.clone()),
-                            style,
-                        )
-                    }
-                    TaskAction::IncreasePriority => (
-                        icon::icon(icon::PLUS).size(14).into(),
-                        Message::ChangePriority(index, 1),
-                        0,
-                    ),
-                    TaskAction::DecreasePriority => (
-                        icon::icon(icon::MINUS).size(14).into(),
-                        Message::ChangePriority(index, -1),
-                        0,
-                    ),
-                    TaskAction::Edit => (
-                        icon::icon(icon::EDIT).size(14).into(),
-                        Message::EditTaskStart(index),
-                        0,
-                    ),
-                    TaskAction::Yank => (
-                        icon::icon(icon::LINK).size(14).into(),
-                        Message::YankTask(task.uid.clone()),
-                        0,
-                    ),
-                    TaskAction::CreateSubtask => (
-                        icon::icon(icon::CREATE_CHILD).size(14).into(),
-                        Message::StartCreateChild(task.uid.clone()),
-                        0,
-                    ),
-                    TaskAction::DuplicateTree => (
-                        icon::icon(icon::CLONE).size(14).into(),
-                        Message::DuplicateTask(task.uid.clone()),
-                        0,
-                    ),
-                    TaskAction::Promote => (
-                        icon::icon(icon::ELEVATOR_UP).size(14).into(),
-                        Message::RemoveParent(task.uid.clone()),
-                        0,
-                    ),
-                    TaskAction::Move => (
-                        icon::icon(icon::MOVE).size(14).into(),
-                        Message::StartMoveTask(task.uid.clone()),
-                        0,
-                    ),
-                    TaskAction::Cancel => (
-                        icon::icon(icon::CROSS).size(14).into(),
-                        Message::SetTaskStatus(index, crate::model::TaskStatus::Cancelled),
-                        1,
-                    ),
-                    TaskAction::Delete => (
-                        icon::icon(icon::TRASH).size(14).into(),
-                        Message::DeleteTask(index),
-                        1,
-                    ),
-                    TaskAction::DeleteTree => (
-                        icon::icon(icon::TRASH).size(14).into(),
-                        Message::DeleteTaskTree(task.uid.clone()),
-                        2,
-                    ),
-                    TaskAction::OpenCoordinates => (
-                        icon::icon(icon::MAP_LOCATION_DOT).size(14).into(),
-                        Message::OpenCoordinates(task.uid.clone()),
-                        0,
-                    ),
-                    TaskAction::OpenLocations => (
-                        icon::icon(icon::MAP_MARKER_MULTIPLE).size(14).into(),
-                        Message::OpenLocations(task.uid.clone()),
-                        0,
-                    ),
-                    TaskAction::OpenUrl => (
-                        icon::icon(icon::URL_CHECK).size(14).into(),
-                        Message::OpenUrl(task.url.clone().unwrap()),
-                        0,
-                    ),
-                };
+                        TaskAction::ToggleTimer => {
+                            if task.status == crate::model::TaskStatus::InProcess {
+                                (
+                                    icon::icon(icon::PAUSE).size(14).into(),
+                                    Message::PauseTask(task.uid.clone()),
+                                    0,
+                                )
+                            } else {
+                                (
+                                    icon::icon(icon::PLAY).size(14).into(),
+                                    Message::StartTask(task.uid.clone()),
+                                    0,
+                                )
+                            }
+                        }
+                        TaskAction::StopTimer => (
+                            icon::icon(icon::DEBUG_STOP).size(14).into(),
+                            Message::StopTask(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::AddSession => {
+                            let style =
+                                if app.adding_session_uid.as_deref() == Some(task.uid.as_str()) {
+                                    3
+                                } else {
+                                    0
+                                };
+                            (
+                                icon::icon(icon::TIMER_PLUS).size(14).into(),
+                                Message::StartAddSession(task.uid.clone()),
+                                style,
+                            )
+                        }
+                        TaskAction::IncreasePriority => (
+                            icon::icon(icon::PLUS).size(14).into(),
+                            Message::ChangePriority(index, 1),
+                            0,
+                        ),
+                        TaskAction::DecreasePriority => (
+                            icon::icon(icon::MINUS).size(14).into(),
+                            Message::ChangePriority(index, -1),
+                            0,
+                        ),
+                        TaskAction::Edit => (
+                            icon::icon(icon::EDIT).size(14).into(),
+                            Message::EditTaskStart(index),
+                            0,
+                        ),
+                        TaskAction::Yank => (
+                            icon::icon(icon::LINK).size(14).into(),
+                            Message::YankTask(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::CreateSubtask => (
+                            icon::icon(icon::CREATE_CHILD).size(14).into(),
+                            Message::StartCreateChild(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::DuplicateTree => (
+                            icon::icon(icon::CLONE).size(14).into(),
+                            Message::DuplicateTask(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::Promote => (
+                            icon::icon(icon::ELEVATOR_UP).size(14).into(),
+                            Message::RemoveParent(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::Move => (
+                            icon::icon(icon::MOVE).size(14).into(),
+                            Message::StartMoveTask(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::Cancel => (
+                            icon::icon(icon::CROSS).size(14).into(),
+                            Message::SetTaskStatus(index, crate::model::TaskStatus::Cancelled),
+                            1,
+                        ),
+                        TaskAction::Delete => (
+                            icon::icon(icon::TRASH).size(14).into(),
+                            Message::DeleteTask(index),
+                            1,
+                        ),
+                        TaskAction::DeleteTree => (
+                            icon::icon(icon::TRASH).size(14).into(),
+                            Message::DeleteTaskTree(task.uid.clone()),
+                            2,
+                        ),
+                        TaskAction::OpenCoordinates => (
+                            icon::icon(icon::MAP_LOCATION_DOT).size(14).into(),
+                            Message::OpenCoordinates(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::OpenLocations => (
+                            icon::icon(icon::MAP_MARKER_MULTIPLE).size(14).into(),
+                            Message::OpenLocations(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::OpenUrl => (
+                            icon::icon(icon::URL_CHECK).size(14).into(),
+                            Message::OpenUrl(task.url.clone().unwrap()),
+                            0,
+                        ),
+                    };
 
                 let style_mode_mapped = if style_mode == 2 { 1 } else { style_mode };
                 let btn = button(icon_element)
