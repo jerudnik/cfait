@@ -213,6 +213,15 @@ pub async fn run_network_actor(
         Ok(results) => {
             merge_results_into_store(&store, &results).await;
             let _ = event_tx.send(AppEvent::TasksLoaded(results)).await;
+
+            let client_container = Arc::new(tokio::sync::Mutex::new(Some(client.clone())));
+            let controller = TaskController::new(store.clone(), client_container, ctx.clone());
+            if let Ok(true) = controller.sync_settings().await
+                && let Ok(cfg) = crate::config::Config::load(ctx.as_ref())
+            {
+                let _ = event_tx.send(AppEvent::ConfigUpdated(Box::new(cfg))).await;
+            }
+
             let _ = event_tx
                 .send(AppEvent::Status {
                     key: "ready".to_string(),
@@ -372,6 +381,17 @@ pub async fn run_network_actor(
                     Ok(results) => {
                         merge_results_into_store(&store, &results).await;
                         let _ = event_tx.send(AppEvent::TasksLoaded(results)).await;
+
+                        let client_container =
+                            Arc::new(tokio::sync::Mutex::new(Some(client.clone())));
+                        let controller =
+                            TaskController::new(store.clone(), client_container, ctx.clone());
+                        if let Ok(true) = controller.sync_settings().await
+                            && let Ok(cfg) = crate::config::Config::load(ctx.as_ref())
+                        {
+                            let _ = event_tx.send(AppEvent::ConfigUpdated(Box::new(cfg))).await;
+                        }
+
                         let _ = event_tx
                             .send(AppEvent::Status {
                                 key: "refreshed".to_string(),

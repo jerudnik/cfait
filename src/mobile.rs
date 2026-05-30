@@ -2440,6 +2440,9 @@ impl CfaitMobile {
             }
         }
         drop(store);
+
+        let _ = self.controller.sync_settings().await;
+
         self.rebuild_alarm_index().await;
         Ok(warning.unwrap_or_else(|| rust_i18n::t!("status_connected").to_string()))
     }
