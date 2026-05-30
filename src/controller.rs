@@ -149,12 +149,6 @@ impl TaskController {
         let existing_task = store.get_task_ref(settings_uid).cloned();
 
         let local_syncable = config.get_syncable();
-        let local_payload = crate::config::SettingsPayload {
-            updated_at: config.settings_updated_at,
-            config: local_syncable,
-        };
-        let local_json = serde_json::to_string_pretty(&local_payload).unwrap_or_default();
-
         let config_changed = false;
 
         match existing_task {
@@ -162,27 +156,65 @@ impl TaskController {
                 if let Ok(remote_payload) =
                     serde_json::from_str::<crate::config::SettingsPayload>(&task.description)
                 {
-                    if remote_payload.updated_at > config.settings_updated_at {
+                    if remote_payload.updated_at > config.settings_updated_at
+                        || (config.settings_updated_at == 0
+                            && remote_payload.config != local_syncable)
+                    {
                         // Remote is newer! Sync down.
                         config.apply_syncable(remote_payload.config.clone());
-                        config.settings_updated_at = remote_payload.updated_at;
+
+                        let mut needs_upstream_fix = false;
+                        if remote_payload.updated_at == 0 {
+                            config.settings_updated_at = chrono::Utc::now().timestamp();
+                            needs_upstream_fix = true;
+                        } else {
+                            config.settings_updated_at = remote_payload.updated_at;
+                        }
                         let _ = config.save(self.ctx.as_ref());
 
                         let mut modified_tasks = Vec::new();
                         for (key, values) in &remote_payload.config.tag_aliases {
                             modified_tasks.extend(store.apply_alias_retroactively(key, values));
                         }
-                        drop(store);
 
-                        if !modified_tasks.is_empty() {
-                            let actions = modified_tasks.into_iter().map(Action::Update).collect();
+                        if needs_upstream_fix {
+                            let fixed_payload = crate::config::SettingsPayload {
+                                updated_at: config.settings_updated_at,
+                                config: remote_payload.config,
+                            };
+                            task.description =
+                                serde_json::to_string_pretty(&fixed_payload).unwrap_or_default();
+                            task.sequence += 1;
+                            store.update_or_add_task(task.clone());
+                            drop(store);
+
+                            let mut actions = modified_tasks
+                                .into_iter()
+                                .map(Action::Update)
+                                .collect::<Vec<_>>();
+                            actions.push(Action::Update(task));
                             let _ = self.persist_changes(actions).await;
+                        } else {
+                            drop(store);
+                            if !modified_tasks.is_empty() {
+                                let actions =
+                                    modified_tasks.into_iter().map(Action::Update).collect();
+                                let _ = self.persist_changes(actions).await;
+                            }
                         }
 
                         return Ok(true);
-                    } else if config.settings_updated_at > remote_payload.updated_at {
+                    } else if config.settings_updated_at > remote_payload.updated_at
+                        || (config.settings_updated_at > 0
+                            && remote_payload.config != local_syncable)
+                    {
                         // Local is newer! Sync up.
-                        task.description = local_json;
+                        let local_payload = crate::config::SettingsPayload {
+                            updated_at: config.settings_updated_at,
+                            config: local_syncable,
+                        };
+                        task.description =
+                            serde_json::to_string_pretty(&local_payload).unwrap_or_default();
                         task.sequence += 1;
                         store.update_or_add_task(task.clone());
                         drop(store);
@@ -190,7 +222,16 @@ impl TaskController {
                     }
                 } else {
                     // Invalid JSON in task, overwrite with local
-                    task.description = local_json;
+                    if config.settings_updated_at == 0 {
+                        config.settings_updated_at = chrono::Utc::now().timestamp();
+                        let _ = config.save(self.ctx.as_ref());
+                    }
+                    let local_payload = crate::config::SettingsPayload {
+                        updated_at: config.settings_updated_at,
+                        config: local_syncable,
+                    };
+                    task.description =
+                        serde_json::to_string_pretty(&local_payload).unwrap_or_default();
                     task.sequence += 1;
                     store.update_or_add_task(task.clone());
                     drop(store);
@@ -199,6 +240,11 @@ impl TaskController {
             }
             None => {
                 // Task doesn't exist, deploy local settings upstream
+                if config.settings_updated_at == 0 {
+                    config.settings_updated_at = chrono::Utc::now().timestamp();
+                    let _ = config.save(self.ctx.as_ref());
+                }
+
                 let target_href = if let Some(def) = &config.default_calendar {
                     if !def.starts_with("local://") {
                         def.clone()
@@ -218,6 +264,13 @@ impl TaskController {
                         .map(|c| c.href)
                         .unwrap_or_else(|| crate::storage::LOCAL_CALENDAR_HREF.to_string())
                 };
+
+                let local_payload = crate::config::SettingsPayload {
+                    updated_at: config.settings_updated_at,
+                    config: local_syncable,
+                };
+                let local_json = serde_json::to_string_pretty(&local_payload).unwrap_or_default();
+
                 let mut new_task = Task::new(
                     "⚙ Cfait Settings (Do not delete)",
                     &std::collections::HashMap::new(),
