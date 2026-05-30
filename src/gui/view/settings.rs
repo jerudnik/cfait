@@ -608,7 +608,8 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                         .style(button::danger)
                         .padding(6)
                         .on_press(Message::CancelEditAlias)
-                ].spacing(5)
+                ]
+                .spacing(5)
             } else {
                 row![
                     button(text(rust_i18n::t!("add")))
@@ -620,7 +621,12 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
         .spacing(10)
         .align_y(iced::Alignment::Center);
 
-        let mut list_col = column![text(rust_i18n::t!("tag_aliases")).size(20), input_row, iced::widget::rule::horizontal(1)].spacing(10);
+        let mut list_col = column![
+            text(rust_i18n::t!("tag_aliases")).size(20),
+            input_row,
+            iced::widget::rule::horizontal(1)
+        ]
+        .spacing(10);
 
         let mut sorted_aliases: Vec<_> = app.tag_aliases.iter().collect();
         sorted_aliases.sort_by_key(|(k, _)| k.to_string());
@@ -636,12 +642,24 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
             })
             .width(Length::FillPortion(1))
             .wrapping(iced::widget::text::Wrapping::Glyph)
-            .style(if is_editing_this { |theme: &Theme| text::Style { color: Some(theme.extended_palette().primary.base.color) } } else { |_: &Theme| text::Style::default() });
+            .style(if is_editing_this {
+                |theme: &Theme| text::Style {
+                    color: Some(theme.extended_palette().primary.base.color),
+                }
+            } else {
+                |_: &Theme| text::Style::default()
+            });
 
             let val_text = text(val_str.clone())
                 .width(Length::FillPortion(2))
                 .wrapping(iced::widget::text::Wrapping::Glyph)
-                .style(if is_editing_this { |theme: &Theme| text::Style { color: Some(theme.extended_palette().primary.base.color) } } else { |_: &Theme| text::Style::default() });
+                .style(if is_editing_this {
+                    |theme: &Theme| text::Style {
+                        color: Some(theme.extended_palette().primary.base.color),
+                    }
+                } else {
+                    |_: &Theme| text::Style::default()
+                });
 
             let row_item = row![
                 key_text,
@@ -661,17 +679,14 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
             list_col = list_col.push(row_item);
         }
 
-        let area =
-            container(list_col)
-                .padding(10)
-                .style(|_| container::Style {
-                    border: iced::Border {
-                        radius: 4.0.into(),
-                        width: 1.0,
-                        color: Color::from_rgb(0.3, 0.3, 0.3),
-                    },
-                    ..Default::default()
-                });
+        let area = container(list_col).padding(10).style(|_| container::Style {
+            border: iced::Border {
+                radius: 4.0.into(),
+                width: 1.0,
+                color: Color::from_rgb(0.3, 0.3, 0.3),
+            },
+            ..Default::default()
+        });
         area.into()
     } else {
         Space::new().width(0).into()

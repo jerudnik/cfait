@@ -343,9 +343,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         Ok(_) => {
                             // If we were editing and changed the key, remove the old one
                             if let Some(old_key) = &app.editing_alias_key
-                                && old_key != &key {
-                                    app.tag_aliases.remove(old_key);
-                                }
+                                && old_key != &key
+                            {
+                                app.tag_aliases.remove(old_key);
+                            }
                             app.editing_alias_key = None;
 
                             app.tag_aliases.insert(key.clone(), tags.clone());
