@@ -40,13 +40,40 @@ trim = true
 # Use Conventional Commits for parsing.
 conventional_commits = true
 
-# THIS IS THE KEY CHANGE:
 # Do NOT filter out commits that don't match the spec.
 filter_unconventional = false
 
-# Parsers for standard Conventional Commit types.
+# Parsers for standard Conventional Commit types and custom patterns.
 commit_parsers = [
-    # Standard types with emojis and sorting hints.
+    # 1. SKIP ALL MERGES (PRs, branch merges, remote-tracking merges)
+    { message = "^[Mm]erge ", skip = true },
+
+    # 2. SKIP WEBLATE TRANSLATION CHORES (Omitted to keep release notes focused on code changes)
+    { message = "^[Tt]ranslated using Weblate", skip = true },
+    { message = "^[Aa]dded translation using Weblate", skip = true },
+    { message = "^Update translation files", skip = true },
+    { message = "^Translation ", skip = true },
+
+    # 3. SKIP AUTOMATED RELEASE COMMITS & VERSION BUMPS
+    { message = "^[Cc]hore: Release", skip = true },
+    { message = "^[Cc]hore\\(release\\)", skip = true },
+    { message = "^[Rr]elease ", skip = true },
+    { message = "^[Pp]rep(aring)? for (crate |v)?[0-9a-fA-Fv.]* release", skip = true },
+    { message = "^[Pp]rep for v", skip = true },
+
+    # 4. SKIP FORMATTING, LINTING, AND TRANSLATION CONFIG MAINTENANCE
+    { message = "^chore:.*(fmt|lint|ktlint|cleanup|sweep)", skip = true },
+    { message = "^[Cc]hore: [Ll]int", skip = true },
+    { message = "^chore\\(android\\): regenerate", skip = true },
+    { message = "^chore\\(auth\\): regenerate", skip = true },
+    { message = "^chore\\(fdroid\\)", skip = true },
+    { message = "^Cargo\\.lock", skip = true },
+    { message = "^ci:", skip = true },
+
+    # 5. CATEGORIZE LEGACY UI LABELS
+    { message = "^\\[(GUI|TUI)\\]", group = "<!-- 5 -->🎨 UI/UX Improvements" },
+
+    # 6. CONVENTIONAL COMMIT TYPING
     { message = "^feat", group = "<!-- 0 -->🚀 Features" },
     { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
     { message = "^refactor", group = "<!-- 2 -->🚜 Refactor" },
@@ -54,22 +81,16 @@ commit_parsers = [
     { message = "^perf", group = "<!-- 4 -->⚡ Performance" },
     { message = "^style", group = "<!-- 5 -->🎨 Styling" },
     { message = "^test", group = "<!-- 6 -->🧪 Testing" },
-    { message = "^chore|^ci", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
+    { message = "^chore", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
     { message = "^revert", group = "<!-- 9 -->◀️ Revert" },
-    
-    # Custom parser for your commits like "[GUI] ..."
-    # This will catch them and put them in a dedicated group.
-    { message = "^\\[(GUI|TUI)\\]", group = "<!-- 5 -->🎨 UI/UX Improvements" },
-    
-    { message = "^chore\\(skip\\)", skip = true },
-    # Skip automated release commits.
-    { message = "^chore\\(release\\): prepare for", skip = true },
-    { message = "^chore: Release", skip = true },
-    
-    # CATCH-ALL: Any commit that didn't match above goes into "Other".
-    # This ensures no commit is ever lost.
+
+    # 7. MAP RAW REPEATED KEYWORDS (Handles legacy commits without strict headers)
+    { message = "^[Rr]eadme|^[Dd]oc", group = "<!-- 3 -->📚 Documentation" },
+    { message = "^[Aa]dd unit tests|^[Tt]est", group = "<!-- 6 -->🧪 Testing" },
+
+    # 8. CATCH-ALL FOR HISTORICAL/UNCONVENTIONAL COMMITS
     { message = ".*", group = "<!-- 10 -->💼 Other" },
 ]
 
-# Sort groups by the numeric hints in the `group` field (e.g., <!-- 0 -->).
+# Sort commits within groups by oldest first to show chronological progression.
 sort_commits = "oldest"
