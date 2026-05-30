@@ -159,7 +159,9 @@ impl TaskController {
 
         match existing_task {
             Some(mut task) => {
-                if let Ok(remote_payload) = serde_json::from_str::<crate::config::SettingsPayload>(&task.description) {
+                if let Ok(remote_payload) =
+                    serde_json::from_str::<crate::config::SettingsPayload>(&task.description)
+                {
                     if remote_payload.updated_at > config.settings_updated_at {
                         // Remote is newer! Sync down.
                         config.apply_syncable(remote_payload.config.clone());
@@ -201,14 +203,26 @@ impl TaskController {
                     if !def.starts_with("local://") {
                         def.clone()
                     } else {
-                        let cals = crate::cache::Cache::load_calendars(self.ctx.as_ref()).unwrap_or_default();
-                        cals.into_iter().find(|c| !c.href.starts_with("local://")).map(|c| c.href).unwrap_or_else(|| crate::storage::LOCAL_CALENDAR_HREF.to_string())
+                        let cals = crate::cache::Cache::load_calendars(self.ctx.as_ref())
+                            .unwrap_or_default();
+                        cals.into_iter()
+                            .find(|c| !c.href.starts_with("local://"))
+                            .map(|c| c.href)
+                            .unwrap_or_else(|| crate::storage::LOCAL_CALENDAR_HREF.to_string())
                     }
                 } else {
-                    let cals = crate::cache::Cache::load_calendars(self.ctx.as_ref()).unwrap_or_default();
-                    cals.into_iter().find(|c| !c.href.starts_with("local://")).map(|c| c.href).unwrap_or_else(|| crate::storage::LOCAL_CALENDAR_HREF.to_string())
+                    let cals =
+                        crate::cache::Cache::load_calendars(self.ctx.as_ref()).unwrap_or_default();
+                    cals.into_iter()
+                        .find(|c| !c.href.starts_with("local://"))
+                        .map(|c| c.href)
+                        .unwrap_or_else(|| crate::storage::LOCAL_CALENDAR_HREF.to_string())
                 };
-                let mut new_task = Task::new("⚙ Cfait Settings (Do not delete)", &std::collections::HashMap::new(), None);
+                let mut new_task = Task::new(
+                    "⚙ Cfait Settings (Do not delete)",
+                    &std::collections::HashMap::new(),
+                    None,
+                );
                 new_task.uid = settings_uid.to_string();
                 new_task.status = crate::model::TaskStatus::Cancelled; // Hides it in standard clients
                 new_task.description = local_json;
@@ -227,7 +241,7 @@ impl TaskController {
     /// with the resulting ETags and URLs.
     pub async fn sync_and_update_store(&self) -> Result<(Vec<String>, Vec<Task>, bool), String> {
         let client_opt = self.client.lock().await.clone();
-        
+
         let (warns, actual_synced) = if let Some(client) = client_opt {
             match client.sync_journal().await {
                 Ok((w, s)) => {
@@ -236,7 +250,9 @@ impl TaskController {
                     let mut to_delete = Vec::new();
 
                     for sync_task in &s {
-                        if sync_task.summary.starts_with("⚙ Cfait Settings") && sync_task.summary.ends_with("(Conflict Copy)") {
+                        if sync_task.summary.starts_with("⚙ Cfait Settings")
+                            && sync_task.summary.ends_with("(Conflict Copy)")
+                        {
                             to_delete.push(sync_task.clone());
                             continue; // Prevent it from entering the store
                         }

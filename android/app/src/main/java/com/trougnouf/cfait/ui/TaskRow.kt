@@ -574,9 +574,26 @@ fun CompactTagRow(
 
         if (hasChildren && onToggleCollapse != null) {
             Spacer(Modifier.width(8.dp))
+            val trees = listOf(NfIcons.TREE_FA, NfIcons.TREE_FAE, NfIcons.TREE_MD, NfIcons.PALM_TREE, NfIcons.PINE_TREE)
+            val hash = kotlin.math.abs(name.hashCode())
+            val iconChar = if (isExpanded) {
+                trees[hash % 5]
+            } else {
+                NfIcons.FAMILY_TREE
+            }
+            val iconColor = if (isExpanded) {
+                val r = ((hash shr 16) % 20) / 100f
+                val g = 0.6f + ((hash shr 8) % 30) / 100f
+                val b = ((hash shr 0) % 20) / 100f
+                Color(r, g, b, 1f)
+            } else if (isTag) {
+                Color(0xFFB86C00)
+            } else {
+                Color.Gray
+            }
+
             IconButton(onClick = onToggleCollapse, modifier = Modifier.size(24.dp)) {
-                val collapseIcon = if (isExpanded) NfIcons.ARROW_DOWN else NfIcons.ARROW_RIGHT
-                NfIcon(collapseIcon, 14.sp, color = Color.Gray)
+                NfIcon(iconChar, 16.sp, iconColor)
             }
         }
 
@@ -585,6 +602,10 @@ fun CompactTagRow(
             IconButton(onClick = onFocus, modifier = Modifier.size(24.dp)) {
                 NfIcon(NfIcons.ARROW_RIGHT, 14.sp)
             }
+        }
+    }
+}
+
         }
     }
 }

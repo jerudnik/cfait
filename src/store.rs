@@ -1581,7 +1581,9 @@ impl TaskStore {
                 .iter()
                 .copied()
                 .filter(|t| {
-                    if t.uid == "cfait-global-settings-v1" || t.summary.starts_with("⚙ Cfait Settings") {
+                    if t.uid == "cfait-global-settings-v1"
+                        || t.summary.starts_with("⚙ Cfait Settings")
+                    {
                         return false;
                     }
 

@@ -417,20 +417,30 @@ pub fn view_sidebar_categories(app: &GuiApp) -> Element<'_, Message> {
                     .delay(Duration::from_millis(700));
 
                     let expand_btn: Element<'_, Message> = if item.has_children {
-                        let arrow_char = if item.is_expanded {
-                            icon::ARROW_EXPAND_UP
+                        let trees = [
+                            icon::TREE_FA,
+                            icon::TREE_FAE,
+                            icon::TREE_MD,
+                            icon::PALM_TREE,
+                            icon::PINE_TREE,
+                        ];
+                        let hash = cat.bytes().fold(0u32, |acc, b| acc.wrapping_add(b as u32));
+
+                        let r = ((hash >> 16) % 20) as f32 / 100.0;
+                        let g = 0.6 + ((hash >> 8) % 30) as f32 / 100.0;
+                        let b = (hash % 20) as f32 / 100.0;
+
+                        let (icon_char, tree_color) = if item.is_expanded {
+                            (trees[(hash % 5) as usize], Color::from_rgb(r, g, b))
                         } else {
-                            icon::ARROW_EXPAND_DOWN
+                            (icon::FAMILY_TREE, Color::from_rgb(0.7, 0.42, 0.0))
                         };
-                        button(
-                            icon::icon(arrow_char)
-                                .size(14)
-                                .color(Color::from_rgb(0.5, 0.5, 0.8)),
-                        )
-                        .style(button::text)
-                        .padding(2)
-                        .on_press(Message::ToggleTagCollapse(cat.clone()))
-                        .into()
+
+                        button(icon::icon(icon_char).size(14).color(tree_color))
+                            .style(button::text)
+                            .padding(2)
+                            .on_press(Message::ToggleTagCollapse(cat.clone()))
+                            .into()
                     } else {
                         Space::new().width(Length::Fixed(0.0)).into()
                     };
@@ -583,20 +593,30 @@ pub fn view_sidebar_locations(app: &GuiApp) -> Element<'_, Message> {
                     .delay(Duration::from_millis(700));
 
                     let expand_btn: Element<'_, Message> = if item.has_children {
-                        let arrow_char = if item.is_expanded {
-                            icon::ARROW_EXPAND_UP
+                        let trees = [
+                            icon::TREE_FA,
+                            icon::TREE_FAE,
+                            icon::TREE_MD,
+                            icon::PALM_TREE,
+                            icon::PINE_TREE,
+                        ];
+                        let hash = loc.bytes().fold(0u32, |acc, b| acc.wrapping_add(b as u32));
+
+                        let r = ((hash >> 16) % 20) as f32 / 100.0;
+                        let g = 0.6 + ((hash >> 8) % 30) as f32 / 100.0;
+                        let b = (hash % 20) as f32 / 100.0;
+
+                        let (icon_char, tree_color) = if item.is_expanded {
+                            (trees[(hash % 5) as usize], Color::from_rgb(r, g, b))
                         } else {
-                            icon::ARROW_EXPAND_DOWN
+                            (icon::FAMILY_TREE, Color::from_rgb(0.5, 0.5, 0.8))
                         };
-                        button(
-                            icon::icon(arrow_char)
-                                .size(14)
-                                .color(Color::from_rgb(0.5, 0.5, 0.8)),
-                        )
-                        .style(button::text)
-                        .padding(2)
-                        .on_press(Message::ToggleLocationCollapse(loc.clone()))
-                        .into()
+
+                        button(icon::icon(icon_char).size(14).color(tree_color))
+                            .style(button::text)
+                            .padding(2)
+                            .on_press(Message::ToggleLocationCollapse(loc.clone()))
+                            .into()
                     } else {
                         Space::new().width(Length::Fixed(0.0)).into()
                     };

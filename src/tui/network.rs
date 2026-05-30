@@ -303,9 +303,12 @@ pub async fn run_network_actor(
                                 controller_clone.sync_and_update_store().await
                             {
                                 if config_changed
-                                    && let Ok(cfg) = crate::config::Config::load(ctx_clone.as_ref()) {
-                                        let _ = event_tx_clone.send(AppEvent::ConfigUpdated(Box::new(cfg))).await;
-                                    }
+                                    && let Ok(cfg) = crate::config::Config::load(ctx_clone.as_ref())
+                                {
+                                    let _ = event_tx_clone
+                                        .send(AppEvent::ConfigUpdated(Box::new(cfg)))
+                                        .await;
+                                }
 
                                 // Send TaskSynced events instead of TasksLoaded to update metadata
                                 // without overwriting the UI's optimistic state!

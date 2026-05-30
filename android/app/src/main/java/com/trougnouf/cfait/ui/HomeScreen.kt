@@ -1033,7 +1033,8 @@ fun HomeScreen(
                             name = stringResource(R.string.locations), count = null,
                             color = MaterialTheme.colorScheme.onSurface, isSelected = isAllLocsSelected,
                             icon = iconStr, onClick = { filterLocations = emptySet() },
-                            onFocus = { filterLocations = emptySet(); scope.launch { drawerState.close() } }
+                            onFocus = { filterLocations = emptySet(); scope.launch { drawerState.close() } },
+                            isTag = false
                         )
                         HorizontalDivider()
                     }
@@ -1254,7 +1255,8 @@ fun HomeScreen(
                                         scope.launch {
                                             api.dispatch(AppIntent.ToggleLocationCollapse(loc.name))
                                         }
-                                    }
+                                    },
+                                    isTag = false
                                 )
                             }
                         }

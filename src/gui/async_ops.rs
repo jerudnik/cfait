@@ -164,7 +164,7 @@ pub fn spawn_background_worker(
                         Ok((_warns, synced_tasks, config_changed)) => {
                             // Always send the success message to allow the GUI to update the unsynced badge
                             let _ = ui_tx.send(crate::gui::message::Message::BackgroundSyncComplete(synced_tasks)).await;
-                            
+
                             if config_changed {
                                 let ctx_ref = ctx.clone();
                                 if let Ok(cfg) = tokio::task::spawn_blocking(move || Config::load_with_credentials(ctx_ref.as_ref())).await.unwrap() {
