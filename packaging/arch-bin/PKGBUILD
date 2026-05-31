@@ -1,5 +1,5 @@
 # Maintainer: Benoit Brummer (Trougnouf) <trougnouf@gmail.com>
-pkgname=cfait
+pkgname=cfait-bin
 pkgver=1.0.4
 pkgrel=1
 pkgdesc="Powerful, fast and elegant task / TODO manager. (GUI & TUI, CalDAV & local)"
@@ -30,7 +30,15 @@ source=()
 sha256sums=('SKIP')
 replaces=('rustycal' 'rustache' 'fairouille')
 provides=('cfait' 'cfait-gui')
+conflicts=('cfait')
 
 package() {
-    tar -xJ -f data.tar.xz -C "${pkgdir}"
+    cd "cfait-linux-${pkgver}"
+    
+    install -Dm755 cfait -t "${pkgdir}/usr/bin/"
+    install -Dm755 cfait-gui -t "${pkgdir}/usr/bin/"
+    install -Dm644 cfait.desktop -t "${pkgdir}/usr/share/applications/"
+    install -Dm644 cfait.svg -t "${pkgdir}/usr/share/icons/hicolor/scalable/apps/"
+    install -Dm644 README.md -t "${pkgdir}/usr/share/doc/${pkgname}/"
+    install -Dm644 LICENSE -t "${pkgdir}/usr/share/licenses/${pkgname}/"
 }
