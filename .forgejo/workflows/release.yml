@@ -209,6 +209,23 @@ jobs:
           chown -R builder:builder .
           su builder -c "makepkg --printsrcinfo > .SRCINFO"
 
+          # Verify Debian package exists
+          if [ ! -f "cfait_${CLEAN_VER}-1_amd64.deb" ]; then
+            echo "Error: Debian package not found"
+            exit 1
+          fi
+
+          HASH=$(sha256sum "cfait_${CLEAN_VER}-1_amd64.deb" | awk '{print $1}')
+
+          cp ../packaging/arch_bin/PKGBUILD ./PKGBUILD_bin
+
+          sed -i "s/pkgver=.*/pkgver=${CLEAN_VER}/" PKGBUILD_bin
+          sed -i "s/'SKIP'/'$HASH'/" PKGBUILD_bin
+          NEW_SOURCE_URL="https://codeberg.org/trougnouf/cfait/releases/download/${RAW_VERSION}/cfait_${CLEAN_VER}-1_amd64.deb"
+          sed -i "s|source=.*|source=(\"${NEW_SOURCE_URL}\")|" PKGBUILD_bin
+
+          su builder -c "makepkg -p PKGBUILD_bin --printsrcinfo > .SRCINFO_bin"
+
       # 7. Upload Everything (Atomic Release)
       - name: Upload to Codeberg Releases
         if: startsWith(github.ref, 'refs/tags/')
@@ -266,4 +283,22 @@ jobs:
             git commit -m "Update to ${{ github.ref_name }}"
             git push
             echo "🚀 Successfully pushed to AUR!"
+          fi
+
+          cd ..
+
+          git clone ssh://aur@aur.archlinux.org/cfait-bin.git aur-repo-bin
+
+          cp dist/PKGBUILD_bin aur-repo-bin/PKGBUILD
+          cp dist/.SRCINFO_bin aur-repo-bin/.SRCINFO
+
+          cd aur-repo-bin
+          git add PKGBUILD .SRCINFO
+
+          if git diff --staged --quiet; then
+            echo "No changes to AUR files."
+          else
+            git commit -m "Update to ${{ github.ref_name }}"
+            git push
+            echo "🚀 Successfully pushed to AUR (bin)!"
           fi
