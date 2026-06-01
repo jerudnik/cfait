@@ -5,6 +5,9 @@ use crate::gui::state::{AppState, GuiApp, SidebarMode};
 use iced::{Subscription, event, keyboard, window};
 use std::sync::atomic::{AtomicBool, Ordering};
 
+pub static LAST_MOUSE_POS: once_cell::sync::Lazy<std::sync::RwLock<iced::Point>> =
+    once_cell::sync::Lazy::new(|| std::sync::RwLock::new(iced::Point::new(0.0, 0.0)));
+
 // Tracks the Command/Ctrl modifier state statelessly so Mouse events can check it
 static CMD_HELD: AtomicBool = AtomicBool::new(false);
 
@@ -115,6 +118,12 @@ fn handle_hotkey(
             modifiers.control() || modifiers.command(),
             Ordering::Relaxed,
         );
+    }
+
+    if let iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) = &evt
+        && let Ok(mut pos) = LAST_MOUSE_POS.write()
+    {
+        *pos = *position;
     }
 
     // Handle Ctrl + Scroll (Zoom In/Out)

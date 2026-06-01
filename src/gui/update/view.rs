@@ -108,11 +108,34 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 app.current_window_size.width / 2.0,
                 app.current_window_size.height / 2.0,
             ); // Fallback
+
             if let Some(id) = app.task_ids.get(&uid)
                 && let Some(bounds) = crate::gui::view::focusable::get_focus_bounds(id)
             {
-                pt = iced::Point::new(bounds.x + 50.0, bounds.y + (bounds.height / 2.0));
+                if let Ok(pos) = crate::gui::subscription::LAST_MOUSE_POS.read()
+                    && bounds.contains(*pos)
+                {
+                    // If the mouse is directly over the task, open exactly at the cursor
+                    pt = *pos;
+                } else if !is_full {
+                    // Ellipsis button clicked via keyboard navigation
+                    pt = iced::Point::new(
+                        bounds.x + bounds.width - 20.0,
+                        bounds.y + (bounds.height / 2.0),
+                    );
+                } else {
+                    // Right-click triggered via keyboard navigation
+                    pt = iced::Point::new(
+                        bounds.x + (bounds.width / 2.0),
+                        bounds.y + (bounds.height / 2.0),
+                    );
+                }
+            } else if let Ok(pos) = crate::gui::subscription::LAST_MOUSE_POS.read()
+                && (pos.x > 0.0 || pos.y > 0.0)
+            {
+                pt = *pos;
             }
+
             app.active_context_menu = Some((uid, is_full, pt));
             Task::none()
         }
