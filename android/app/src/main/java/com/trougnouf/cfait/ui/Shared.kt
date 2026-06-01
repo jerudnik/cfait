@@ -129,6 +129,7 @@ object NfIcons {
     val SYNC_OFF = get(0xf04e8)
     val DELETE = get(0xf1f8)
     val CHECK = get(0xf00c)
+    val CHECK_SQUARE = get(0xf14a)
     val CROSS = get(0xf00d)
     val CHILD_ARROW = get(0xf149)
     val DETAILED_TRIANGLE = get(0xf01c6)

@@ -451,6 +451,10 @@ pub fn compare_sortkeys(
 // Helper context used by hierarchy organization routines.
 // Bundles the children map, result vector and other parameters so recursive helpers
 impl Task {
+    pub fn has_extractable_subtasks(&self) -> bool {
+        crate::model::extractor::has_extractable_subtasks(&self.description)
+    }
+
     pub fn is_relative_recurrence(&self) -> bool {
         self.unmapped_properties
             .iter()

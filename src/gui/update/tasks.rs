@@ -507,6 +507,59 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::batch(tasks)
         }
 
+        Message::ExtractSubtasks(uid) => {
+            if let Some((parent, _)) = app.store.get_task_mut(&uid) {
+                let desc_text = parent.description.clone();
+                let (clean_desc, extracted) =
+                    crate::model::extractor::extract_markdown_tasks(&desc_text);
+
+                if !extracted.is_empty() {
+                    parent.description = clean_desc;
+                    parent.sequence += 1;
+                    let parent_copy = parent.clone();
+                    let target_href = parent_copy.calendar_href.clone();
+
+                    let config = &app.core_config;
+                    let def_time =
+                        chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M")
+                            .ok();
+
+                    let mut actions = vec![crate::journal::Action::Update(parent_copy)];
+
+                    for ext in extracted {
+                        let mut sub =
+                            crate::model::Task::new(&ext.raw_text, &app.tag_aliases, def_time);
+                        sub.uid = ext.uid;
+                        if !ext.description.is_empty() {
+                            if sub.description.is_empty() {
+                                sub.description = ext.description;
+                            } else {
+                                sub.description
+                                    .push_str(&format!("\n\n{}", ext.description));
+                            }
+                        }
+                        if ext.is_completed {
+                            sub.status = crate::model::TaskStatus::Completed;
+                            sub.set_completion_date(Some(chrono::Utc::now()));
+                        }
+                        sub.parent_uid = Some(ext.parent_uid.unwrap_or(uid.clone()));
+                        sub.dependencies = ext.dependencies;
+                        sub.calendar_href = target_href.clone();
+
+                        app.store.add_task(sub.clone());
+                        actions.push(crate::journal::Action::Create(sub));
+                    }
+
+                    common::refresh_filtered_tasks(app);
+
+                    if let Some(tx) = &app.bg_tx {
+                        let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
+                    }
+                }
+            }
+            Task::none()
+        }
+
         Message::ClearYank => {
             app.yanked_uid = None;
             app.yank_lock_active = false;

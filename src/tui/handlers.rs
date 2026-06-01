@@ -56,6 +56,7 @@ fn get_available_actions(state: &AppState, task: &Task) -> Vec<crate::config::Ta
             TaskAction::CompleteAndShift => {
                 task.rrule.is_some() && !is_done_or_cancelled && !task.is_relative_recurrence()
             }
+            TaskAction::ExtractSubtasks => task.has_extractable_subtasks(),
             TaskAction::Promote => task.parent_uid.is_some(),
             TaskAction::Yank => state.yanked_uid.is_none(),
             TaskAction::StopTimer => {
@@ -95,6 +96,7 @@ fn update_action_menu_filter(state: &mut AppState) {
                 DecreasePriority => filter == "-" || filter == "down",
                 Edit => filter == "e",
                 Yank => filter == "y" || filter == "copy",
+                ExtractSubtasks => filter == "extract" || filter == "parse",
                 CreateSubtask => filter == "c" || filter == "sub",
                 DuplicateTree => filter == "d" || filter == "dup",
                 Promote => filter == "<" || filter == "outdent",
@@ -322,6 +324,58 @@ async fn execute_task_action(
             use std::io::Write;
             let _ = std::io::stdout().flush();
             state.message = rust_i18n::t!("yanked_and_copied", summary = summary).to_string();
+        }
+        ExtractSubtasks => {
+            if let Some((parent, _)) = state.store.get_task_mut(&uid) {
+                let desc_text = parent.description.clone();
+                let (clean_desc, extracted) =
+                    crate::model::extractor::extract_markdown_tasks(&desc_text);
+
+                if !extracted.is_empty() {
+                    parent.description = clean_desc;
+                    parent.sequence += 1;
+                    let parent_copy = parent.clone();
+                    let target_href = parent_copy.calendar_href.clone();
+
+                    let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
+                    let def_time =
+                        chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M")
+                            .ok();
+
+                    let mut actions = vec![crate::journal::Action::Update(parent_copy)];
+
+                    for ext in extracted {
+                        let mut sub = Task::new(&ext.raw_text, &state.tag_aliases, def_time);
+                        sub.uid = ext.uid;
+                        if !ext.description.is_empty() {
+                            if sub.description.is_empty() {
+                                sub.description = ext.description;
+                            } else {
+                                sub.description
+                                    .push_str(&format!("\n\n{}", ext.description));
+                            }
+                        }
+                        if ext.is_completed {
+                            sub.status = crate::model::TaskStatus::Completed;
+                            sub.set_completion_date(Some(chrono::Utc::now()));
+                        }
+                        sub.parent_uid = Some(ext.parent_uid.unwrap_or(uid.clone()));
+                        sub.dependencies = ext.dependencies;
+                        sub.calendar_href = target_href.clone();
+
+                        state.store.add_task(sub.clone());
+                        actions.push(crate::journal::Action::Create(sub));
+                    }
+
+                    state.refresh_filtered_view();
+                    tokio::spawn({
+                        let tx = action_tx.clone();
+                        async move {
+                            let _ = tx.send(Action::PersistBatch(actions)).await;
+                        }
+                    });
+                }
+            }
         }
         CreateSubtask => {
             let mut initial_input = String::new();

@@ -858,6 +858,11 @@ pub fn view_task_row<'a>(
                             Message::YankTask(task.uid.clone()),
                             0,
                         ),
+                        TaskAction::ExtractSubtasks => (
+                            icon::icon(icon::CHECK_SQUARE).size(14).into(),
+                            Message::ExtractSubtasks(task.uid.clone()),
+                            0,
+                        ),
                         TaskAction::CreateSubtask => (
                             icon::icon(icon::CREATE_CHILD).size(14).into(),
                             Message::StartCreateChild(task.uid.clone()),

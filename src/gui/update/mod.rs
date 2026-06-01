@@ -118,6 +118,7 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::ChangePriority(_, _)
         | Message::SetTaskStatus(_, _)
         | Message::YankTask(_)
+        | Message::ExtractSubtasks(_)
         | Message::ClearYank
         | Message::EscapePressed
         | Message::EscCaptured

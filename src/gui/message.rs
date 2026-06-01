@@ -146,6 +146,7 @@ pub enum Message {
     ToggleHelpSection(String),
 
     // --- Navigation & Actions ---
+    ExtractSubtasks(String),
     YankTask(String),
     StartCreateChild(String),
     AddDependency(String),

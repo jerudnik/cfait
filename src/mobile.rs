@@ -207,6 +207,7 @@ pub struct MobileTask {
     pub virtual_type: String,
     pub virtual_payload: String,
     pub is_collapsed: bool,
+    pub has_extractable_subtasks: bool,
 
     // UI Visual resolution fields
     pub visible_categories: Vec<String>,
@@ -261,6 +262,7 @@ impl MobileTask {
             virtual_type: vtype.to_string(),
             virtual_payload: payload.to_string(),
             is_collapsed: false,
+            has_extractable_subtasks: false,
             visible_categories: vec![],
             visible_location: None,
         }
@@ -605,6 +607,7 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
         virtual_type: v_type,
         virtual_payload: v_payload,
         is_collapsed: t.collapsed,
+        has_extractable_subtasks: t.has_extractable_subtasks(),
         visible_categories: t.visible_categories.clone(),
         visible_location: t.visible_location.clone(),
     }
@@ -1947,6 +1950,64 @@ impl CfaitMobile {
     pub async fn delete_task_tree(&self, uid: String) -> Result<(), MobileError> {
         self.dispatch(crate::model::AppIntent::DeleteTaskTree { uid })
             .await?;
+        Ok(())
+    }
+
+    pub async fn extract_subtasks(&self, uid: String) -> Result<(), MobileError> {
+        let config = Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let def_time =
+            chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
+
+        let mut store = self.controller.store.lock().await;
+        let mut actions = Vec::new();
+
+        if let Some((parent, _)) = store.get_task_mut(&uid) {
+            let desc_text = parent.description.clone();
+            let (clean_desc, extracted) =
+                crate::model::extractor::extract_markdown_tasks(&desc_text);
+
+            if !extracted.is_empty() {
+                parent.description = clean_desc;
+                parent.sequence += 1;
+                let parent_copy = parent.clone();
+                let target_href = parent_copy.calendar_href.clone();
+
+                actions.push(crate::journal::Action::Update(parent_copy));
+
+                for ext in extracted {
+                    let mut sub = Task::new(&ext.raw_text, &config.tag_aliases, def_time);
+                    sub.uid = ext.uid;
+                    if !ext.description.is_empty() {
+                        if sub.description.is_empty() {
+                            sub.description = ext.description;
+                        } else {
+                            sub.description
+                                .push_str(&format!("\n\n{}", ext.description));
+                        }
+                    }
+                    if ext.is_completed {
+                        sub.status = crate::model::TaskStatus::Completed;
+                        sub.set_completion_date(Some(chrono::Utc::now()));
+                    }
+                    sub.parent_uid = Some(ext.parent_uid.unwrap_or(uid.clone()));
+                    sub.dependencies = ext.dependencies;
+                    sub.calendar_href = target_href.clone();
+
+                    store.add_task(sub.clone());
+                    actions.push(crate::journal::Action::Create(sub));
+                }
+            }
+        }
+        drop(store);
+
+        if !actions.is_empty() {
+            self.controller
+                .persist_changes(actions)
+                .await
+                .map_err(MobileError::from)?;
+            self.rebuild_alarm_index().await;
+        }
+
         Ok(())
     }
 

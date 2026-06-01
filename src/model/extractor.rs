@@ -13,6 +13,48 @@ pub struct ExtractedTask {
     pub is_completed: bool,
 }
 
+pub fn has_extractable_subtasks(input: &str) -> bool {
+    for line in input.lines() {
+        let mut byte_offset = 0;
+        for c in line.chars() {
+            if c == ' ' || c == '\t' {
+                byte_offset += c.len_utf8();
+            } else {
+                break;
+            }
+        }
+        let rest = &line[byte_offset..];
+        if rest.starts_with("- ") || rest.starts_with("* ") || rest.starts_with("+ ") {
+            let after_marker = &rest[2..];
+            if after_marker.starts_with("[ ] ")
+                || after_marker.starts_with("[x] ")
+                || after_marker.starts_with("[X] ")
+            {
+                return true;
+            }
+        } else {
+            let mut digit_bytes = 0;
+            for c in rest.chars() {
+                if c.is_ascii_digit() {
+                    digit_bytes += c.len_utf8();
+                } else {
+                    break;
+                }
+            }
+            if digit_bytes > 0 && rest[digit_bytes..].starts_with(". ") {
+                let after_marker = &rest[digit_bytes + 2..];
+                if after_marker.starts_with("[ ] ")
+                    || after_marker.starts_with("[x] ")
+                    || after_marker.starts_with("[X] ")
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
 /// Takes a raw markdown string.
 /// Returns (Cleaned Root Description, List of Extracted Subtasks).
 pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {

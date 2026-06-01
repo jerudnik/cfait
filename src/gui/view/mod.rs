@@ -60,6 +60,7 @@ pub fn is_action_available(
         crate::config::TaskAction::CompleteAndShift => {
             task.rrule.is_some() && !is_done_or_cancelled && !task.is_relative_recurrence()
         }
+        crate::config::TaskAction::ExtractSubtasks => task.has_extractable_subtasks(),
         crate::config::TaskAction::Promote => task.parent_uid.is_some(),
         crate::config::TaskAction::Yank => app.yanked_uid.is_none(),
         crate::config::TaskAction::StopTimer => {
@@ -475,6 +476,11 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                     Message::YankTask(uid.clone()),
                     false,
                 ),
+                TaskAction::ExtractSubtasks => (
+                    icon::icon(icon::CHECK_SQUARE).size(14).into(),
+                    Message::ExtractSubtasks(uid.clone()),
+                    false,
+                ),
                 TaskAction::CreateSubtask => (
                     icon::icon(icon::CREATE_CHILD).size(14).into(),
                     Message::StartCreateChild(uid.clone()),
@@ -565,6 +571,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::Edit,
                 TaskAction::Yank,
                 TaskAction::CreateSubtask,
+                TaskAction::ExtractSubtasks,
                 TaskAction::DuplicateTree,
                 TaskAction::Promote,
                 TaskAction::Move,

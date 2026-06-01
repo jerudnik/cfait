@@ -456,6 +456,14 @@ fun TaskRow(
                             leadingIcon = { NfIcon(NfIcons.LINK, 16.sp) })
                     }
 
+                    if (task.hasExtractableSubtasks) {
+                        DropdownMenuItem(
+                            text = { Text(androidx.compose.ui.res.stringResource(R.string.action_extract_subtasks)) },
+                            onClick = { expanded = false; onAction("extract_subtasks") },
+                            leadingIcon = { NfIcon(NfIcons.CHECK_SQUARE, 16.sp) }
+                        )
+                    }
+
                     DropdownMenuItem(
                         text = { Text(androidx.compose.ui.res.stringResource(R.string.create_subtask)) },
                         onClick = { expanded = false; onAction("create_child") },

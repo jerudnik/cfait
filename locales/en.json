@@ -5,6 +5,7 @@
     "about_title": "Cfait Task Manager",
     "about_version": "Version %{version}",
     "action_complete_and_shift": "Complete & shift schedule",
+    "action_extract_subtasks": "Extract markdown subtasks",
     "action_open_locations": "Open locations (GPX)",
     "actions": "Actions",
     "active_alarm": "Active alarm",

@@ -795,6 +795,8 @@ internal object IntegrityCheckingUniffiLib {
 
     external fun uniffi_cfait_checksum_method_cfaitmobile_export_locations_gpx(): Short
 
+    external fun uniffi_cfait_checksum_method_cfaitmobile_extract_subtasks(): Short
+
     external fun uniffi_cfait_checksum_method_cfaitmobile_get_all_locations(): Short
 
     external fun uniffi_cfait_checksum_method_cfaitmobile_get_all_tags(): Short
@@ -1043,6 +1045,11 @@ internal object UniffiLib {
         `uid`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
+
+    external fun uniffi_cfait_fn_method_cfaitmobile_extract_subtasks(
+        `ptr`: Long,
+        `uid`: RustBuffer.ByValue,
+    ): Long
 
     external fun uniffi_cfait_fn_method_cfaitmobile_get_all_locations(`ptr`: Long): Long
 
@@ -1595,6 +1602,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_export_locations_gpx() != 44122.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_extract_subtasks() != 8770.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_all_locations() != 55689.toShort()) {
@@ -2341,6 +2351,8 @@ public interface CfaitMobileInterface {
 
     fun `exportLocationsGpx`(`uid`: kotlin.String): kotlin.String
 
+    suspend fun `extractSubtasks`(`uid`: kotlin.String)
+
     suspend fun `getAllLocations`(): List<MobileLocation>
 
     suspend fun `getAllTags`(): List<MobileTag>
@@ -3043,6 +3055,25 @@ open class CfaitMobile :
                     )
                 }
             },
+        )
+
+    @Throws(MobileException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `extractSubtasks`(`uid`: kotlin.String) =
+        uniffiRustCallAsync(
+            callWithHandle { uniffiHandle ->
+                UniffiLib.uniffi_cfait_fn_method_cfaitmobile_extract_subtasks(
+                    uniffiHandle,
+                    FfiConverterString.lower(`uid`),
+                )
+            },
+            { future, callback, continuation -> UniffiLib.ffi_cfait_rust_future_poll_void(future, callback, continuation) },
+            { future, continuation -> UniffiLib.ffi_cfait_rust_future_complete_void(future, continuation) },
+            { future -> UniffiLib.ffi_cfait_rust_future_free_void(future) },
+            // lift function
+            { Unit },
+            // Error FFI converter
+            MobileException.ErrorHandler,
         )
 
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
@@ -4517,6 +4548,7 @@ data class MobileTask(
     var `virtualType`: kotlin.String,
     var `virtualPayload`: kotlin.String,
     var `isCollapsed`: kotlin.Boolean,
+    var `hasExtractableSubtasks`: kotlin.Boolean,
     var `visibleCategories`: List<kotlin.String>,
     var `visibleLocation`: kotlin.String?,
 ) {
@@ -4574,6 +4606,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
             FfiConverterSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
         )
@@ -4625,6 +4658,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
                 FfiConverterString.allocationSize(value.`virtualType`) +
                 FfiConverterString.allocationSize(value.`virtualPayload`) +
                 FfiConverterBoolean.allocationSize(value.`isCollapsed`) +
+                FfiConverterBoolean.allocationSize(value.`hasExtractableSubtasks`) +
                 FfiConverterSequenceString.allocationSize(value.`visibleCategories`) +
                 FfiConverterOptionalString.allocationSize(value.`visibleLocation`)
         )
@@ -4678,6 +4712,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
         FfiConverterString.write(value.`virtualType`, buf)
         FfiConverterString.write(value.`virtualPayload`, buf)
         FfiConverterBoolean.write(value.`isCollapsed`, buf)
+        FfiConverterBoolean.write(value.`hasExtractableSubtasks`, buf)
         FfiConverterSequenceString.write(value.`visibleCategories`, buf)
         FfiConverterOptionalString.write(value.`visibleLocation`, buf)
     }
