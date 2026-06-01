@@ -27,7 +27,7 @@ use ratatui::{
 };
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-fn highlight_markdown_raw(input: &str) -> Text<'static> {
+fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
     use ratatui::text::Text;
     let mut lines = Vec::new();
 
@@ -39,25 +39,37 @@ fn highlight_markdown_raw(input: &str) -> Text<'static> {
             spans.push(Span::styled(
                 line.to_string(),
                 Style::default()
-                    .fg(Color::Blue)
+                    .fg(if is_dark_theme {
+                        Color::Blue
+                    } else {
+                        Color::Rgb(150, 50, 50)
+                    })
                     .add_modifier(Modifier::BOLD),
             ));
         } else if trimmed.starts_with("- ") || trimmed.starts_with("* ") {
             spans.push(Span::styled(
                 line.to_string(),
-                Style::default().fg(Color::Yellow),
+                Style::default().fg(if is_dark_theme {
+                    Color::Yellow
+                } else {
+                    Color::Rgb(150, 100, 0)
+                }),
             ));
         } else if trimmed.starts_with("> ") {
             spans.push(Span::styled(
                 line.to_string(),
                 Style::default()
-                    .fg(Color::Gray)
+                    .fg(Color::DarkGray)
                     .add_modifier(Modifier::ITALIC),
             ));
         } else if trimmed.starts_with("```") {
             spans.push(Span::styled(
                 line.to_string(),
-                Style::default().fg(Color::Green),
+                Style::default().fg(if is_dark_theme {
+                    Color::Green
+                } else {
+                    Color::Rgb(0, 120, 0)
+                }),
             ));
         } else {
             spans.push(Span::raw(line.to_string()));
@@ -99,6 +111,7 @@ fn format_description_for_markdown(raw: &str) -> String {
 }
 
 pub fn draw(f: &mut Frame, state: &mut AppState) {
+    let is_dark_theme = state.theme.is_dark();
     let footer_height = if state.mode == InputMode::EditingDescription {
         Constraint::Length(10)
     } else {
@@ -130,7 +143,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
     let is_filter_empty = state.tasks.is_empty() && state.store.has_any_tasks();
     // Default border style for sidebar (may be overridden per-tab below)
     let mut sidebar_border_style = if state.active_focus == Focus::Sidebar {
-        Style::default().fg(Color::Yellow)
+        Style::default().fg(if is_dark_theme {
+            Color::Yellow
+        } else {
+            Color::Rgb(200, 100, 0)
+        })
     } else {
         Style::default()
     };
@@ -168,7 +185,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
 
                     let text_style = if is_target {
                         Style::default()
-                            .fg(Color::Yellow)
+                            .fg(if is_dark_theme {
+                                Color::Yellow
+                            } else {
+                                Color::Rgb(200, 100, 0)
+                            })
                             .add_modifier(Modifier::BOLD)
                     } else if !is_visible {
                         Style::default().fg(Color::DarkGray)
@@ -210,7 +231,8 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                             indent, selected, item.display_name, item.count, tree_icon
                         )))
                     } else {
-                        let (r, g, b) = color_utils::generate_color(&item.full_key);
+                        let (r, g, b) =
+                            color_utils::generate_tui_color(&item.full_key, is_dark_theme);
                         let color =
                             Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8);
                         let spans = vec![
@@ -261,7 +283,14 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                     let spans = vec![
                         Span::raw(indent),
                         Span::raw(format!("{} ", selected)),
-                        Span::styled("@@", Style::default().fg(Color::LightCyan)),
+                        Span::styled(
+                            "@@",
+                            Style::default().fg(if is_dark_theme {
+                                Color::LightCyan
+                            } else {
+                                Color::Magenta
+                            }),
+                        ),
                         Span::raw(format!(
                             "{} ({}){}",
                             item.display_name, item.count, tree_icon
@@ -333,19 +362,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                     // We'll build the style from this color so we can dim it for done/cancelled tasks.
                     let mut base_color = if is_blocked {
                         Color::DarkGray
+                    } else if t.priority == 0 || t.priority > 9 {
+                        Color::Reset
                     } else {
-                        match t.priority {
-                            1 => Color::Red,
-                            2 => Color::Rgb(255, 69, 0),
-                            3 => Color::Rgb(255, 140, 0),
-                            4 => Color::Rgb(255, 190, 0),
-                            5 => Color::Yellow,
-                            6 => Color::Rgb(238, 232, 170),
-                            7 => Color::Rgb(176, 196, 222),
-                            8 => Color::Rgb(112, 128, 144),
-                            9 => Color::Rgb(47, 79, 79),
-                            _ => Color::White,
-                        }
+                        let (r, g, b) = color_utils::get_priority_rgb(t.priority, is_dark_theme);
+                        Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
                     };
 
                     // If task is done or cancelled, dim the color by blending toward the background (black).
@@ -360,6 +381,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                                 ((b as f32) * 0.75) as u8,
                             ),
                             // For named/constant colors, approximate by scaling their RGB equivalents.
+                            Color::Reset => Color::DarkGray,
                             Color::Red => Color::Rgb((255.0 * 0.75) as u8, 0, 0),
                             Color::Yellow => {
                                 Color::Rgb((255.0 * 0.75) as u8, (255.0 * 0.75) as u8, 0)
@@ -446,7 +468,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         let style = if t.is_overdue {
                             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
                         } else {
-                            Style::default().fg(Color::Blue)
+                            Style::default().fg(if is_dark_theme {
+                                Color::LightBlue
+                            } else {
+                                Color::Magenta
+                            })
                         };
 
                         (format!(" @{}⌛", d.format_smart()), style)
@@ -530,29 +556,48 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         metadata_spans.push(Span::raw(" "));
                         metadata_spans.push(Span::styled(
                             "\u{ee69}",
-                            Style::default().fg(Color::LightBlue),
+                            Style::default().fg(if is_dark_theme {
+                                Color::LightBlue
+                            } else {
+                                Color::Magenta
+                            }),
                         ));
                     }
                     if t.url.is_some() {
                         metadata_spans.push(Span::raw(" "));
                         metadata_spans.push(Span::styled(
                             "\u{f0789}",
-                            Style::default().fg(Color::LightBlue),
+                            Style::default().fg(if is_dark_theme {
+                                Color::LightBlue
+                            } else {
+                                Color::Magenta
+                            }),
                         ));
                     }
 
                     // Right side (location + visible tags)
                     let mut right_spans = Vec::new();
                     if let Some(loc) = &visible_location {
-                        right_spans.push(Span::styled("@@", Style::default().fg(Color::Yellow)));
+                        right_spans.push(Span::styled(
+                            "@@",
+                            Style::default().fg(if is_dark_theme {
+                                Color::Yellow
+                            } else {
+                                Color::Rgb(180, 100, 0)
+                            }),
+                        ));
                         right_spans.push(Span::styled(
                             loc.clone(),
-                            Style::default().fg(Color::Yellow),
+                            Style::default().fg(if is_dark_theme {
+                                Color::Yellow
+                            } else {
+                                Color::Rgb(180, 100, 0)
+                            }),
                         ));
                     }
 
                     for cat in visible_tags {
-                        let (r, g, b) = color_utils::generate_color(cat);
+                        let (r, g, b) = color_utils::generate_tui_color(cat, is_dark_theme);
                         if !right_spans.is_empty() {
                             right_spans.push(Span::raw(" "));
                         }
@@ -842,7 +887,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
     }
 
     let main_style = if state.active_focus == Focus::Main {
-        Style::default().fg(Color::Yellow)
+        Style::default().fg(if is_dark_theme {
+            Color::Yellow
+        } else {
+            Color::Rgb(200, 100, 0)
+        })
     } else if state.unsynced_changes {
         Style::default().fg(Color::LightRed)
     } else {
@@ -859,7 +908,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Green)
+                .bg(if is_dark_theme {
+                    Color::Green
+                } else {
+                    Color::Rgb(255, 200, 100)
+                })
                 .fg(Color::Black),
         );
     f.render_stateful_widget(task_list, main_chunks[0], &mut state.list_state);
@@ -924,13 +977,21 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         (
                             format!(" {} ", rust_i18n::t!("mode_create")),
                             "> ",
-                            Color::LightYellow,
+                            if is_dark_theme {
+                                Color::LightYellow
+                            } else {
+                                Color::Rgb(200, 150, 0)
+                            },
                         )
                     } else {
                         (
                             format!(" {} ", rust_i18n::t!("mode_create")),
                             "> ",
-                            Color::Yellow,
+                            if is_dark_theme {
+                                Color::Yellow
+                            } else {
+                                Color::Rgb(180, 100, 0)
+                            },
                         )
                     }
                 }
@@ -938,7 +999,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 _ => (
                     format!(" {} ", rust_i18n::t!("mode_create")),
                     "> ",
-                    Color::Yellow,
+                    if is_dark_theme {
+                        Color::Yellow
+                    } else {
+                        Color::Rgb(180, 100, 0)
+                    },
                 ),
             };
 
@@ -986,22 +1051,27 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                     let style = match token.kind {
                         SyntaxType::Priority => {
                             let p = text.trim_start_matches('!').parse::<u8>().unwrap_or(0);
-                            match p {
-                                1 => Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-                                2..=4 => Style::default().fg(Color::LightRed),
-                                5 => Style::default().fg(Color::Yellow),
-                                6..=8 => Style::default().fg(Color::LightBlue),
-                                9 => Style::default().fg(Color::DarkGray),
-                                _ => Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-                            }
+                            let (r, g, b) = color_utils::get_priority_rgb(p, is_dark_theme);
+                            Style::default()
+                                .fg(Color::Rgb(
+                                    (r * 255.0) as u8,
+                                    (g * 255.0) as u8,
+                                    (b * 255.0) as u8,
+                                ))
+                                .add_modifier(Modifier::BOLD)
                         }
-                        SyntaxType::DueDate => Style::default().fg(Color::Blue),
+                        SyntaxType::DueDate => Style::default().fg(if is_dark_theme {
+                            Color::LightBlue
+                        } else {
+                            Color::Magenta
+                        }),
                         SyntaxType::StartDate => Style::default().fg(Color::Green),
                         SyntaxType::Recurrence => Style::default().fg(Color::Magenta),
                         SyntaxType::Duration => Style::default().fg(Color::DarkGray),
                         SyntaxType::Tag => {
                             let tag_name = text.trim_start_matches('#');
-                            let (r, g, b) = color_utils::generate_color(tag_name);
+                            let (r, g, b) =
+                                color_utils::generate_tui_color(tag_name, is_dark_theme);
                             Style::default().fg(Color::Rgb(
                                 (r * 255.0) as u8,
                                 (g * 255.0) as u8,
@@ -1009,8 +1079,16 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                             ))
                         }
                         SyntaxType::Text => Style::default().fg(color),
-                        SyntaxType::Location => Style::default().fg(Color::LightCyan),
-                        SyntaxType::Url => Style::default().fg(Color::Blue),
+                        SyntaxType::Location => Style::default().fg(if is_dark_theme {
+                            Color::LightCyan
+                        } else {
+                            Color::Magenta
+                        }),
+                        SyntaxType::Url => Style::default().fg(if is_dark_theme {
+                            Color::LightBlue
+                        } else {
+                            Color::Magenta
+                        }),
                         SyntaxType::Geo => Style::default().fg(Color::DarkGray),
                         SyntaxType::Description => Style::default().fg(Color::Gray),
                         SyntaxType::Reminder => Style::default().fg(Color::LightRed),
@@ -1055,7 +1133,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         }
         _ => {
             let status = Paragraph::new(state.message.clone())
-                .style(Style::default().fg(Color::Cyan))
+                .style(Style::default().fg(if is_dark_theme {
+                    Color::Cyan
+                } else {
+                    Color::Rgb(200, 100, 0)
+                }))
                 .block(
                     Block::default()
                         .borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM)
@@ -1228,9 +1310,21 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 Block::default()
                     .borders(Borders::ALL)
                     .title(title)
-                    .border_style(Style::default().fg(Color::Yellow)),
+                    .border_style(Style::default().fg(if is_dark_theme {
+                        Color::Yellow
+                    } else {
+                        Color::Rgb(200, 100, 0)
+                    })),
             )
-            .highlight_style(Style::default().bg(Color::Blue).fg(Color::White));
+            .highlight_style(
+                Style::default()
+                    .bg(if is_dark_theme {
+                        Color::Blue
+                    } else {
+                        Color::Rgb(255, 200, 100)
+                    })
+                    .fg(Color::Black),
+            );
 
         f.render_stateful_widget(popup, area, &mut state.action_selection_state);
     }
@@ -1243,7 +1337,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         let block = Block::default()
             .title(format!(" {} ", rust_i18n::t!("edit_description_title")))
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Yellow));
+            .border_style(Style::default().fg(if is_dark_theme {
+                Color::Yellow
+            } else {
+                Color::Rgb(200, 100, 0)
+            }));
         let inner_area = block.inner(area);
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -1278,7 +1376,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             state.edit_scroll_x = cursor_col - viewport_width + 1;
         }
 
-        let styled_content = highlight_markdown_raw(&state.input_buffer);
+        let styled_content = highlight_markdown_raw(&state.input_buffer, is_dark_theme);
         let p = Paragraph::new(styled_content)
             .block(Block::default())
             .scroll((state.edit_scroll_offset, state.edit_scroll_x));
@@ -1322,8 +1420,16 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 tab_spans.push(Span::styled(
                     label,
                     Style::default()
-                        .fg(Color::Black)
-                        .bg(Color::Yellow)
+                        .fg(if is_dark_theme {
+                            Color::Black
+                        } else {
+                            Color::White
+                        })
+                        .bg(if is_dark_theme {
+                            Color::Yellow
+                        } else {
+                            Color::Rgb(200, 100, 0)
+                        })
                         .add_modifier(Modifier::BOLD),
                 ));
             } else {
@@ -1339,7 +1445,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             lines.push(Line::from(Span::styled(
                 rust_i18n::t!("about_title").to_string(),
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(if is_dark_theme {
+                        Color::Yellow
+                    } else {
+                        Color::Rgb(200, 100, 0)
+                    })
                     .add_modifier(Modifier::BOLD),
             )));
             lines.push(Line::from(
@@ -1387,7 +1497,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 lines.push(Line::from(Span::styled(
                     format!("--- {} ---", sec.title),
                     Style::default()
-                        .fg(Color::LightCyan)
+                        .fg(if is_dark_theme {
+                            Color::LightCyan
+                        } else {
+                            Color::Rgb(200, 100, 0)
+                        })
                         .add_modifier(Modifier::BOLD),
                 )));
                 for item in sec.items {
@@ -1422,7 +1536,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 rust_i18n::t!("help"),
                 rust_i18n::t!("help_tab_to_switch")
             ))
-            .border_style(Style::default().fg(Color::Yellow));
+            .border_style(Style::default().fg(if is_dark_theme {
+                Color::Yellow
+            } else {
+                Color::Rgb(200, 100, 0)
+            }));
 
         let p = Paragraph::new(lines)
             .block(block)

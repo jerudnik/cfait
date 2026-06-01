@@ -67,6 +67,8 @@ pub struct AppState {
     pub sort_cutoff_months: Option<u32>,
     pub sort_standard_by_priority: bool,
 
+    pub theme: crate::config::AppTheme,
+
     pub quick_filter_term: String,
     pub quick_filter_icon: String,
     pub show_quick_filter: bool,
@@ -186,6 +188,7 @@ impl AppState {
             show_quick_filter: true,
             sort_cutoff_months: Some(2),
             sort_standard_by_priority: false,
+            theme: crate::config::AppTheme::default(),
             // Initialize sidebar caches as empty; they will be populated by refresh_filtered_view()
             cached_categories: Vec::new(),
             cached_locations: Vec::new(),

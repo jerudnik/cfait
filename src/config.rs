@@ -280,6 +280,19 @@ pub enum AppTheme {
     Ferra,
 }
 
+impl AppTheme {
+    pub fn is_dark(&self) -> bool {
+        match self {
+            AppTheme::Light
+            | AppTheme::SolarizedLight
+            | AppTheme::GruvboxLight
+            | AppTheme::CatppuccinLatte
+            | AppTheme::TokyoNightLight => false,
+            _ => true,
+        }
+    }
+}
+
 impl fmt::Display for AppTheme {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -870,7 +883,7 @@ impl Config {
                 );
             } else if trimmed.starts_with("theme =") {
                 out.push_str(line);
-                out.push_str(" # String: GUI Theme (RustyDark, Light, Dark, Dracula, Nord, etc).");
+                out.push_str(" # String: App Theme (RustyDark, Light, Dark, etc). In the TUI, light themes adapt text contrast for light terminal backgrounds.");
             } else if trimmed.starts_with("sort_cutoff_months =") {
                 out.push_str(line);
                 out.push_str(

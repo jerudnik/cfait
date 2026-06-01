@@ -209,6 +209,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         expanded_tags,
         expanded_locations,
         expanded_done_groups,
+        theme,
     ) = (
         cfg.url,
         cfg.username,
@@ -232,6 +233,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         cfg.expanded_tags,
         cfg.expanded_locations,
         cfg.expanded_done_groups,
+        cfg.theme,
     );
 
     // --- 2. TERMINAL SETUP ---
@@ -262,6 +264,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
     app_state.expanded_tags = expanded_tags.into_iter().collect();
     app_state.expanded_locations = expanded_locations.into_iter().collect();
     app_state.expanded_done_groups = expanded_done_groups.into_iter().collect();
+    app_state.theme = theme;
 
     // --- START ALARM ACTOR ---
     let (gui_alarm_tx, mut gui_alarm_rx) = tokio::sync::mpsc::channel(100);

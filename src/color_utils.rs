@@ -11,6 +11,11 @@ use std::hash::{Hash, Hasher};
 /// Generates a deterministic color tuple (r, g, b) in [0.0, 1.0] range based on the input string.
 /// Ranges selected produce reasonably saturated and bright colors suitable for UI accents.
 pub fn generate_color(tag: &str) -> (f32, f32, f32) {
+    generate_tui_color(tag, true)
+}
+
+/// Generates a deterministic color tuple (r, g, b) in [0.0, 1.0] range specifically tailored for the terminal's theme.
+pub fn generate_tui_color(tag: &str, is_dark_theme: bool) -> (f32, f32, f32) {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     tag.hash(&mut hasher);
     let hash = hasher.finish();
@@ -21,11 +26,17 @@ pub fn generate_color(tag: &str) -> (f32, f32, f32) {
     let hash_s = hash >> 16;
     let hash_l = hash >> 32;
 
-    // Saturation: 40% - 90% (0.40 .. 0.90)
-    let s = 0.40 + ((hash_s % 51) as f32 / 100.0);
+    let s = if is_dark_theme {
+        0.40 + ((hash_s % 51) as f32 / 100.0)
+    } else {
+        0.60 + ((hash_s % 41) as f32 / 100.0) // slightly more saturation for light bg
+    };
 
-    // Lightness: 65% - 90% (0.65 .. 0.90)
-    let l = 0.65 + ((hash_l % 26) as f32 / 100.0);
+    let l = if is_dark_theme {
+        0.65 + ((hash_l % 26) as f32 / 100.0) // 0.65 - 0.90
+    } else {
+        0.25 + ((hash_l % 26) as f32 / 100.0) // 0.25 - 0.50 for light bg
+    };
 
     hsl_to_rgb(h, s, l)
 }

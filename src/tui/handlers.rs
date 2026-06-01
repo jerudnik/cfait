@@ -750,6 +750,7 @@ pub fn handle_app_event(state: &mut AppState, event: AppEvent, default_cal: &Opt
             state.quick_filter_term = cfg.quick_filter_term.clone();
             state.quick_filter_icon = cfg.quick_filter_icon.clone();
             state.show_quick_filter = cfg.show_quick_filter;
+            state.theme = cfg.theme;
             state.refresh_filtered_view();
         }
     }
