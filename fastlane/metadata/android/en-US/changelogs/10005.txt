@@ -1,0 +1,28 @@
+## [1.0.5] - 2026-06-03
+
+### 🚀 Features
+
+- *(tui)* Add a way to delete relations (delete key in the links list (L)) and to lock yank (shift+y), add missing help items (reported by wunter8)
+- *(tui)* Add context menu (enter)
+- Add ExtractSubtasks action
+- *(gui)* Right click context menu materializes at cursor height
+- *(gui)* Right click context menu materializes exactly where the cursor is positioned
+- *(tui)* Adapt TUI color contrasts dynamically to match the configured light/dark app theme ( https://codeberg.org/trougnouf/cfait/issues/77 )
+
+### 🐛 Bug Fixes
+
+- Fix RFC 5545 compliance by aligning RRULE UNTIL and EXDATE value types with DTSTART
+- *(tui)* Hide relationship menu when empty and add parent task support
+
+### 💼 Other
+
+- Automatically publish AUR bin package on release
+
+### 🎨 Styling
+
+- Vary and randomize ExtractSubtasks action icon
+
+### ⚙️ Miscellaneous Tasks
+
+- Unify Arch packages in packaging/arch
+- Add logging for notification errors ( https://codeberg.org/trougnouf/cfait/issues/80 )
