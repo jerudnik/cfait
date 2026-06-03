@@ -575,16 +575,22 @@ pub fn spawn_alarm_actor(
                                         not(target_os = "macos"),
                                         not(target_os = "android")
                                     ))]
-                                    if let Ok(handle) = n.show() {
-                                        handle.wait_for_action(move |action| {
-                                            if action == "default"
-                                                && let Some(tx) = &ui_tx_clone
-                                            {
-                                                let _ = tx.try_send(AlarmMessage::FocusTask(
-                                                    task_uid_clone.clone(),
-                                                ));
-                                            }
-                                        });
+                                    match n.show() {
+                                        Ok(handle) => {
+                                            handle.wait_for_action(move |action| {
+                                                if action == "default"
+                                                    && let Some(tx) = &ui_tx_clone
+                                                {
+                                                    let _ = tx.try_send(AlarmMessage::FocusTask(
+                                                        task_uid_clone.clone(),
+                                                    ));
+                                                }
+                                            });
+                                        }
+                                        Err(e) => log::error!(
+                                            "Failed to show system notification (DBus/daemon issue?): {}",
+                                            e
+                                        ),
                                     }
 
                                     // On windows, macos, and android we can't wait for actions.
@@ -596,7 +602,12 @@ pub fn spawn_alarm_actor(
                                         target_os = "android"
                                     ))]
                                     {
-                                        let _ = n.show();
+                                        if let Err(e) = n.show() {
+                                            log::error!(
+                                                "Failed to show system notification: {}",
+                                                e
+                                            );
+                                        }
                                     }
                                 });
                             }
