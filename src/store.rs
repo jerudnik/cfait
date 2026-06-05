@@ -1041,7 +1041,12 @@ impl TaskStore {
                 p = (p - delta as i16).min(9);
             }
 
-            task.priority = p as u8;
+            let new_p = p as u8;
+            if task.priority == new_p {
+                return None;
+            }
+
+            task.priority = new_p;
             task.sequence += 1;
             return Some(task.clone());
         }
@@ -2402,7 +2407,22 @@ impl TaskStore {
                 }
             }
             AppIntent::ToggleTreeCollapse { uid } => {
-                if let Some((task, _)) = self.get_task_mut(uid) {
+                let mut is_parent = false;
+                for map in self.calendars.values() {
+                    for t in map.values() {
+                        if t.parent_uid.as_ref() == Some(uid) {
+                            is_parent = true;
+                            break;
+                        }
+                    }
+                    if is_parent {
+                        break;
+                    }
+                }
+
+                if let Some((task, _)) = self.get_task_mut(uid)
+                    && (is_parent || task.collapsed)
+                {
                     task.collapsed = !task.collapsed;
                     task.sequence += 1;
                     let updated = task.clone();

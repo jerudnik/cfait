@@ -496,7 +496,16 @@ fn test_apply_task_intent_comprehensive() {
         &config,
     );
 
-    // ToggleTreeCollapse
+    // Make task 2 a child of task 1 again so ToggleTreeCollapse works
+    store.apply_task_intent(
+        &cfait::model::AppIntent::MakeChild {
+            uid: "2".to_string(),
+            parent_uid: "1".to_string(),
+        },
+        &config,
+    );
+
+    // ToggleTreeCollapse (only works on parent tasks)
     store.apply_task_intent(
         &cfait::model::AppIntent::ToggleTreeCollapse {
             uid: "1".to_string(),
