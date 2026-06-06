@@ -358,26 +358,18 @@ Cfait organizes tasks in the following order:
 - Priority 0 (unset) is treated as priority 5 (medium)
 - Future start dates move tasks to rank 6, even if they have urgent priority
 - Thresholds for "urgent", "due soon", and "cutoff" are configurable in settings
+- Tasks can be pinned to the top using `+pin` in smart input (overrides sorting)
 
 ### 🔀 Sort by Priority (toggle)
 
-Press **`Ctrl+P`** (TUI/GUI) to switch between two sorting modes for the standard and remaining task groups (ranks 4 & 5). The toggle can also be set permanently in More settings > Sorting & visibility.
+Press **`Ctrl+P`** (TUI/GUI) to switch between two sorting modes for the standard and remaining task groups (ranks 4 & 5). The toggle can also be set permanently via `sort_standard_by_priority = true` in `~/.config/cfait/config.toml`. The sort order within ranks 1-3 can be customized via `sort_preset` in settings.
 
 | Mode | Standard tasks (rank 4) | Remaining tasks (rank 5) |
 | :--- | :--- | :--- |
 | **Date-first** *(default)* | Sorted by due date, then priority | Sorted by priority, then name |
 | **Priority-first** | Ranks 4 & 5 **merged** — sorted by priority, then due date (tasks without a date follow tasks of the same priority that have one), then name |
 
-The setting is saved in the config file and persists across restarts. It can also be set permanently via `sort_standard_by_priority = true` in `~/.config/cfait/config.toml`.
-
-### 📌 Pinned Tasks
-Tasks can be manually pinned to the top of the list using `+pin` in smart input, which overrides the normal sorting order. Pinned tasks always appear first regardless of their priority, due date, or start status.
-
-### 🔄 Sort Preset
-The order of urgency criteria (urgent priority, due soon, started status) within the top ranks can be customized via the `sort_preset` setting in More settings > Sorting & visibility. Three presets are available:
-- **Urgent > Started > Due Soon** (default)
-- **Urgent > Due Soon > Started**
-- **Started > Urgent > Due Soon**
+The setting is saved in the config file and persists across restarts.
 
 <a name="calendar-events-for-tasks"></a>
 ## 📅 calendar events for tasks
