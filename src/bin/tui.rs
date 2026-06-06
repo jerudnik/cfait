@@ -52,6 +52,27 @@ async fn build_store_cli(ctx: &Arc<dyn AppContext>) -> TaskStore {
     store
 }
 
+// Helper to resolve a collection ID or name back to its full HREF
+async fn resolve_collection_href(ctx: &Arc<dyn AppContext>, target: &str) -> String {
+    let mut all_cals = Vec::new();
+    if let Ok(locals) = cfait::storage::LocalCalendarRegistry::load(ctx.as_ref()) {
+        all_cals.extend(locals);
+    }
+    if let Ok(remotes) = cfait::cache::Cache::load_calendars(ctx.as_ref()) {
+        all_cals.extend(remotes);
+    }
+    if let Some(found) = all_cals.into_iter().find(|c| {
+        c.name == target
+            || c.href == target
+            || c.href.ends_with(&format!("/{}/", target))
+            || c.href.ends_with(&format!("/{}", target))
+    }) {
+        found.href
+    } else {
+        target.to_string() // Fallback to raw input
+    }
+}
+
 // Helper to resolve short partial UIDs back to a full UID
 fn resolve_uid(store: &TaskStore, partial: &str) -> Option<String> {
     let mut matches: Vec<String> = Vec::new();
@@ -287,7 +308,33 @@ async fn main() -> Result<()> {
             }
         }
         "add" | "create" => {
-            let input = args[2..].join(" ");
+            let mut col_href = None;
+            let mut desc_text = None;
+            let mut i = 2;
+            let mut task_args = Vec::new();
+            while i < args.len() {
+                if args[i] == "--collection" || args[i] == "-c" {
+                    if i + 1 < args.len() {
+                        col_href = Some(args[i + 1].clone());
+                        i += 2;
+                    } else {
+                        eprintln!("Error: Missing value for {}", args[i]);
+                        std::process::exit(1);
+                    }
+                } else if args[i] == "--desc" {
+                    if i + 1 < args.len() {
+                        desc_text = Some(args[i + 1].clone());
+                        i += 2;
+                    } else {
+                        eprintln!("Error: Missing value for --desc");
+                        std::process::exit(1);
+                    }
+                } else {
+                    task_args.push(args[i].clone());
+                    i += 1;
+                }
+            }
+            let input = task_args.join(" ");
             if input.trim().is_empty() {
                 eprintln!("{}", rust_i18n::t!("error_empty_task_description"));
                 std::process::exit(1);
@@ -309,32 +356,23 @@ async fn main() -> Result<()> {
             }
 
             let mut task = Task::new(&clean_input, &config.tag_aliases, def_time);
-
-            let mut target_href = config
-                .default_calendar
-                .clone()
-                .unwrap_or_else(|| cfait::storage::LOCAL_CALENDAR_HREF.to_string());
-
-            let mut all_cals = Vec::new();
-            if let Ok(locals) = cfait::storage::LocalCalendarRegistry::load(ctx.as_ref()) {
-                all_cals.extend(locals);
-            }
-            if let Ok(remotes) = cfait::cache::Cache::load_calendars(ctx.as_ref()) {
-                all_cals.extend(remotes);
+            if let Some(d) = desc_text {
+                task.description = d;
             }
 
-            let mut matched = false;
-            if let Some(found) = all_cals.iter().find(|c| {
-                c.name == target_href
-                    || c.href == target_href
-                    || c.href.ends_with(&format!("/{}/", target_href))
-                    || c.href.ends_with(&format!("/{}", target_href))
-            }) {
-                target_href = found.href.clone();
-                matched = true;
-            }
+            let target_href_input = col_href.unwrap_or_else(|| {
+                config
+                    .default_calendar
+                    .clone()
+                    .unwrap_or_else(|| cfait::storage::LOCAL_CALENDAR_HREF.to_string())
+            });
 
-            if !matched && !target_href.starts_with("local://") && !target_href.starts_with('/') {
+            let mut target_href = resolve_collection_href(&ctx, &target_href_input).await;
+
+            if !target_href.starts_with("local://")
+                && !target_href.starts_with('/')
+                && !target_href.starts_with("http")
+            {
                 eprintln!(
                     "{}",
                     rust_i18n::t!("warning_calendar_not_found", calendar = target_href)
@@ -369,18 +407,182 @@ async fn main() -> Result<()> {
             }
             return Ok(());
         }
-        "list" | "search" => {
-            // Parse arguments: support explicit --all which overrides hidden calendars and completed hiding
-            let mut show_all = false;
-            let mut query_parts: Vec<String> = Vec::new();
-            // Iterate by reference so we don't move `args` (which is used later).
-            for arg in args.iter().skip(2) {
-                if arg == "--all" {
-                    show_all = true;
+        "edit" => {
+            let mut col_href = None;
+            let mut desc_text = None;
+            let mut clear_due = false;
+            let mut clear_start = false;
+            let mut clear_tags = false;
+            let mut clear_loc = false;
+            let mut i = 2;
+            let mut task_args = Vec::new();
+            while i < args.len() {
+                if args[i] == "--collection" || args[i] == "-c" {
+                    if i + 1 < args.len() {
+                        col_href = Some(args[i + 1].clone());
+                        i += 2;
+                    } else {
+                        eprintln!("Error: Missing value for {}", args[i]);
+                        std::process::exit(1);
+                    }
+                } else if args[i] == "--desc" {
+                    if i + 1 < args.len() {
+                        desc_text = Some(args[i + 1].clone());
+                        i += 2;
+                    } else {
+                        eprintln!("Error: Missing value for --desc");
+                        std::process::exit(1);
+                    }
+                } else if args[i] == "--clear-due" {
+                    clear_due = true;
+                    i += 1;
+                } else if args[i] == "--clear-start" {
+                    clear_start = true;
+                    i += 1;
+                } else if args[i] == "--clear-tags" {
+                    clear_tags = true;
+                    i += 1;
+                } else if args[i] == "--clear-loc" {
+                    clear_loc = true;
+                    i += 1;
                 } else {
-                    query_parts.push(arg.clone());
+                    task_args.push(args[i].clone());
+                    i += 1;
                 }
             }
+            if task_args.is_empty() {
+                eprintln!(
+                    "{}",
+                    rust_i18n::t!("cli_usage_edit", binary_name = binary_name)
+                );
+                std::process::exit(1);
+            }
+            let partial_uid = task_args[0].clone();
+            let input = task_args[1..].join(" ");
+
+            let mut store = build_store_cli(&ctx).await;
+            let full_uid = match resolve_uid(&store, &partial_uid) {
+                Some(uid) => uid,
+                None => std::process::exit(1),
+            };
+
+            let mut config =
+                cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+            let def_time =
+                chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
+
+            let mut actions = Vec::new();
+            let mut changed = false;
+
+            if !input.trim().is_empty() {
+                let (clean_input, new_aliases) = cfait::model::extract_inline_aliases(&input);
+                if !new_aliases.is_empty() {
+                    for (k, v) in &new_aliases {
+                        let _ = cfait::model::validate_alias_integrity(k, v, &config.tag_aliases);
+                        config.tag_aliases.insert(k.clone(), v.clone());
+                    }
+                    let _ = config.save_with_credentials(ctx.as_ref());
+                }
+
+                if let Some((task_mut, _)) = store.get_task_mut(&full_uid) {
+                    task_mut.apply_smart_input(&clean_input, &config.tag_aliases, def_time);
+                    changed = true;
+                }
+            }
+
+            if let Some(d) = desc_text
+                && let Some((task_mut, _)) = store.get_task_mut(&full_uid)
+            {
+                task_mut.description = d;
+                changed = true;
+            }
+
+            if let Some((task_mut, _)) = store.get_task_mut(&full_uid) {
+                if clear_due && task_mut.due.is_some() {
+                    task_mut.due = None;
+                    changed = true;
+                }
+                if clear_start && task_mut.dtstart.is_some() {
+                    task_mut.dtstart = None;
+                    changed = true;
+                }
+                if clear_tags && !task_mut.categories.is_empty() {
+                    task_mut.categories.clear();
+                    changed = true;
+                }
+                if clear_loc && task_mut.location.is_some() {
+                    task_mut.location = None;
+                    changed = true;
+                }
+            }
+
+            if changed && let Some((task_mut, _)) = store.get_task_mut(&full_uid) {
+                task_mut.sequence += 1;
+                actions.push(cfait::journal::Action::Update(task_mut.clone()));
+            }
+
+            if let Some(target_href_input) = col_href {
+                let matched_href = resolve_collection_href(&ctx, &target_href_input).await;
+                let intent = cfait::model::AppIntent::MoveTask {
+                    uid: full_uid.clone(),
+                    target_href: matched_href,
+                };
+                let move_actions = store.apply_task_intent(&intent, &config);
+                actions.extend(move_actions);
+            }
+
+            if !actions.is_empty() {
+                let store_arc = Arc::new(tokio::sync::Mutex::new(store));
+                let client_arc = Arc::new(tokio::sync::Mutex::new(None));
+                let controller =
+                    cfait::controller::TaskController::new(store_arc, client_arc, ctx.clone());
+
+                controller
+                    .persist_changes(actions)
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
+                println!("Task '{}' updated successfully.", partial_uid);
+
+                if let Err(e) = maybe_sync(ctx.clone()).await {
+                    eprintln!(
+                        "{}",
+                        rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
+                    );
+                }
+            } else {
+                println!("No changes made to task '{}'.", partial_uid);
+            }
+            return Ok(());
+        }
+        "list" | "search" => {
+            // Parse arguments: support explicit --all, --json, and -c <id>
+            let mut show_all = false;
+            let mut as_json = false;
+            let mut col_href = None;
+            let mut query_parts: Vec<String> = Vec::new();
+
+            let mut i = 2;
+            while i < args.len() {
+                if args[i] == "--all" {
+                    show_all = true;
+                    i += 1;
+                } else if args[i] == "--json" {
+                    as_json = true;
+                    i += 1;
+                } else if args[i] == "--collection" || args[i] == "-c" {
+                    if i + 1 < args.len() {
+                        col_href = Some(args[i + 1].clone());
+                        i += 2;
+                    } else {
+                        eprintln!("Error: Missing value for {}", args[i]);
+                        std::process::exit(1);
+                    }
+                } else {
+                    query_parts.push(args[i].clone());
+                    i += 1;
+                }
+            }
+
             let query = if command == "search" {
                 query_parts.join(" ")
             } else {
@@ -400,6 +602,11 @@ async fn main() -> Result<()> {
                 hide_completed = false;
             }
 
+            let mut target_href = None;
+            if let Some(col_id) = col_href {
+                target_href = Some(resolve_collection_href(&ctx, &col_id).await);
+            }
+
             let cutoff_date = if show_all {
                 None
             } else {
@@ -416,7 +623,7 @@ async fn main() -> Result<()> {
             let expanded_locations: HashSet<String> = HashSet::new();
 
             let res = store.filter(FilterOptions {
-                active_cal_href: None,
+                active_cal_href: target_href.as_deref(),
                 hidden_calendars: &hidden,
                 selected_categories: &selected_categories,
                 selected_locations: &selected_locations,
@@ -441,6 +648,25 @@ async fn main() -> Result<()> {
                 max_done_subtasks: usize::MAX,
                 tag_aliases: &config.tag_aliases,
             });
+
+            if as_json {
+                let tasks: Vec<&Task> = res
+                    .items
+                    .iter()
+                    .filter_map(|i| {
+                        if let cfait::store::TaskListItem::Task(t) = i {
+                            Some(t.as_ref())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&tasks).unwrap_or_default()
+                );
+                return Ok(());
+            }
 
             if res.items.is_empty() {
                 println!("{}", rust_i18n::t!("status_no_tasks_found"));
@@ -470,13 +696,31 @@ async fn main() -> Result<()> {
             return Ok(());
         }
         "view" | "show" => {
+            let mut as_json = false;
+            let mut partial = String::new();
+            for arg in args.iter().skip(2) {
+                if arg == "--json" {
+                    as_json = true;
+                } else {
+                    partial = arg.clone();
+                }
+            }
+            if partial.is_empty() {
+                eprintln!("{}", rust_i18n::t!("error_uid_required"));
+                std::process::exit(1);
+            }
+
             let store = build_store_cli(&ctx).await;
-            let partial = args.get(2).map(|s| s.as_str()).unwrap_or("");
-            let uid = resolve_uid(&store, partial)
+            let uid = resolve_uid(&store, &partial)
                 .ok_or_else(|| anyhow::anyhow!(rust_i18n::t!("error_uid_required")))?;
             let t = store
                 .get_task_ref(&uid)
                 .ok_or_else(|| anyhow::anyhow!(rust_i18n::t!("error_task_not_found")))?;
+
+            if as_json {
+                println!("{}", serde_json::to_string_pretty(&t).unwrap_or_default());
+                return Ok(());
+            }
 
             println!("{}:  {}", rust_i18n::t!("cli_view_summary"), t.summary);
             println!(
@@ -583,8 +827,37 @@ async fn main() -> Result<()> {
             return Ok(());
         }
         "collection" => {
+            let sub = args.get(2).map(|s| s.as_str()).unwrap_or("list");
+            if sub == "list" {
+                let as_json = args.iter().any(|a| a == "--json");
+                let mut all_cals = Vec::new();
+                if let Ok(locals) = cfait::storage::LocalCalendarRegistry::load(ctx.as_ref()) {
+                    all_cals.extend(locals);
+                }
+                if let Ok(remotes) = cfait::cache::Cache::load_calendars(ctx.as_ref()) {
+                    all_cals.extend(remotes);
+                }
+                if as_json {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&all_cals).unwrap_or_default()
+                    );
+                    return Ok(());
+                }
+                println!("{:<30} {:<40} COLOR", "NAME", "HREF");
+                for cal in all_cals {
+                    println!(
+                        "{:<30} {:<40} {}",
+                        cal.name,
+                        cal.href,
+                        cal.color.unwrap_or_default()
+                    );
+                }
+                return Ok(());
+            }
+
             if args.len() < 4 {
-                eprintln!("Usage: {} collection [create|edit] ...", binary_name);
+                eprintln!("Usage: {} collection [list|create|edit] ...", binary_name);
                 std::process::exit(1);
             }
             let sub = &args[2];

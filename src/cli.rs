@@ -122,26 +122,34 @@ pub fn print_help(binary_name: &str) {
         println!("{}", rust_i18n::t!("cli_action_commands_heading"));
         print_cmd(
             &format!(
-                "{} add <{}>",
+                "{} add <{}> [-c <id>] [--desc <text>]",
                 binary_name,
                 rust_i18n::t!("cli_task_placeholder")
             ),
             rust_i18n::t!("cli_desc_add").to_string(),
         );
         print_cmd(
-            &format!("{} list [--all]", binary_name),
+            &format!(
+                "{} edit <uid> <{}> [-c <id>] [--desc <text>] [--clear-due] [--clear-start] [--clear-tags] [--clear-loc]",
+                binary_name,
+                rust_i18n::t!("cli_task_placeholder")
+            ),
+            rust_i18n::t!("cli_desc_edit").to_string(),
+        );
+        print_cmd(
+            &format!("{} list [--all] [--json] [-c <id>]", binary_name),
             rust_i18n::t!("cli_desc_list").to_string(),
         );
         print_cmd(
             &format!(
-                "{} search <{}> [--all]",
+                "{} search <{}> [--all] [--json] [-c <id>]",
                 binary_name,
                 rust_i18n::t!("cli_query_placeholder")
             ),
             rust_i18n::t!("cli_desc_search").to_string(),
         );
         print_cmd(
-            &format!("{} view <uid>", binary_name),
+            &format!("{} view <uid> [--json]", binary_name),
             rust_i18n::t!("cli_desc_view").to_string(),
         );
         print_cmd(
@@ -161,8 +169,12 @@ pub fn print_help(binary_name: &str) {
             rust_i18n::t!("cli_desc_delete").to_string(),
         );
         print_cmd(
+            &format!("{} collection list [--json]", binary_name),
+            rust_i18n::t!("cli_desc_collection_list").to_string(),
+        );
+        print_cmd(
             &format!("{} collection create <name> [--color #hex]", binary_name),
-            "Create a remote CalDAV collection.".to_string(),
+            rust_i18n::t!("cli_desc_collection_create").to_string(),
         );
         print_cmd(
             &format!(
