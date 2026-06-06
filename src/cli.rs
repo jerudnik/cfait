@@ -213,7 +213,7 @@ pub fn print_help(binary_name: &str) {
             "    Meeting @tomorrow 2pm ~1h +cal {}",
             rust_i18n::t!("cli_example_force_cal")
         );
-        println!("    Plant tree #gardening:trees !3 ~2h @@home:garden");
+        println!("    Plant tree #gardening:trees !3 ~2h @@home:garden +pin");
         println!("    #tree_planting:=#gardening,@@home");
         println!(
             "    @@aldi:=#groceries,@@shops {}",

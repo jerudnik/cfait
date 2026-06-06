@@ -48,6 +48,7 @@ const HANDLED_KEYS: &[&str] = &[
     "X-CFAIT-FUZZY-START",
     "X-CFAIT-FUZZY-DUE",
     "X-CFAIT-COLLAPSED",
+    "X-CFAIT-PINNED",
 ];
 
 pub struct IcsAdapter;
@@ -306,6 +307,9 @@ impl IcsAdapter {
         if task.collapsed {
             todo.add_property("X-CFAIT-COLLAPSED", "TRUE");
         }
+        if task.pinned {
+            todo.add_property("X-CFAIT-PINNED", "TRUE");
+        }
 
         // Emit time-tracking properties (if present)
         if task.time_spent_seconds > 0 {
@@ -527,6 +531,10 @@ impl IcsAdapter {
             });
 
         let collapsed = get_prop("X-CFAIT-COLLAPSED")
+            .map(|v| v.trim().to_uppercase() == "TRUE")
+            .unwrap_or(false);
+
+        let pinned = get_prop("X-CFAIT-PINNED")
             .map(|v| v.trim().to_uppercase() == "TRUE")
             .unwrap_or(false);
 
@@ -964,6 +972,7 @@ impl IcsAdapter {
             url,
             geo,
             collapsed,
+            pinned,
             time_spent_seconds,
             last_started_at,
             sessions: manual_sessions, // Use manual parsing result

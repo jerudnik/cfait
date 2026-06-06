@@ -88,6 +88,7 @@ pub struct GuiApp {
     pub hide_aliases_in_sidebar: bool,
     pub sort_cutoff_months: Option<u32>,
     pub sort_standard_by_priority: bool,
+    pub sort_preset: crate::config::SortPreset,
     pub current_theme: AppTheme,
 
     // Store the resolved random theme for this session
@@ -372,6 +373,7 @@ impl Default for GuiApp {
             hide_aliases_in_sidebar: true,
             sort_cutoff_months: Some(2),
             sort_standard_by_priority: false,
+            sort_preset: crate::config::SortPreset::default(),
             ob_sort_months_input: "2".to_string(),
             current_theme: AppTheme::default(),
             resolved_random_theme,

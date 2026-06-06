@@ -137,6 +137,13 @@ impl Highlighter for SmartInputHighlighter {
                             ..Default::default()
                         }),
                     },
+                    SyntaxType::Pin => highlighter::Format {
+                        color: Some(Color::from_rgb(1.0, 0.4, 0.0)), // Orange for pin
+                        font: Some(Font {
+                            weight: iced::font::Weight::Bold,
+                            ..Default::default()
+                        }),
+                    },
                 };
                 (t.start..t.end, format)
             })

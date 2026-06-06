@@ -110,6 +110,7 @@ pub enum MobileSyntaxType {
     Description,
     Reminder,
     Calendar,
+    Pin,
     Filter,
     Operator,
 }
@@ -130,6 +131,7 @@ impl From<SyntaxType> for MobileSyntaxType {
             SyntaxType::Description => MobileSyntaxType::Description,
             SyntaxType::Reminder => MobileSyntaxType::Reminder,
             SyntaxType::Calendar => MobileSyntaxType::Calendar,
+            SyntaxType::Pin => MobileSyntaxType::Pin,
             SyntaxType::Filter => MobileSyntaxType::Filter,
             SyntaxType::Operator => MobileSyntaxType::Operator,
         }
@@ -207,6 +209,7 @@ pub struct MobileTask {
     pub virtual_type: String,
     pub virtual_payload: String,
     pub is_collapsed: bool,
+    pub pinned: bool,
     pub has_extractable_subtasks: bool,
 
     // UI Visual resolution fields
@@ -262,6 +265,7 @@ impl MobileTask {
             virtual_type: vtype.to_string(),
             virtual_payload: payload.to_string(),
             is_collapsed: false,
+            pinned: false,
             has_extractable_subtasks: false,
             visible_categories: vec![],
             visible_location: None,
@@ -334,6 +338,7 @@ pub struct MobileConfig {
     pub disabled_calendars: Vec<String>,
     pub sort_cutoff_months: Option<u32>,
     pub sort_standard_by_priority: bool,
+    pub sort_preset: String,
     pub urgent_days: u32,
     pub urgent_prio: u8,
     pub default_priority: u8,
@@ -607,6 +612,7 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
         virtual_type: v_type,
         virtual_payload: v_payload,
         is_collapsed: t.collapsed,
+        pinned: t.pinned,
         has_extractable_subtasks: t.has_extractable_subtasks(),
         visible_categories: t.visible_categories.clone(),
         visible_location: t.visible_location.clone(),
@@ -767,6 +773,7 @@ impl CfaitMobile {
             disabled_calendars: c.disabled_calendars,
             sort_cutoff_months: c.sort_cutoff_months,
             sort_standard_by_priority: c.sort_standard_by_priority,
+            sort_preset: c.sort_preset.to_string(),
             urgent_days: c.urgent_days_horizon,
             urgent_prio: c.urgent_priority_threshold,
             default_priority: c.default_priority,
@@ -851,6 +858,7 @@ impl CfaitMobile {
         c.disabled_calendars = config.disabled_calendars;
         c.sort_cutoff_months = config.sort_cutoff_months;
         c.sort_standard_by_priority = config.sort_standard_by_priority;
+        c.sort_preset = config.sort_preset.parse().unwrap_or_default();
         c.urgent_days_horizon = config.urgent_days;
         c.urgent_priority_threshold = config.urgent_prio;
         c.default_priority = config.default_priority;
@@ -1507,6 +1515,7 @@ impl CfaitMobile {
             default_priority: config.default_priority,
             start_grace_period_days: config.start_grace_period_days,
             sort_standard_by_priority: config.sort_standard_by_priority,
+            sort_preset: config.sort_preset,
             expanded_done_groups: &expanded_set,
             expanded_tags: &expanded_tags_set,
             expanded_locations: &expanded_locations_set,
@@ -1640,6 +1649,7 @@ impl CfaitMobile {
             default_priority: config.default_priority,
             start_grace_period_days: config.start_grace_period_days,
             sort_standard_by_priority: config.sort_standard_by_priority,
+            sort_preset: config.sort_preset,
             expanded_done_groups: &HashSet::new(),
             expanded_tags: &HashSet::new(),
             expanded_locations: &HashSet::new(),
@@ -1949,6 +1959,12 @@ impl CfaitMobile {
 
     pub async fn delete_task_tree(&self, uid: String) -> Result<(), MobileError> {
         self.dispatch(crate::model::AppIntent::DeleteTaskTree { uid })
+            .await?;
+        Ok(())
+    }
+
+    pub async fn toggle_pin(&self, uid: String) -> Result<(), MobileError> {
+        self.dispatch(crate::model::AppIntent::TogglePin { uid })
             .await?;
         Ok(())
     }

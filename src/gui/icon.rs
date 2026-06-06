@@ -112,6 +112,7 @@ pub const WINDOW_MINIMIZE: char = '\u{f2d1}'; // nf-fa-window_minimize
 pub const CONTENT_SAVE_EDIT: char = '\u{f0cfb}'; // nf-md-content_save_edit
 pub const EYE: char = '\u{ea70}'; // nf-cod-eye
 pub const EYE_CLOSED: char = '\u{eae7}'; // nf-cod-eye_closed
+pub const THUMB_TACK: char = '\u{f08d}'; // nf-fa-thumb_tack
 
 // --- SUPPORT / DONATION ICONS ---
 pub const HEART_HAND: char = '\u{ed9b}'; // nf-fa-hand_holding_heart

@@ -553,6 +553,12 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             refresh_filtered_tasks(app);
             Task::none()
         }
+        Message::SetSortPreset(val) => {
+            app.sort_preset = val;
+            save_config(app);
+            refresh_filtered_tasks(app);
+            Task::none()
+        }
         Message::ToggleSortStandardByPriorityToggle => {
             let new_val = !app.sort_standard_by_priority;
             handle(app, Message::ToggleSortStandardByPriority(new_val))

@@ -641,6 +641,7 @@ async fn main() -> Result<()> {
                 default_priority: config.default_priority,
                 start_grace_period_days: config.start_grace_period_days,
                 sort_standard_by_priority: config.sort_standard_by_priority,
+                sort_preset: config.sort_preset,
                 expanded_done_groups: &expanded_done_groups,
                 expanded_tags: &expanded_tags,
                 expanded_locations: &expanded_locations,

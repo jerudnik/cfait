@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Tests for store behavior.
+use cfait::config::SortPreset;
 use cfait::context::TestContext;
 use cfait::model::{Task, TaskStatus};
 use cfait::store::{FilterOptions, TaskStore};
@@ -49,6 +50,7 @@ fn test_filter_by_tag() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &empty_set,
         expanded_tags: &empty_set,
         expanded_locations: &empty_set,
@@ -99,6 +101,7 @@ fn test_filter_hierarchical_tags() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &empty_set,
         expanded_tags: &empty_set,
         expanded_locations: &empty_set,
@@ -155,6 +158,7 @@ fn test_hide_hidden_calendars() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &empty_set,
         expanded_tags: &empty_set,
         expanded_locations: &empty_set,

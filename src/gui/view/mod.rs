@@ -61,6 +61,7 @@ pub fn is_action_available(
             task.rrule.is_some() && !is_done_or_cancelled && !task.is_relative_recurrence()
         }
         crate::config::TaskAction::ExtractSubtasks => task.has_extractable_subtasks(),
+        crate::config::TaskAction::TogglePin => true,
         crate::config::TaskAction::Promote => task.parent_uid.is_some(),
         crate::config::TaskAction::Yank => app.yanked_uid.is_none(),
         crate::config::TaskAction::StopTimer => {
@@ -536,6 +537,11 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::CompleteAndShift => (
                     icon::icon(icon::REPEAT).size(14).into(),
                     Message::ToggleTaskShift(uid.clone()),
+                    false,
+                ),
+                TaskAction::TogglePin => (
+                    icon::icon(icon::THUMB_TACK).size(14).into(),
+                    Message::TogglePin(uid.clone()),
                     false,
                 ),
             };

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Tests for task sorting logic.
+use cfait::config::SortPreset;
 use cfait::model::item::{CompareOptions, SortKey, compare_sortkeys};
 use cfait::model::{DateType, Task, TaskStatus};
 use cfait::store::organize_hierarchy;
@@ -31,7 +32,8 @@ fn test_sorting_priority_basic() {
                 urgent_prio: 1,
                 default_priority: 5,
                 start_grace_period_days: 1,
-                sort_standard_by_priority: false
+                sort_standard_by_priority: false,
+                sort_preset: SortPreset::default()
             }
         ), // Pass defaults
         std::cmp::Ordering::Less
@@ -47,7 +49,8 @@ fn test_sorting_priority_basic() {
                 urgent_prio: 1,
                 default_priority: 5,
                 start_grace_period_days: 1,
-                sort_standard_by_priority: false
+                sort_standard_by_priority: false,
+                sort_preset: SortPreset::default()
             }
         ), // Pass defaults
         std::cmp::Ordering::Less
@@ -79,7 +82,8 @@ fn test_sorting_status_trumps_everything() {
                 urgent_prio: 1,
                 default_priority: 5,
                 start_grace_period_days: 1,
-                sort_standard_by_priority: false
+                sort_standard_by_priority: false,
+                sort_preset: SortPreset::default()
             }
         ),
         std::cmp::Ordering::Less
@@ -106,7 +110,8 @@ fn test_sorting_completed_sinks() {
                 urgent_prio: 1,
                 default_priority: 5,
                 start_grace_period_days: 1,
-                sort_standard_by_priority: false
+                sort_standard_by_priority: false,
+                sort_preset: SortPreset::default()
             }
         ),
         std::cmp::Ordering::Less
@@ -136,7 +141,8 @@ fn test_sorting_due_dates() {
                 urgent_prio: 1,
                 default_priority: 5,
                 start_grace_period_days: 1,
-                sort_standard_by_priority: false
+                sort_standard_by_priority: false,
+                sort_preset: SortPreset::default()
             }
         ),
         std::cmp::Ordering::Less
@@ -152,7 +158,8 @@ fn test_sorting_due_dates() {
                 urgent_prio: 1,
                 default_priority: 5,
                 start_grace_period_days: 1,
-                sort_standard_by_priority: false
+                sort_standard_by_priority: false,
+                sort_preset: SortPreset::default()
             }
         ),
         std::cmp::Ordering::Less

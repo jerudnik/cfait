@@ -372,6 +372,19 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .label(rust_i18n::t!("sort_standard_by_priority_label"))
                     .on_toggle(Message::ToggleSortStandardByPriority),
                 Space::new().height(10),
+                row![
+                    text(rust_i18n::t!("sorting_preset_label")).width(Length::Fixed(200.0)),
+                    iced::widget::pick_list(
+                        crate::config::SortPreset::iter().collect::<Vec<_>>(),
+                        Some(app.sort_preset),
+                        Message::SetSortPreset
+                    )
+                    .width(Length::Fill)
+                    .padding(5)
+                ]
+                .spacing(10)
+                .align_y(iced::Alignment::Center),
+                Space::new().height(10),
                 text(rust_i18n::t!("priority_rules")).size(16),
                 row![
                     text(rust_i18n::t!("due_within_days")).width(Length::Fixed(150.0)),
@@ -471,6 +484,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                             crate::config::TaskAction::ExtractSubtasks => {
                                 icon::get_extract_subtasks_icon()
                             }
+                            crate::config::TaskAction::TogglePin => icon::THUMB_TACK,
                             crate::config::TaskAction::CreateSubtask => icon::CREATE_CHILD,
                             crate::config::TaskAction::DuplicateTree => icon::CLONE,
                             crate::config::TaskAction::Promote => icon::ELEVATOR_UP,

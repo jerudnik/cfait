@@ -421,6 +421,7 @@ pub struct FilterOptions<'a> {
     pub default_priority: u8,
     pub start_grace_period_days: u32,
     pub sort_standard_by_priority: bool,
+    pub sort_preset: crate::config::SortPreset,
     pub expanded_done_groups: &'a HashSet<String>,
     pub expanded_tags: &'a HashSet<String>,
     pub expanded_locations: &'a HashSet<String>,
@@ -2078,6 +2079,7 @@ impl TaskStore {
                 options.urgent_prio,
                 options.start_grace_period_days,
                 eff_blocked,
+                options.sort_preset,
             );
 
             t.has_blocking_tasks = self.has_tasks_blocking(&t.uid);
@@ -2406,6 +2408,14 @@ impl TaskStore {
                     actions.push(JournalAction::Update(updated));
                 }
             }
+            AppIntent::TogglePin { uid } => {
+                if let Some((task, _)) = self.get_task_mut(uid) {
+                    task.pinned = !task.pinned;
+                    task.sequence += 1;
+                    let updated = task.clone();
+                    actions.push(JournalAction::Update(updated));
+                }
+            }
             AppIntent::ToggleTreeCollapse { uid } => {
                 let mut is_parent = false;
                 for map in self.calendars.values() {
@@ -2467,6 +2477,7 @@ mod tests {
             url: None,
             geo: None,
             collapsed,
+            pinned: false,
             time_spent_seconds: 0,
             last_started_at: None,
             sessions: vec![],

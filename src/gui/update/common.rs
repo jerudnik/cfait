@@ -94,6 +94,7 @@ pub fn save_config(app: &mut GuiApp) -> Config {
     cfg.hide_fully_completed_tags = app.hide_fully_completed_tags;
     cfg.hide_aliases_in_sidebar = app.hide_aliases_in_sidebar;
     cfg.sort_standard_by_priority = app.sort_standard_by_priority;
+    cfg.sort_preset = app.sort_preset;
     cfg.ui_scale = app.ui_scale;
     cfg.show_priority_numbers = app.show_priority_numbers;
     cfg.tag_aliases = app.tag_aliases.clone();

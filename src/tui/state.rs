@@ -309,6 +309,7 @@ impl AppState {
             default_priority: self.default_priority,
             start_grace_period_days: self.start_grace_period_days,
             sort_standard_by_priority: self.sort_standard_by_priority,
+            sort_preset: config.sort_preset,
             expanded_done_groups: &self.expanded_done_groups,
             expanded_tags: &self.expanded_tags,
             expanded_locations: &self.expanded_locations,

@@ -56,6 +56,7 @@ fn get_available_actions(state: &AppState, task: &Task) -> Vec<crate::config::Ta
                 task.rrule.is_some() && !is_done_or_cancelled && !task.is_relative_recurrence()
             }
             TaskAction::ExtractSubtasks => task.has_extractable_subtasks(),
+            TaskAction::TogglePin => true,
             TaskAction::Promote => task.parent_uid.is_some(),
             TaskAction::Yank => state.yanked_uid.is_none(),
             TaskAction::StopTimer => {
@@ -96,6 +97,7 @@ fn update_action_menu_filter(state: &mut AppState) {
                 Edit => filter == "e",
                 Yank => filter == "y" || filter == "copy",
                 ExtractSubtasks => filter == "extract" || filter == "parse",
+                TogglePin => filter == "p" || filter == "pin",
                 CreateSubtask => filter == "c" || filter == "sub",
                 DuplicateTree => filter == "d" || filter == "dup",
                 Promote => filter == "<" || filter == "outdent",
@@ -334,6 +336,9 @@ async fn execute_task_action(
             use std::io::Write;
             let _ = std::io::stdout().flush();
             state.message = rust_i18n::t!("yanked_and_copied", summary = summary).to_string();
+        }
+        TogglePin => {
+            intent = Some(AppIntent::TogglePin { uid });
         }
         ExtractSubtasks => {
             if let Some((parent, _)) = state.store.get_task_mut(&uid) {

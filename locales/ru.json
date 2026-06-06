@@ -243,6 +243,7 @@
     "help_metadata_attach_link": "Указать ссылку",
     "help_metadata_coordinates": "Координаты (Широта, Долгота)",
     "help_metadata_force_calendar": "Принудительное создание событий календаря",
+    "help_metadata_pin_task": "Закрепить задачу в верху списка",
     "help_metadata_jump_related": "Перейти к меню связанных задач",
     "help_metadata_log_time": "Вести учёт времени",
     "help_metadata_manage_sessions": "Управление сессиями учёта времени",

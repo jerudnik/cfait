@@ -304,6 +304,9 @@ pub struct Task {
     pub geo: Option<String>,
     #[serde(default)]
     pub collapsed: bool,
+    /// When `true`, task is pinned to the top of the list, overriding normal sorting.
+    #[serde(default)]
+    pub pinned: bool,
 
     // Time-tracking fields:
     // - `time_spent_seconds` accumulates committed seconds of work for this task.
@@ -379,6 +382,7 @@ pub struct CompareOptions {
     pub default_priority: u8,
     pub start_grace_period_days: u32,
     pub sort_standard_by_priority: bool,
+    pub sort_preset: crate::config::SortPreset,
 }
 
 /// Comparison helper for sort policies. The ordering decision tree is centralized here
@@ -578,6 +582,7 @@ impl Task {
             url: None,
             geo: None,
             collapsed: false,
+            pinned: false,
             time_spent_seconds: 0,
             last_started_at: None,
             sessions: Vec::new(),
@@ -629,6 +634,7 @@ impl Task {
         urgent_prio: u8,
         start_grace_period_days: u32,
         effectively_blocked: bool,
+        sort_preset: crate::config::SortPreset,
     ) -> u8 {
         // Trash items are bottom-most
         if self.calendar_href == "local://trash" {
@@ -659,17 +665,50 @@ impl Task {
             }
         }
 
-        // Urgency buckets based on explicit priority and near due date.
-        if self.effective_priority > 0 && self.effective_priority <= urgent_prio {
-            return 1;
+        if self.pinned {
+            return 0;
         }
-        if let Some(due) = &self.effective_due
-            && due.to_comparison_time() <= now + chrono::Duration::days(urgent_days as i64)
-        {
-            return 2;
-        }
-        if self.status == TaskStatus::InProcess {
-            return 3;
+
+        let is_urgent = self.effective_priority > 0 && self.effective_priority <= urgent_prio;
+        let is_due_soon = self.effective_due.as_ref().is_some_and(|due| {
+            due.to_comparison_time() <= now + chrono::Duration::days(urgent_days as i64)
+        });
+        let is_in_process = self.status == TaskStatus::InProcess;
+
+        match sort_preset {
+            crate::config::SortPreset::UrgentStartedDue => {
+                if is_urgent {
+                    return 1;
+                }
+                if is_in_process {
+                    return 2;
+                }
+                if is_due_soon {
+                    return 3;
+                }
+            }
+            crate::config::SortPreset::UrgentDueStarted => {
+                if is_urgent {
+                    return 1;
+                }
+                if is_due_soon {
+                    return 2;
+                }
+                if is_in_process {
+                    return 3;
+                }
+            }
+            crate::config::SortPreset::StartedUrgentDue => {
+                if is_in_process {
+                    return 1;
+                }
+                if is_urgent {
+                    return 2;
+                }
+                if is_due_soon {
+                    return 3;
+                }
+            }
         }
 
         if let Some(due) = &self.effective_due {
@@ -737,6 +776,7 @@ impl Task {
             opts.urgent_prio,
             opts.start_grace_period_days,
             eff_blocked_self,
+            opts.sort_preset,
         );
         let rank_other = other.calculate_base_rank(
             opts.cutoff,
@@ -744,6 +784,7 @@ impl Task {
             opts.urgent_prio,
             opts.start_grace_period_days,
             eff_blocked_other,
+            opts.sort_preset,
         );
         let a = SortKey {
             rank: rank_self,

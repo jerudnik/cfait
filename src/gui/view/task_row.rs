@@ -312,6 +312,17 @@ pub fn view_task_row<'a>(
                     let mut tags_row: iced::widget::Row<'_, Message> =
                         row![].spacing(3).align_y(iced::Alignment::Center);
 
+                    if task.pinned {
+                        tags_row = tags_row.push(
+                            container(
+                                icon::icon(icon::THUMB_TACK)
+                                    .size(12)
+                                    .color(Color::from_rgb(1.0, 0.4, 0.0)),
+                            )
+                            .padding(3),
+                        );
+                    }
+
                     if is_blocked {
                         tags_row = tags_row.push(
                             container(text(rust_i18n::t!("blocked")).size(12).style(
@@ -863,6 +874,11 @@ pub fn view_task_row<'a>(
                                 .size(14)
                                 .into(),
                             Message::ExtractSubtasks(task.uid.clone()),
+                            0,
+                        ),
+                        TaskAction::TogglePin => (
+                            icon::icon(icon::THUMB_TACK).size(14).into(),
+                            Message::TogglePin(task.uid.clone()),
                             0,
                         ),
                         TaskAction::CreateSubtask => (

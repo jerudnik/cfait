@@ -520,6 +520,12 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         ));
                     }
 
+                    if t.pinned {
+                        metadata_spans.push(Span::raw(" "));
+                        metadata_spans
+                            .push(Span::styled("📌", Style::default().fg(Color::LightRed)));
+                    }
+
                     if state.show_priority_numbers && t.priority > 0 {
                         metadata_spans.push(Span::raw(" "));
                         metadata_spans.push(Span::styled(
@@ -1094,6 +1100,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         SyntaxType::Reminder => Style::default().fg(Color::LightRed),
                         SyntaxType::Operator => Style::default().fg(Color::Magenta), // Highlight boolean/operator tokens
                         SyntaxType::Calendar => Style::default().fg(Color::Magenta), // Added for +cal/-cal
+                        SyntaxType::Pin => Style::default().fg(Color::LightRed), // Added for +pin/-pin
                         SyntaxType::Filter => Style::default().fg(Color::Cyan), // Added for search operators / filters
                     };
                     input_spans.push(Span::styled(text, style));

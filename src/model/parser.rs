@@ -27,6 +27,7 @@ pub enum SyntaxType {
     Description,
     Reminder,
     Calendar, // +cal, -cal
+    Pin,      // +pin, -pin
     Filter,   // is:done, < / > operators, duration filters, etc.
     Operator, // Boolean / operator tokens: |, -, (, ), AND/OR/NOT
 }
@@ -606,6 +607,8 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 matched_kind = Some(SyntaxType::Url);
             } else if word == "+cal" || word == "-cal" {
                 matched_kind = Some(SyntaxType::Calendar);
+            } else if word == "+pin" || word == "-pin" {
+                matched_kind = Some(SyntaxType::Pin);
             } else if word_lower.starts_with("geo:") {
                 let mut temp_consumed = 1;
                 let mut raw_val = word[4..].to_string();
@@ -1615,6 +1618,8 @@ fn is_special_token(word: &str) -> bool {
         || lower.starts_with("spent:")
         || lower.starts_with("until")
         || lower.starts_with("except")
+        || lower == "+pin"
+        || lower == "-pin"
     {
         return true;
     }
@@ -2084,6 +2089,10 @@ pub fn apply_smart_input(
             task.create_event = Some(true);
         } else if token == "-cal" {
             task.create_event = Some(false);
+        } else if token == "+pin" {
+            task.pinned = true;
+        } else if token == "-pin" {
+            task.pinned = false;
         } else if token_lower.starts_with("geo:") {
             let mut raw_val = token[4..].to_string();
             let mut temp_consumed = 1;

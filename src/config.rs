@@ -85,6 +85,7 @@ pub enum TaskAction {
     OpenLocations,
     OpenCoordinates,
     ExtractSubtasks,
+    TogglePin,
 }
 
 impl TaskAction {
@@ -103,6 +104,7 @@ impl TaskAction {
         TaskAction::Yank,
         TaskAction::CreateSubtask,
         TaskAction::ExtractSubtasks,
+        TaskAction::TogglePin,
         TaskAction::DuplicateTree,
         TaskAction::Promote,
         TaskAction::Move,
@@ -133,6 +135,42 @@ impl TaskAction {
             TaskAction::OpenLocations => rust_i18n::t!("action_open_locations").to_string(),
             TaskAction::OpenCoordinates => rust_i18n::t!("open_coordinates").to_string(),
             TaskAction::OpenUrl => rust_i18n::t!("open_url").to_string(),
+            TaskAction::TogglePin => rust_i18n::t!("action_toggle_pin").to_string(),
+        }
+    }
+}
+
+/// Controls the priority order of task sorting within the "urgent" bucket (rank 1-3).
+/// This determines which criterion (urgent priority, started status, or due soon) takes precedence.
+/// - `UrgentStartedDue`: Urgent tasks first, then started, then due soon
+/// - `UrgentDueStarted`: Urgent tasks first, then due soon, then started
+/// - `StartedUrgentDue`: Started tasks first, then urgent, then due soon
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, EnumIter)]
+pub enum SortPreset {
+    #[default]
+    UrgentStartedDue,
+    UrgentDueStarted,
+    StartedUrgentDue,
+}
+
+impl fmt::Display for SortPreset {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SortPreset::UrgentStartedDue => write!(f, "Urgent > Started > Due Soon"),
+            SortPreset::UrgentDueStarted => write!(f, "Urgent > Due Soon > Started"),
+            SortPreset::StartedUrgentDue => write!(f, "Started > Urgent > Due Soon"),
+        }
+    }
+}
+
+impl std::str::FromStr for SortPreset {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Urgent > Started > Due Soon" => Ok(SortPreset::UrgentStartedDue),
+            "Urgent > Due Soon > Started" => Ok(SortPreset::UrgentDueStarted),
+            "Started > Urgent > Due Soon" => Ok(SortPreset::StartedUrgentDue),
+            _ => Err(()),
         }
     }
 }
@@ -365,6 +403,10 @@ pub struct Config {
     /// by priority first, then by due date.  Default is `false` (date-first).
     #[serde(default)]
     pub sort_standard_by_priority: bool,
+    /// Priority order for sorting tasks within the urgent/due soon/started ranks.
+    /// See `SortPreset` enum for available options.
+    #[serde(default)]
+    pub sort_preset: SortPreset,
     #[serde(default)]
     pub theme: AppTheme,
 
@@ -469,6 +511,8 @@ pub struct SyncableConfig {
     pub sort_cutoff_months: Option<u32>,
     #[serde(default)]
     pub sort_standard_by_priority: bool,
+    #[serde(default)]
+    pub sort_preset: SortPreset,
     #[serde(default = "default_urgent_days")]
     pub urgent_days_horizon: u32,
     #[serde(default = "default_urgent_prio")]
@@ -535,6 +579,7 @@ impl Default for Config {
             ui_scale: 1.0,
             sort_cutoff_months: Some(2),
             sort_standard_by_priority: false,
+            sort_preset: SortPreset::default(),
             tag_aliases: HashMap::new(),
             language: None,
             theme: AppTheme::default(),
@@ -580,6 +625,7 @@ impl Config {
             hide_aliases_in_sidebar: self.hide_aliases_in_sidebar,
             sort_cutoff_months: self.sort_cutoff_months,
             sort_standard_by_priority: self.sort_standard_by_priority,
+            sort_preset: self.sort_preset,
             urgent_days_horizon: self.urgent_days_horizon,
             urgent_priority_threshold: self.urgent_priority_threshold,
             default_priority: self.default_priority,
@@ -609,6 +655,7 @@ impl Config {
         self.hide_aliases_in_sidebar = sync.hide_aliases_in_sidebar;
         self.sort_cutoff_months = sync.sort_cutoff_months;
         self.sort_standard_by_priority = sync.sort_standard_by_priority;
+        self.sort_preset = sync.sort_preset;
         self.urgent_days_horizon = sync.urgent_days_horizon;
         self.urgent_priority_threshold = sync.urgent_priority_threshold;
         self.default_priority = sync.default_priority;

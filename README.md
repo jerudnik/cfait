@@ -159,6 +159,7 @@ The clients are self-documenting; the most up-to-date documentation should be pr
 | **Location** | `@@` / `loc:` | Where the task happens. Supports hierarchy like tags (e.g. `@@home:office`, `@@store:aldi:downtown`). |
 | **Reminder** | `rem:` | Set an notification. (e.g. `rem:10m`, `rem:8am`, `rem:tomorrow 9:00`). |
 | **Calendar Event** | `+cal` / `-cal` | Override calendar event creation (per-task). `+cal` forces event creation, `-cal` prevents it. |
+| **Pin** | `+pin` / `-pin` | Pin task to top of list (overrides normal sorting). |
 
 You can also type url: (e.g. `url:https://trougnouf.com`), geo: (e.g. `geo:53.046070,-121.105264` or `geo:50.13139° N, 4.50080° E`. Android: `geo:here`), and desc: (e.g. `desc:"a description"` or `desc:{une description}`)
 
@@ -368,6 +369,15 @@ Press **`Ctrl+P`** (TUI/GUI) to switch between two sorting modes for the standar
 | **Priority-first** | Ranks 4 & 5 **merged** — sorted by priority, then due date (tasks without a date follow tasks of the same priority that have one), then name |
 
 The setting is saved in the config file and persists across restarts. It can also be set permanently via `sort_standard_by_priority = true` in `~/.config/cfait/config.toml`.
+
+### 📌 Pinned Tasks
+Tasks can be manually pinned to the top of the list using `+pin` in smart input, which overrides the normal sorting order. Pinned tasks always appear first regardless of their priority, due date, or start status.
+
+### 🔄 Sort Preset
+The order of urgency criteria (urgent priority, due soon, started status) within the top ranks can be customized via the `sort_preset` setting in More settings > Sorting & visibility. Three presets are available:
+- **Urgent > Started > Due Soon** (default)
+- **Urgent > Due Soon > Started**
+- **Started > Urgent > Due Soon**
 
 <a name="calendar-events-for-tasks"></a>
 ## 📅 calendar events for tasks

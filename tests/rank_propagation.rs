@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Tests for rank propagation.
+use cfait::config::SortPreset;
 use cfait::context::TestContext;
 use cfait::model::Task;
 use cfait::store::{FilterOptions, TaskStore};
@@ -61,6 +62,7 @@ fn parent_inherits_child_priority_and_sorts_before_sibling() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -152,6 +154,7 @@ fn compare_two_parents_inherited_priorities_determine_order() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -238,6 +241,7 @@ fn parent_inherits_started_child_over_unset_sibling() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),

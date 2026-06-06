@@ -170,7 +170,8 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::KeyboardOpenContextMenu
         | Message::KeyboardToggleDetails
         | Message::StartMoveTask(_)
-        | Message::CancelMoveTask => tasks::handle(app, message),
+        | Message::CancelMoveTask
+        | Message::TogglePin(_) => tasks::handle(app, message),
 
         Message::TabPressed(_)
         | Message::FocusInput
@@ -190,6 +191,7 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::ToggleHideFullyCompletedTags(_)
         | Message::ToggleHideAliasesInSidebar(_)
         | Message::ToggleSortStandardByPriority(_)
+        | Message::SetSortPreset(_)
         | Message::ToggleSortStandardByPriorityToggle
         | Message::SelectCalendar(_)
         | Message::ToggleCalendarDisabled(_, _)

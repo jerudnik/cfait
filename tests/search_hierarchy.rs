@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Tests for search hierarchy functionality.
+use cfait::config::SortPreset;
 use cfait::context::TestContext;
 use cfait::model::Task;
 use cfait::store::{FilterOptions, TaskStore};
@@ -43,6 +44,7 @@ fn test_search_includes_non_matching_children() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -113,6 +115,7 @@ fn test_search_includes_deep_hierarchy() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -163,6 +166,7 @@ fn test_child_match_does_not_force_parent_if_parent_does_not_match() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -229,6 +233,7 @@ fn test_multiple_parents_with_children() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -299,6 +304,7 @@ fn test_sibling_match_only_includes_matching_sibling() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -354,6 +360,7 @@ fn test_empty_search_shows_all_tasks() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -405,6 +412,7 @@ fn test_hierarchy_expansion_with_completed_tasks() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -436,6 +444,7 @@ fn test_hierarchy_expansion_with_completed_tasks() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),

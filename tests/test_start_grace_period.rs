@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Tests for start grace period functionality.
+use cfait::config::SortPreset;
 use cfait::context::TestContext;
 use cfait::model::{Alarm, DateType, Task};
 use cfait::store::{FilterOptions, TaskStore};
@@ -54,6 +55,7 @@ fn test_start_grace_period_keeps_tasks_in_active_section() {
         default_priority: 5,
         start_grace_period_days: 2, // 2-day grace period
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -140,6 +142,7 @@ fn test_grace_period_zero_pushes_all_future_starts() {
         default_priority: 5,
         start_grace_period_days: 0, // No grace period
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -228,6 +231,7 @@ fn test_acknowledged_alarm_keeps_task_in_active_section() {
         default_priority: 5,
         start_grace_period_days: 1, // 1-day grace period
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -325,6 +329,7 @@ fn test_any_acknowledged_alarm_keeps_task_active() {
         default_priority: 5,
         start_grace_period_days: 1, // 1-day grace period
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -412,6 +417,7 @@ fn test_recurring_task_with_fresh_dates_goes_to_future() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),

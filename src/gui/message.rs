@@ -135,6 +135,7 @@ pub enum Message {
     ToggleHideFullyCompletedTags(bool),
     ToggleHideAliasesInSidebar(bool),
     ToggleSortStandardByPriority(bool),
+    SetSortPreset(crate::config::SortPreset),
     TabPressed(bool),
     OpenHelp(crate::help::HelpTab),
     CloseHelp,
@@ -147,6 +148,7 @@ pub enum Message {
 
     // --- Navigation & Actions ---
     ExtractSubtasks(String),
+    TogglePin(String),
     YankTask(String),
     StartCreateChild(String),
     AddDependency(String),

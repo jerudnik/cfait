@@ -265,6 +265,10 @@ impl TaskDisplay for Task {
             s.push_str(if create_event { " +cal" } else { " -cal" });
         }
 
+        if self.pinned {
+            s.push_str(" +pin");
+        }
+
         // Output completion date if present
         if let Some(comp) = self.completion_date() {
             let local = comp.with_timezone(&chrono::Local);

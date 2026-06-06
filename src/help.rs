@@ -180,6 +180,11 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     desc: rust_i18n::t!("help_metadata_force_calendar").to_string(),
                     example: "Task @tomorrow +cal".to_string(),
                 },
+                HelpItem {
+                    keys: "+pin / -pin".to_string(),
+                    desc: rust_i18n::t!("help_metadata_pin_task").to_string(),
+                    example: "Important task +pin".to_string(),
+                },
             ],
         },
         HelpSection {

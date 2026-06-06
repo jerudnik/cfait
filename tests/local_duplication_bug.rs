@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Tests for local duplication bug.
+use cfait::config::SortPreset;
 use cfait::context::TestContext;
 use cfait::model::{Task, TaskStatus};
 use cfait::storage::{LOCAL_CALENDAR_HREF, LocalStorage};
@@ -69,6 +70,7 @@ fn test_reproduce_android_local_revert_bug() {
         start_grace_period_days: 1,
         // Newly required fields in FilterOptions:
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),

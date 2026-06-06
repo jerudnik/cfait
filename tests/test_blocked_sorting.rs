@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Tests for blocked sorting functionality.
+use cfait::config::SortPreset;
 use cfait::context::TestContext;
 use cfait::model::{DateType, Task, TaskStatus};
 use cfait::store::{FilterOptions, TaskStore};
@@ -52,6 +53,7 @@ fn test_blocked_tasks_skip_urgent_rank() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -135,6 +137,7 @@ fn test_blocked_tasks_skip_due_soon_rank() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -216,6 +219,7 @@ fn test_blocked_tasks_skip_started_rank() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -298,6 +302,7 @@ fn test_dependency_blocked_tasks_also_skip_ranks() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -385,6 +390,7 @@ fn test_is_ready_filters_manually_blocked_tasks() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -458,6 +464,7 @@ fn test_is_blocked_filter_shows_only_blocked() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),

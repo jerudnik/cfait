@@ -507,6 +507,11 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::batch(tasks)
         }
 
+        Message::TogglePin(uid) => {
+            common::dispatch_intent(app, AppIntent::TogglePin { uid });
+            Task::none()
+        }
+
         Message::ExtractSubtasks(uid) => {
             if let Some((parent, _)) = app.store.get_task_mut(&uid) {
                 let desc_text = parent.description.clone();

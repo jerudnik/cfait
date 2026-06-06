@@ -32,6 +32,7 @@ pub fn three_way_merge(base: &Task, local: &Task, server: &Task) -> Option<Task>
     merge_field!(url);
     merge_field!(geo);
     merge_field!(collapsed);
+    merge_field!(pinned);
     // Smart merge for time tracking (accumulate offline time from both clients)
     if local.time_spent_seconds != base.time_spent_seconds
         || server.time_spent_seconds != base.time_spent_seconds

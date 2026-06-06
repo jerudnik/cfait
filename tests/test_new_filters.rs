@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Tests for newer filter features (relative dates, etc.).
+use cfait::config::SortPreset;
 use cfait::context::TestContext;
 use cfait::model::{Task, TaskStatus};
 use cfait::store::{FilterOptions, TaskStore};
@@ -171,6 +172,7 @@ fn test_is_ready_filters_future_start_dates() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -253,6 +255,7 @@ fn test_is_ready_filters_blocked_tasks() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -341,6 +344,7 @@ fn test_is_ready_combines_with_other_filters() {
         default_priority: 5,
         start_grace_period_days: 1,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
         expanded_locations: &HashSet::new(),
@@ -416,6 +420,7 @@ fn test_is_ready_filters_implicitly_future_tasks() {
         urgent_prio: 5,
         default_priority: 5,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         start_grace_period_days: 1,
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
@@ -474,6 +479,7 @@ fn test_is_ready_filters_implicitly_future_tasks() {
         urgent_prio: 5,
         default_priority: 5,
         sort_standard_by_priority: false,
+        sort_preset: SortPreset::default(),
         start_grace_period_days: 1,
         expanded_done_groups: &HashSet::new(),
         expanded_tags: &HashSet::new(),
