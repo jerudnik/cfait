@@ -56,6 +56,11 @@ pub fn print_help(binary_name: &str) {
             "-r, --root <path>",
             rust_i18n::t!("cli_desc_root").to_string(),
         );
+        print_cmd(
+            "-n, --no-wait",
+            rust_i18n::t!("cli_desc_no_wait").to_string(),
+        );
+        print_cmd("-w, --wait", rust_i18n::t!("cli_desc_wait").to_string());
     }
     print_cmd("-h, --help", rust_i18n::t!("cli_desc_help").to_string());
 
@@ -122,7 +127,7 @@ pub fn print_help(binary_name: &str) {
         println!("{}", rust_i18n::t!("cli_action_commands_heading"));
         print_cmd(
             &format!(
-                "{} add <{}> [-c <id>] [--desc <text>]",
+                "{} add <{}> [-c <id>] [--desc <text>] [-n] [-w]",
                 binary_name,
                 rust_i18n::t!("cli_task_placeholder")
             ),
@@ -130,7 +135,7 @@ pub fn print_help(binary_name: &str) {
         );
         print_cmd(
             &format!(
-                "{} edit <uid> <{}> [-c <id>] [--desc <text>] [--clear-due] [--clear-start] [--clear-tags] [--clear-loc]",
+                "{} edit <uid> <{}> [-c <id>] [--desc <text>] [--clear-due] [--clear-start] [--clear-tags] [--clear-loc] [-n] [-w]",
                 binary_name,
                 rust_i18n::t!("cli_task_placeholder")
             ),
@@ -153,19 +158,19 @@ pub fn print_help(binary_name: &str) {
             rust_i18n::t!("cli_desc_view").to_string(),
         );
         print_cmd(
-            &format!("{} start <uid>", binary_name),
+            &format!("{} start <uid> [-n] [-w]", binary_name),
             rust_i18n::t!("cli_desc_start").to_string(),
         );
         print_cmd(
-            &format!("{} pause <uid>", binary_name),
+            &format!("{} pause <uid> [-n] [-w]", binary_name),
             rust_i18n::t!("cli_desc_pause").to_string(),
         );
         print_cmd(
-            &format!("{} toggle <uid>", binary_name),
+            &format!("{} toggle <uid> [-n] [-w]", binary_name),
             rust_i18n::t!("cli_desc_toggle").to_string(),
         );
         print_cmd(
-            &format!("{} delete <uid>", binary_name),
+            &format!("{} delete <uid> [-n] [-w]", binary_name),
             rust_i18n::t!("cli_desc_delete").to_string(),
         );
         print_cmd(

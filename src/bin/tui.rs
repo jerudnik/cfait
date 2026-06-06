@@ -106,6 +106,26 @@ fn resolve_uid(store: &TaskStore, partial: &str) -> Option<String> {
     }
 }
 
+// Helper to determine if we should skip waiting based on args and background presence
+fn get_sync_strategy(
+    no_wait_flag: bool,
+    wait_flag: bool,
+    ctx: &Arc<dyn AppContext>,
+) -> (bool, bool) {
+    if wait_flag {
+        (false, false)
+    } else if no_wait_flag {
+        (true, false)
+    } else {
+        #[cfg(not(target_os = "android"))]
+        let is_present = cfait::storage::PresenceLock::is_present(ctx.as_ref());
+        #[cfg(target_os = "android")]
+        let is_present = false;
+
+        (is_present, is_present)
+    }
+}
+
 // Best-effort sync helper that can be called without passing a pre-loaded config
 // Delegate to `sync_background` so the shared helper is used and keeps logic centralized.
 async fn maybe_sync(ctx: Arc<dyn AppContext>) -> Result<(), String> {
@@ -275,6 +295,8 @@ async fn main() -> Result<()> {
         }
         "daemon" => {
             println!("{}", rust_i18n::t!("starting_daemon"));
+            #[cfg(not(target_os = "android"))]
+            let _presence_lock = cfait::storage::PresenceLock::acquire_shared(ctx.as_ref()).ok();
             loop {
                 let config =
                     cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
@@ -310,10 +332,18 @@ async fn main() -> Result<()> {
         "add" | "create" => {
             let mut col_href = None;
             let mut desc_text = None;
+            let mut no_wait = false;
+            let mut wait = false;
             let mut i = 2;
             let mut task_args = Vec::new();
             while i < args.len() {
-                if args[i] == "--collection" || args[i] == "-c" {
+                if args[i] == "--no-wait" || args[i] == "-n" {
+                    no_wait = true;
+                    i += 1;
+                } else if args[i] == "--wait" || args[i] == "-w" {
+                    wait = true;
+                    i += 1;
+                } else if args[i] == "--collection" || args[i] == "-c" {
                     if i + 1 < args.len() {
                         col_href = Some(args[i + 1].clone());
                         i += 2;
@@ -398,12 +428,20 @@ async fn main() -> Result<()> {
                 )
             );
 
-            // Best-effort background sync of the journal
-            if let Err(e) = maybe_sync(ctx.clone()).await {
-                eprintln!(
-                    "{}",
-                    rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
-                );
+            let (effective_no_wait, is_auto) = get_sync_strategy(no_wait, wait, &ctx);
+
+            if !effective_no_wait {
+                // Best-effort background sync of the journal
+                if let Err(e) = maybe_sync(ctx.clone()).await {
+                    eprintln!(
+                        "{}",
+                        rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
+                    );
+                }
+            } else if is_auto {
+                println!("{}", rust_i18n::t!("cli_action_queued_auto"));
+            } else {
+                println!("{}", rust_i18n::t!("cli_action_queued"));
             }
             return Ok(());
         }
@@ -414,10 +452,18 @@ async fn main() -> Result<()> {
             let mut clear_start = false;
             let mut clear_tags = false;
             let mut clear_loc = false;
+            let mut no_wait = false;
+            let mut wait = false;
             let mut i = 2;
             let mut task_args = Vec::new();
             while i < args.len() {
-                if args[i] == "--collection" || args[i] == "-c" {
+                if args[i] == "--no-wait" || args[i] == "-n" {
+                    no_wait = true;
+                    i += 1;
+                } else if args[i] == "--wait" || args[i] == "-w" {
+                    wait = true;
+                    i += 1;
+                } else if args[i] == "--collection" || args[i] == "-c" {
                     if i + 1 < args.len() {
                         col_href = Some(args[i + 1].clone());
                         i += 2;
@@ -543,11 +589,19 @@ async fn main() -> Result<()> {
                     .map_err(|e| anyhow::anyhow!(e))?;
                 println!("Task '{}' updated successfully.", partial_uid);
 
-                if let Err(e) = maybe_sync(ctx.clone()).await {
-                    eprintln!(
-                        "{}",
-                        rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
-                    );
+                let (effective_no_wait, is_auto) = get_sync_strategy(no_wait, wait, &ctx);
+
+                if !effective_no_wait {
+                    if let Err(e) = maybe_sync(ctx.clone()).await {
+                        eprintln!(
+                            "{}",
+                            rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
+                        );
+                    }
+                } else if is_auto {
+                    println!("{}", rust_i18n::t!("cli_action_queued_auto"));
+                } else {
+                    println!("{}", rust_i18n::t!("cli_action_queued"));
                 }
             } else {
                 println!("No changes made to task '{}'.", partial_uid);
@@ -759,7 +813,20 @@ async fn main() -> Result<()> {
         }
         "start" | "pause" | "toggle" | "done" | "complete" => {
             let store = build_store_cli(&ctx).await;
-            let partial_uid = args.get(2).cloned().unwrap_or_default();
+            let mut partial_uid = String::new();
+            let mut no_wait = false;
+            let mut wait = false;
+            let mut i = 2;
+            while i < args.len() {
+                if args[i] == "--no-wait" || args[i] == "-n" {
+                    no_wait = true;
+                } else if args[i] == "--wait" || args[i] == "-w" {
+                    wait = true;
+                } else if partial_uid.is_empty() {
+                    partial_uid = args[i].clone();
+                }
+                i += 1;
+            }
             if partial_uid.is_empty() {
                 eprintln!("{}", rust_i18n::t!("error_missing_uid"));
                 std::process::exit(1);
@@ -818,12 +885,20 @@ async fn main() -> Result<()> {
                 }
             }
 
-            // Best-effort background sync
-            if let Err(e) = maybe_sync(ctx.clone()).await {
-                eprintln!(
-                    "{}",
-                    rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
-                );
+            let (effective_no_wait, is_auto) = get_sync_strategy(no_wait, wait, &ctx);
+
+            if !effective_no_wait {
+                // Best-effort background sync
+                if let Err(e) = maybe_sync(ctx.clone()).await {
+                    eprintln!(
+                        "{}",
+                        rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
+                    );
+                }
+            } else if is_auto {
+                println!("{}", rust_i18n::t!("cli_action_queued_auto"));
+            } else {
+                println!("{}", rust_i18n::t!("cli_action_queued"));
             }
             return Ok(());
         }
@@ -931,7 +1006,20 @@ async fn main() -> Result<()> {
             return Ok(());
         }
         "delete" | "rm" => {
-            let partial_uid = args.get(2).cloned().unwrap_or_default();
+            let mut partial_uid = String::new();
+            let mut no_wait = false;
+            let mut wait = false;
+            let mut i = 2;
+            while i < args.len() {
+                if args[i] == "--no-wait" || args[i] == "-n" {
+                    no_wait = true;
+                } else if args[i] == "--wait" || args[i] == "-w" {
+                    wait = true;
+                } else if partial_uid.is_empty() {
+                    partial_uid = args[i].clone();
+                }
+                i += 1;
+            }
             if partial_uid.is_empty() {
                 eprintln!("{}", rust_i18n::t!("error_missing_uid"));
                 std::process::exit(1);
@@ -962,12 +1050,20 @@ async fn main() -> Result<()> {
                 .map_err(|e| anyhow::anyhow!(e))?;
             println!("{}", rust_i18n::t!("task_deleted", uid = partial_uid));
 
-            // Best-effort background sync
-            if let Err(e) = maybe_sync(ctx.clone()).await {
-                eprintln!(
-                    "{}",
-                    rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
-                );
+            let (effective_no_wait, is_auto) = get_sync_strategy(no_wait, wait, &ctx);
+
+            if !effective_no_wait {
+                // Best-effort background sync
+                if let Err(e) = maybe_sync(ctx.clone()).await {
+                    eprintln!(
+                        "{}",
+                        rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
+                    );
+                }
+            } else if is_auto {
+                println!("{}", rust_i18n::t!("cli_action_queued_auto"));
+            } else {
+                println!("{}", rust_i18n::t!("cli_action_queued"));
             }
             return Ok(());
         }
@@ -988,6 +1084,9 @@ async fn main() -> Result<()> {
     let _ui_lock = cfait::storage::DaemonLock::acquire_shared(ctx.as_ref())
         .map_err(|e| eprintln!("Warning: Could not acquire shared UI lock: {}", e))
         .ok();
+
+    #[cfg(not(target_os = "android"))]
+    let _presence_lock = cfait::storage::PresenceLock::acquire_shared(ctx.as_ref()).ok();
 
     cfait::tui::run(ctx).await
 }

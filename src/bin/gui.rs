@@ -74,5 +74,8 @@ fn main() -> iced::Result {
         .map_err(|e| eprintln!("Warning: Could not acquire shared UI lock: {}", e))
         .ok();
 
+    #[cfg(not(target_os = "android"))]
+    let _presence_lock = cfait::storage::PresenceLock::acquire_shared(ctx.as_ref()).ok();
+
     cfait::gui::run_with_ics_file(ics_file_path, override_root, force_ssd)
 }

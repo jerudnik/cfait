@@ -479,6 +479,60 @@ pub struct DaemonLock {
 }
 
 #[cfg(not(target_os = "android"))]
+pub struct PresenceLock {
+    _file: std::fs::File,
+}
+
+#[cfg(not(target_os = "android"))]
+impl PresenceLock {
+    /// Acquired by UI instances and the daemon to signal they are running and
+    /// capable of processing background syncs.
+    pub fn acquire_shared(ctx: &dyn AppContext) -> Result<Self> {
+        let path = ctx.get_data_dir()?.join("presence.lock");
+        let file = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(&path)?;
+
+        file.lock_shared()?;
+        Ok(Self { _file: file })
+    }
+
+    /// Tests if any UI or daemon is currently holding the shared presence lock.
+    pub fn is_present(ctx: &dyn AppContext) -> bool {
+        let path = match ctx.get_data_dir() {
+            Ok(p) => p.join("presence.lock"),
+            Err(_) => return false,
+        };
+        if let Ok(file) = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(&path)
+        {
+            match file.try_lock_exclusive() {
+                Ok(_) => {
+                    let _ = file.unlock();
+                    false
+                }
+                Err(e)
+                    if e.kind() == std::io::ErrorKind::WouldBlock
+                        || e.kind() == std::io::ErrorKind::PermissionDenied =>
+                {
+                    true
+                }
+                Err(_) => false,
+            }
+        } else {
+            false
+        }
+    }
+}
+
+#[cfg(not(target_os = "android"))]
 impl DaemonLock {
     /// Acquired by UI instances. Multiple UIs can hold this shared lock simultaneously.
     /// If the daemon is currently syncing, this blocks briefly until the daemon finishes.
