@@ -257,8 +257,11 @@ pub fn view_task_row<'a>(
                 || has_valid_parent;
             let has_time = !task.sessions.is_empty() || task.time_spent_seconds > 0;
 
-            let has_content_to_show =
-                has_info || has_time || app.adding_session_uid.as_ref() == Some(&task.uid);
+            let has_content_to_show = has_info
+                || has_time
+                || app.adding_session_uid.as_ref() == Some(&task.uid)
+                || task.created_date().is_some()
+                || task.last_modified_date().is_some();
 
             let has_metadata = !task.categories.is_empty()
                 || task.rrule.is_some()
@@ -1515,6 +1518,31 @@ pub fn view_task_row<'a>(
                             .on_press(Message::ToggleShowAllSessions(task.uid.clone())),
                         );
                     }
+                }
+
+                let mut date_infos = Vec::new();
+                if let Some(created) = task.created_date() {
+                    let local = created.with_timezone(&chrono::Local);
+                    date_infos.push(format!(
+                        "{}: {}",
+                        rust_i18n::t!("created_label"),
+                        local.format("%Y-%m-%d %H:%M")
+                    ));
+                }
+                if let Some(modified) = task.last_modified_date() {
+                    let local = modified.with_timezone(&chrono::Local);
+                    date_infos.push(format!(
+                        "{}: {}",
+                        rust_i18n::t!("last_modified_label"),
+                        local.format("%Y-%m-%d %H:%M")
+                    ));
+                }
+                if !date_infos.is_empty() {
+                    details_col = details_col.push(
+                        text(date_infos.join("  |  "))
+                            .size(12)
+                            .color(Color::from_rgb(0.5, 0.5, 0.5)),
+                    );
                 }
             }
 

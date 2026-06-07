@@ -4585,6 +4585,8 @@ data class MobileTask(
     var `isCollapsed`: kotlin.Boolean,
     var `pinned`: kotlin.Boolean,
     var `hasExtractableSubtasks`: kotlin.Boolean,
+    var `createdDateIso`: kotlin.String?,
+    var `lastModifiedDateIso`: kotlin.String?,
     var `visibleCategories`: List<kotlin.String>,
     var `visibleLocation`: kotlin.String?,
 ) {
@@ -4644,6 +4646,8 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
             FfiConverterSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
         )
@@ -4697,6 +4701,8 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
                 FfiConverterBoolean.allocationSize(value.`isCollapsed`) +
                 FfiConverterBoolean.allocationSize(value.`pinned`) +
                 FfiConverterBoolean.allocationSize(value.`hasExtractableSubtasks`) +
+                FfiConverterOptionalString.allocationSize(value.`createdDateIso`) +
+                FfiConverterOptionalString.allocationSize(value.`lastModifiedDateIso`) +
                 FfiConverterSequenceString.allocationSize(value.`visibleCategories`) +
                 FfiConverterOptionalString.allocationSize(value.`visibleLocation`)
         )
@@ -4752,6 +4758,8 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
         FfiConverterBoolean.write(value.`isCollapsed`, buf)
         FfiConverterBoolean.write(value.`pinned`, buf)
         FfiConverterBoolean.write(value.`hasExtractableSubtasks`, buf)
+        FfiConverterOptionalString.write(value.`createdDateIso`, buf)
+        FfiConverterOptionalString.write(value.`lastModifiedDateIso`, buf)
         FfiConverterSequenceString.write(value.`visibleCategories`, buf)
         FfiConverterOptionalString.write(value.`visibleLocation`, buf)
     }

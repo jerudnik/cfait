@@ -723,6 +723,26 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         if let Some(loc) = &task.location {
             meta.push(format!("- **Location:** {}", loc));
         }
+        let mut date_infos = Vec::new();
+        if let Some(created) = task.created_date() {
+            let local = created.with_timezone(&chrono::Local);
+            date_infos.push(format!(
+                "**{}**: {}",
+                rust_i18n::t!("created_label"),
+                local.format("%Y-%m-%d %H:%M")
+            ));
+        }
+        if let Some(modified) = task.last_modified_date() {
+            let local = modified.with_timezone(&chrono::Local);
+            date_infos.push(format!(
+                "**{}**: {}",
+                rust_i18n::t!("last_modified_label"),
+                local.format("%Y-%m-%d %H:%M")
+            ));
+        }
+        if !date_infos.is_empty() {
+            meta.push(format!("- {}", date_infos.join("  |  ")));
+        }
 
         if !meta.is_empty() {
             details_md.push_str("---\n");

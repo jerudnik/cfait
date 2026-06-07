@@ -480,6 +480,40 @@ impl Task {
             .any(|p| p.key == "X-CFAIT-RECUR-FROM-COMPLETION")
     }
 
+    fn parse_ics_datetime(v: &str) -> Option<DateTime<Utc>> {
+        if v.contains('T') {
+            NaiveDateTime::parse_from_str(v, "%Y%m%dT%H%M%SZ")
+                .ok()
+                .map(|ndt| Utc.from_utc_datetime(&ndt))
+                .or_else(|| {
+                    NaiveDateTime::parse_from_str(v, "%Y%m%dT%H%M%S")
+                        .ok()
+                        .map(|ndt| Utc.from_utc_datetime(&ndt))
+                })
+                .or_else(|| {
+                    DateTime::parse_from_rfc3339(v)
+                        .ok()
+                        .map(|dt| dt.with_timezone(&Utc))
+                })
+        } else {
+            None
+        }
+    }
+
+    pub fn created_date(&self) -> Option<DateTime<Utc>> {
+        self.unmapped_properties
+            .iter()
+            .find(|p| p.key == "CREATED")
+            .and_then(|p| Self::parse_ics_datetime(p.value.trim()))
+    }
+
+    pub fn last_modified_date(&self) -> Option<DateTime<Utc>> {
+        self.unmapped_properties
+            .iter()
+            .find(|p| p.key == "LAST-MODIFIED")
+            .and_then(|p| Self::parse_ics_datetime(p.value.trim()))
+    }
+
     /// Return the explicit COMPLETED date parsed from unmapped properties, if present.
     pub fn completion_date(&self) -> Option<DateTime<Utc>> {
         self.unmapped_properties
@@ -487,28 +521,12 @@ impl Task {
             .find(|p| p.key == "COMPLETED")
             .and_then(|p| {
                 let v = p.value.trim();
-                // Try several common datetime variants for resilience against different ICS sources.
-                if v.contains('T') {
-                    NaiveDateTime::parse_from_str(v, "%Y%m%dT%H%M%SZ")
-                        .ok()
-                        .map(|ndt| Utc.from_utc_datetime(&ndt))
-                        .or_else(|| {
-                            NaiveDateTime::parse_from_str(v, "%Y%m%dT%H%M%S")
-                                .ok()
-                                .map(|ndt| Utc.from_utc_datetime(&ndt))
-                        })
-                        .or_else(|| {
-                            DateTime::parse_from_rfc3339(v)
-                                .ok()
-                                .map(|dt| dt.with_timezone(&Utc))
-                        })
-                } else {
-                    // Date-only value (all-day): interpret as midnight (UTC conversion).
+                Self::parse_ics_datetime(v).or_else(|| {
                     NaiveDate::parse_from_str(v, "%Y%m%d")
                         .ok()
                         .and_then(|nd| nd.and_hms_opt(0, 0, 0))
                         .map(|ndt| Utc.from_utc_datetime(&ndt))
-                }
+                })
             })
     }
 

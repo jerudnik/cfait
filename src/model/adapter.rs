@@ -30,7 +30,6 @@ const HANDLED_KEYS: &[&str] = &[
     "CATEGORIES",
     "RELATED-TO",
     "DTSTAMP",
-    "LAST-MODIFIED",
     "SEQUENCE",
     "PRODID",
     "VERSION",

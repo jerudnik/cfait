@@ -727,6 +727,24 @@ fun TaskDetailScreen(
                 textStyle = TextStyle(textAlign = androidx.compose.ui.text.style.TextAlign.Start),
             )
 
+            if (task!!.createdDateIso != null || task!!.lastModifiedDateIso != null) {
+                val dateStrs = mutableListOf<String>()
+                if (task!!.createdDateIso != null) {
+                    val createdStr = formatIsoToLocal(task!!.createdDateIso!!)
+                    dateStrs.add("${stringResource(R.string.created_label)}: $createdStr")
+                }
+                if (task!!.lastModifiedDateIso != null) {
+                    val modifiedStr = formatIsoToLocal(task!!.lastModifiedDateIso!!)
+                    dateStrs.add("${stringResource(R.string.last_modified_label)}: $modifiedStr")
+                }
+                Text(
+                    text = dateStrs.joinToString("  |  "),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+
             Spacer(Modifier.height(24.dp))
         }
     }

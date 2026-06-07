@@ -56,7 +56,12 @@ pub fn is_action_available(
         crate::config::TaskAction::DeleteTree => task.has_subtasks,
         crate::config::TaskAction::OpenCoordinates => task.geo.is_some(),
         crate::config::TaskAction::OpenLocations => app.store.count_tree_locations(&task.uid) > 1,
-        crate::config::TaskAction::ToggleDetails => has_info || has_time,
+        crate::config::TaskAction::ToggleDetails => {
+            has_info
+                || has_time
+                || task.created_date().is_some()
+                || task.last_modified_date().is_some()
+        }
         crate::config::TaskAction::CompleteAndShift => {
             task.rrule.is_some() && !is_done_or_cancelled && !task.is_relative_recurrence()
         }

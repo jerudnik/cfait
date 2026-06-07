@@ -211,6 +211,8 @@ pub struct MobileTask {
     pub is_collapsed: bool,
     pub pinned: bool,
     pub has_extractable_subtasks: bool,
+    pub created_date_iso: Option<String>,
+    pub last_modified_date_iso: Option<String>,
 
     // UI Visual resolution fields
     pub visible_categories: Vec<String>,
@@ -267,6 +269,8 @@ impl MobileTask {
             is_collapsed: false,
             pinned: false,
             has_extractable_subtasks: false,
+            created_date_iso: None,
+            last_modified_date_iso: None,
             visible_categories: vec![],
             visible_location: None,
         }
@@ -549,6 +553,8 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
     };
 
     let completed_date_iso = t.completion_date().map(|d| d.to_rfc3339());
+    let created_date_iso = t.created_date().map(|d| d.to_rfc3339());
+    let last_modified_date_iso = t.last_modified_date().map(|d| d.to_rfc3339());
 
     let has_alarms = !t
         .alarms
@@ -614,6 +620,8 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
         is_collapsed: t.collapsed,
         pinned: t.pinned,
         has_extractable_subtasks: t.has_extractable_subtasks(),
+        created_date_iso,
+        last_modified_date_iso,
         visible_categories: t.visible_categories.clone(),
         visible_location: t.visible_location.clone(),
     }
