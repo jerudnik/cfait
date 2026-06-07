@@ -482,7 +482,15 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             {
                 app.session.selected_locations.remove(pos);
             } else {
-                app.session.selected_locations.push(loc);
+                app.session.selected_locations.push(loc.clone());
+                // Auto-expand when selecting
+                if !app.session.expanded_locations.contains(&loc) {
+                    crate::gui::update::common::dispatch_intent(
+                        app,
+                        crate::model::AppIntent::ToggleLocationCollapse { location: loc.clone() },
+                    );
+                    crate::gui::update::common::save_config(app);
+                }
             }
             refresh_filtered_tasks(app);
             Task::none()

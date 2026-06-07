@@ -2376,7 +2376,15 @@ pub async fn handle_key_event(
                                 if state.selected_locations.contains(&l_clone) {
                                     state.selected_locations.remove(&l_clone);
                                 } else {
-                                    state.selected_locations.insert(l_clone);
+                                    state.selected_locations.insert(l_clone.clone());
+                                    // Auto-expand when selecting
+                                    if !state.expanded_locations.contains(&l_clone) {
+                                        state.expanded_locations.insert(l_clone);
+                                        if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                                            cfg.expanded_locations = state.expanded_locations.iter().cloned().collect();
+                                            let _ = cfg.save(state.ctx.as_ref());
+                                        }
+                                    }
                                 }
                                 state.refresh_filtered_view();
                             }
