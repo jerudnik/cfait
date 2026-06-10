@@ -190,11 +190,11 @@ fn handle_hotkey(
                         }
                     }
                     keyboard::Key::Character(s) => match s.to_lowercase().as_str() {
-                        "j" => return Some(Message::SelectNext),
-                        "k" => return Some(Message::SelectPrev),
                         "1" => return Some(Message::SidebarModeChanged(SidebarMode::Calendars)),
                         "2" => return Some(Message::SidebarModeChanged(SidebarMode::Categories)),
                         "3" => return Some(Message::SidebarModeChanged(SidebarMode::Locations)),
+                        "j" => return Some(Message::SelectNext),
+                        "k" => return Some(Message::SelectPrev),
                         "*" => return Some(Message::ClearAllFilters),
                         _ => {}
                     },
