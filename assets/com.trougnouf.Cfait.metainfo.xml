@@ -78,6 +78,36 @@
   </requires>
 
   <releases>
+    <release version="1.0.6" date="2026-06-10">
+      <description>
+        <p>Features:</p>
+        <ul>
+          <li>(sort) Sort overdue tasks by priority over due date</li>
+          <li>(cli) Expand CLI with edit command, collection listing/writing, and json outputs</li>
+          <li>(sorting) Add sort presets and default to Urgent &gt; Started &gt; Due Soon, add +pin</li>
+          <li>(cli) Add --no-wait/-w flags with background process auto-detection</li>
+          <li>(ui) Auto-expand sidebar tags and locations when selected (tui, gui, https://github.com/trougnouf/cfait/issues/38 )</li>
+          <li>(ui) Auto-expand sidebar tags when selected (tui, gui)</li>
+          <li>Implement nested tag grouping and key=value rendering</li>
+          <li>Expose tasks creation date</li>
+          <li>(ui) Implement GUI sidebar focus navigation and refine TUI tree indicators ( https://github.com/trougnouf/cfait/issues/38 , winter8)</li>
+        </ul>
+        <p>Bug Fixes:</p>
+        <ul>
+          <li>Treat DAV:all aggregate privilege as writable in calendar discovery</li>
+          <li>(tui) Avoid redundant journal actions and syncs on no-op collapse and priority change (reported by starkgoose)</li>
+          <li>Resolve DTSTAMP fallback for modified dates, deduplicate identical timestamps, and bump storage versions</li>
+        </ul>
+        <p>Documentation:</p>
+        <ul>
+          <li>Reduce new README content</li>
+        </ul>
+        <p>Miscellaneous Tasks:</p>
+        <ul>
+          <li>(gui) Try to intercept 1,2,3 keys first</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.5" date="2026-06-03">
       <description>
         <p>Features:</p>

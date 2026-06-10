@@ -1,0 +1,27 @@
+## [1.0.6] - 2026-06-10
+
+### 🚀 Features
+
+- *(sort)* Sort overdue tasks by priority over due date
+- *(cli)* Expand CLI with edit command, collection listing/writing, and json outputs
+- *(sorting)* Add sort presets and default to Urgent > Started > Due Soon, add +pin
+- *(cli)* Add --no-wait/-w flags with background process auto-detection
+- *(ui)* Auto-expand sidebar tags and locations when selected (tui, gui, https://github.com/trougnouf/cfait/issues/38 )
+- *(ui)* Auto-expand sidebar tags when selected (tui, gui)
+- Implement nested tag grouping and key=value rendering
+- Expose tasks creation date
+- *(ui)* Implement GUI sidebar focus navigation and refine TUI tree indicators ( https://github.com/trougnouf/cfait/issues/38 , winter8)
+
+### 🐛 Bug Fixes
+
+- Treat DAV:all aggregate privilege as writable in calendar discovery
+- *(tui)* Avoid redundant journal actions and syncs on no-op collapse and priority change (reported by starkgoose)
+- Resolve DTSTAMP fallback for modified dates, deduplicate identical timestamps, and bump storage versions
+
+### 📚 Documentation
+
+- Reduce new README content
+
+### ⚙️ Miscellaneous Tasks
+
+- *(gui)* Try to intercept 1,2,3 keys first
