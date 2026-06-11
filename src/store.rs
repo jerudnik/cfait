@@ -111,13 +111,16 @@ pub fn organize_hierarchy(
     max_done_roots: usize,
     max_done_subtasks: usize,
     search_active: bool,
+    sort_preset: crate::config::SortPreset,
 ) -> Vec<TaskListItem> {
     let present_uids: HashSet<String> = tasks.iter().map(|t| t.uid.clone()).collect();
     let mut children_map: HashMap<String, Vec<Task>> = HashMap::new();
     let mut roots: Vec<Task> = Vec::new();
 
     // Sort by the canonical comparator before building hierarchy
-    tasks.sort_by(|a, b| a.compare_for_sort(b, default_priority, sort_standard_by_priority));
+    tasks.sort_by(|a, b| {
+        a.compare_for_sort(b, default_priority, sort_standard_by_priority, sort_preset)
+    });
 
     for mut task in tasks {
         let is_orphan = match &task.parent_uid {
@@ -307,8 +310,9 @@ pub fn organize_hierarchy(
     }
 
     if !unvisited.is_empty() {
-        unvisited
-            .sort_by(|a, b| a.compare_for_sort(b, default_priority, sort_standard_by_priority));
+        unvisited.sort_by(|a, b| {
+            a.compare_for_sort(b, default_priority, sort_standard_by_priority, sort_preset)
+        });
         process_group(
             unvisited,
             "".to_string(),
@@ -2136,6 +2140,8 @@ impl TaskStore {
             cache: &mut HashMap<usize, Task>,
             visiting: &mut HashSet<usize>,
             default_prio: u8,
+            sort_standard_by_priority: bool,
+            sort_preset: crate::config::SortPreset,
         ) -> Task {
             if let Some(cached) = cache.get(&idx) {
                 return cached.clone();
@@ -2152,7 +2158,16 @@ impl TaskStore {
 
             if !is_suppressed && let Some(children) = map.get(&t.uid) {
                 for &child_idx in children {
-                    let child_eff = resolve(child_idx, tasks, map, cache, visiting, default_prio);
+                    let child_eff = resolve(
+                        child_idx,
+                        tasks,
+                        map,
+                        cache,
+                        visiting,
+                        default_prio,
+                        sort_standard_by_priority,
+                        sort_preset,
+                    );
                     let a = crate::model::item::SortKey {
                         rank: child_eff.sort_rank,
                         prio: child_eff.effective_priority,
@@ -2167,8 +2182,13 @@ impl TaskStore {
                         start: best.effective_dtstart.clone(),
                         is_overdue: best.is_overdue,
                     };
-                    let ordering =
-                        crate::model::item::compare_sortkeys(&a, &b, default_prio, false);
+                    let ordering = crate::model::item::compare_sortkeys(
+                        &a,
+                        &b,
+                        default_prio,
+                        sort_standard_by_priority,
+                        sort_preset,
+                    );
                     if ordering == std::cmp::Ordering::Less {
                         best = child_eff;
                     }
@@ -2192,6 +2212,8 @@ impl TaskStore {
                     &mut cache,
                     &mut visiting,
                     options.default_priority,
+                    options.sort_standard_by_priority,
+                    options.sort_preset,
                 );
             }
         }
@@ -2220,6 +2242,7 @@ impl TaskStore {
             options.max_done_roots,
             options.max_done_subtasks,
             !options.search_term.is_empty(),
+            options.sort_preset,
         );
 
         FilterResult {
@@ -2523,6 +2546,7 @@ mod tests {
             10,    // max_done_roots
             10,    // max_done_subtasks
             false, // search_active
+            crate::config::SortPreset::UrgentStartedDue,
         );
 
         // Extract task UIDs from the result
@@ -2568,6 +2592,7 @@ mod tests {
             10,
             1, // max_done_subtasks = 1, so only 1 done child shown, 1 hidden
             false,
+            crate::config::SortPreset::UrgentStartedDue,
         );
 
         let result_uids: Vec<String> = result
@@ -2614,6 +2639,7 @@ mod tests {
             3, // max_done_roots = 3, so 2 shown (3-1), 3 hidden
             10,
             false,
+            crate::config::SortPreset::UrgentStartedDue,
         );
 
         let result_uids: Vec<String> = result

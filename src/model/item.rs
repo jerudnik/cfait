@@ -397,8 +397,8 @@ pub fn compare_sortkeys(
     b: &SortKey,
     default_prio: u8,
     sort_standard_by_priority: bool,
+    sort_preset: crate::config::SortPreset,
 ) -> Ordering {
-    // When the priority-first mode is active, treat ranks 4 and 5 as one merged group.
     let effective_rank = |rank: u8| {
         if sort_standard_by_priority && rank == 5 {
             4
@@ -406,9 +406,12 @@ pub fn compare_sortkeys(
             rank
         }
     };
+
     if effective_rank(a.rank) != effective_rank(b.rank) {
         return effective_rank(a.rank).cmp(&effective_rank(b.rank));
     }
+
+    let rank = effective_rank(a.rank);
     let norm_prio = |p: u8| if p == 0 { default_prio } else { p };
     let compare_dates = |d1: &Option<DateType>, d2: &Option<DateType>| -> Ordering {
         match (d1, d2) {
@@ -418,52 +421,43 @@ pub fn compare_sortkeys(
             (None, None) => Ordering::Equal,
         }
     };
-    match effective_rank(a.rank) {
-        1 => norm_prio(a.prio)
-            .cmp(&norm_prio(b.prio))
-            .then_with(|| compare_dates(&a.due, &b.due)),
-        2 => {
-            b.is_overdue
-                .cmp(&a.is_overdue) // true comes first
-                .then_with(|| {
-                    if a.is_overdue && b.is_overdue {
-                        norm_prio(a.prio)
-                            .cmp(&norm_prio(b.prio))
-                            .then_with(|| compare_dates(&a.due, &b.due))
-                    } else {
-                        compare_dates(&a.due, &b.due)
-                            .then(norm_prio(a.prio).cmp(&norm_prio(b.prio)))
-                    }
-                })
+
+    let is_priority_first = match rank {
+        1..=3 => {
+            let urgent_rank = match sort_preset {
+                crate::config::SortPreset::UrgentStartedDue => 1,
+                crate::config::SortPreset::UrgentDueStarted => 1,
+                crate::config::SortPreset::StartedUrgentDue => 2,
+            };
+            rank == urgent_rank
         }
-        3 => compare_dates(&a.due, &b.due).then(norm_prio(a.prio).cmp(&norm_prio(b.prio))),
-        4 => {
-            if sort_standard_by_priority {
-                // Merged group: priority first, then date (None sorts after Some).
+        4 => sort_standard_by_priority,
+        5 | 6 => true,
+        7 => false,
+        _ => true,
+    };
+
+    if is_priority_first {
+        norm_prio(a.prio)
+            .cmp(&norm_prio(b.prio))
+            .then_with(|| b.is_overdue.cmp(&a.is_overdue))
+            .then_with(|| compare_dates(&a.due, &b.due))
+    } else {
+        b.is_overdue.cmp(&a.is_overdue).then_with(|| {
+            if a.is_overdue && b.is_overdue {
                 norm_prio(a.prio)
                     .cmp(&norm_prio(b.prio))
                     .then_with(|| compare_dates(&a.due, &b.due))
             } else {
-                compare_dates(&a.due, &b.due).then(norm_prio(a.prio).cmp(&norm_prio(b.prio)))
+                if rank == 7 {
+                    let s1 = a.start.as_ref().map(|d| d.to_start_comparison_time());
+                    let s2 = b.start.as_ref().map(|d| d.to_start_comparison_time());
+                    s1.cmp(&s2).then(norm_prio(a.prio).cmp(&norm_prio(b.prio)))
+                } else {
+                    compare_dates(&a.due, &b.due).then(norm_prio(a.prio).cmp(&norm_prio(b.prio)))
+                }
             }
-        }
-        5 => norm_prio(a.prio)
-            .cmp(&norm_prio(b.prio))
-            .then_with(|| compare_dates(&a.due, &b.due)),
-        7 => {
-            let s1 = a
-                .start
-                .as_ref()
-                .map(|d: &DateType| d.to_start_comparison_time());
-            let s2 = b
-                .start
-                .as_ref()
-                .map(|d: &DateType| d.to_start_comparison_time());
-            s1.cmp(&s2).then(norm_prio(a.prio).cmp(&norm_prio(b.prio)))
-        }
-        _ => norm_prio(a.prio)
-            .cmp(&norm_prio(b.prio))
-            .then_with(|| compare_dates(&a.due, &b.due)),
+        })
     }
 }
 
@@ -750,6 +744,7 @@ impl Task {
         other: &Self,
         default_priority: u8,
         sort_standard_by_priority: bool,
+        sort_preset: crate::config::SortPreset,
     ) -> Ordering {
         // Stable ordering for trash and completed groups uses completion date desc.
         if self.sort_rank == 9 && other.sort_rank == 9 {
@@ -780,8 +775,14 @@ impl Task {
             start: other.effective_dtstart.clone(),
             is_overdue: other.is_overdue,
         };
-        compare_sortkeys(&a, &b, default_priority, sort_standard_by_priority)
-            .then_with(|| self.summary.cmp(&other.summary))
+        compare_sortkeys(
+            &a,
+            &b,
+            default_priority,
+            sort_standard_by_priority,
+            sort_preset,
+        )
+        .then_with(|| self.summary.cmp(&other.summary))
     }
 
     /// Compare taking into account cutoff and other global settings.
@@ -824,6 +825,7 @@ impl Task {
             &b,
             opts.default_priority,
             opts.sort_standard_by_priority,
+            opts.sort_preset,
         )
         .then_with(|| self.summary.cmp(&other.summary))
     }

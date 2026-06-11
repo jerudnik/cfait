@@ -188,6 +188,7 @@ fn test_hierarchy_organization() {
         usize::MAX,
         usize::MAX,
         false,
+        SortPreset::default(),
     );
 
     assert_eq!(organized.len(), 2);
@@ -224,7 +225,13 @@ fn test_sort_standard_date_first() {
     };
     // date-first: soon (low_prio_soon) should sort BEFORE late (high_prio_late)
     assert_eq!(
-        compare_sortkeys(&low_prio_soon, &high_prio_late, 5, false),
+        compare_sortkeys(
+            &low_prio_soon,
+            &high_prio_late,
+            5,
+            false,
+            SortPreset::default()
+        ),
         std::cmp::Ordering::Less,
         "date-first: soon task should sort before late task regardless of priority"
     );
@@ -250,7 +257,13 @@ fn test_sort_standard_priority_first() {
     };
     // priority-first: high priority (prio=1) should sort BEFORE low priority (prio=9)
     assert_eq!(
-        compare_sortkeys(&high_prio_late, &low_prio_soon, 5, true),
+        compare_sortkeys(
+            &high_prio_late,
+            &low_prio_soon,
+            5,
+            true,
+            SortPreset::default()
+        ),
         std::cmp::Ordering::Less,
         "priority-first: high-priority task should sort before low-priority task regardless of date"
     );
@@ -277,7 +290,13 @@ fn test_sort_merged_rank4_rank5_priority_wins() {
         is_overdue: false,
     };
     assert_eq!(
-        compare_sortkeys(&rank5_high_prio, &rank4_low_prio, 5, true),
+        compare_sortkeys(
+            &rank5_high_prio,
+            &rank4_low_prio,
+            5,
+            true,
+            SortPreset::default()
+        ),
         std::cmp::Ordering::Less,
         "priority-first: rank-5 high-priority task should sort before rank-4 low-priority task"
     );
@@ -308,13 +327,25 @@ fn test_sort_merged_same_priority_date_wins() {
     };
     // With flag=true: both map to effective_rank=4 (merged group), priority equal → date wins.
     assert_eq!(
-        compare_sortkeys(&rank5_with_date, &rank5_no_date, 5, true),
+        compare_sortkeys(
+            &rank5_with_date,
+            &rank5_no_date,
+            5,
+            true,
+            SortPreset::default()
+        ),
         std::cmp::Ordering::Less,
         "merged (flag=true): same priority → task with date before task without date"
     );
     // With flag=false: both stay rank-5, sort is priority-first then date → same ordering.
     assert_eq!(
-        compare_sortkeys(&rank5_with_date, &rank5_no_date, 5, false),
+        compare_sortkeys(
+            &rank5_with_date,
+            &rank5_no_date,
+            5,
+            false,
+            SortPreset::default()
+        ),
         std::cmp::Ordering::Less,
         "non-merged (flag=false): rank-5 is already priority-first+date, so ordering is the same"
     );
@@ -339,7 +370,13 @@ fn test_sort_rank4_before_rank5_when_flag_off() {
         is_overdue: false,
     };
     assert_eq!(
-        compare_sortkeys(&rank4_low_prio, &rank5_high_prio, 5, false),
+        compare_sortkeys(
+            &rank4_low_prio,
+            &rank5_high_prio,
+            5,
+            false,
+            SortPreset::default()
+        ),
         std::cmp::Ordering::Less,
         "flag off: rank-4 task must always sort before rank-5 task"
     );
@@ -365,7 +402,13 @@ fn test_sort_urgent_ranks_always_date_first() {
     };
     // Rank 2 always date-first, even with the flag set to true
     assert_eq!(
-        compare_sortkeys(&low_prio_soon, &high_prio_late, 5, true),
+        compare_sortkeys(
+            &low_prio_soon,
+            &high_prio_late,
+            5,
+            true,
+            SortPreset::default()
+        ),
         std::cmp::Ordering::Less,
         "rank-2 must remain date-first even when sort_standard_by_priority is true"
     );
