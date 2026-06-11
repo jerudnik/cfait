@@ -1100,22 +1100,33 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             let prefix_width = prefix.width();
             let input_area_width = inner_width.saturating_sub(prefix_width).saturating_sub(1);
 
-            let (visible_text, scroll_offset) = if state.mode == InputMode::EditingDescription {
+            let (visible_text, visible_cursor_x) = if state.mode == InputMode::EditingDescription {
                 (String::new(), 0)
             } else {
-                let cursor = state.cursor_position;
-                if cursor >= input_area_width {
-                    let offset = cursor - input_area_width + 1;
-                    let slice: String = state
-                        .input_buffer
-                        .chars()
-                        .skip(offset)
-                        .take(input_area_width)
-                        .collect();
-                    (slice, offset)
+                let text_up_to_cursor: String = state
+                    .input_buffer
+                    .chars()
+                    .take(state.cursor_position)
+                    .collect();
+                let cursor_visual_x = text_up_to_cursor.width();
+
+                if cursor_visual_x >= input_area_width {
+                    let target_scroll_w = cursor_visual_x - input_area_width + 1;
+                    let mut skipped_chars = 0;
+                    let mut skipped_w = 0;
+                    for c in state.input_buffer.chars() {
+                        if skipped_w >= target_scroll_w {
+                            break;
+                        }
+                        skipped_w += c.width().unwrap_or(0);
+                        skipped_chars += 1;
+                    }
+
+                    let slice: String = state.input_buffer.chars().skip(skipped_chars).collect();
+                    let vis_cursor_x = cursor_visual_x - skipped_w;
+                    (slice, vis_cursor_x as u16)
                 } else {
-                    let slice: String = state.input_buffer.chars().take(input_area_width).collect();
-                    (slice, 0)
+                    (state.input_buffer.clone(), cursor_visual_x as u16)
                 }
             };
 
@@ -1193,9 +1204,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 let cursor_y = footer_area.y + 1;
                 f.set_cursor_position((cursor_x, cursor_y));
             } else {
-                let visual_cursor_offset = state.cursor_position.saturating_sub(scroll_offset);
-                let cursor_x =
-                    footer_area.x + 1 + prefix_width as u16 + visual_cursor_offset as u16;
+                let cursor_x = footer_area.x + 1 + prefix_width as u16 + visible_cursor_x;
                 f.set_cursor_position((
                     cursor_x.min(footer_area.x + footer_area.width - 2),
                     footer_area.y + 1,
