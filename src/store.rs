@@ -1471,11 +1471,25 @@ impl TaskStore {
         }
     }
 
-    /// Retrieves the completion history stats (last 7 days, last 30 days) for a recurring task.
-    /// This utilizes the O(1) related_from index to find history snapshots rapidly.
-    pub fn get_completion_history_stats(&self, uid: &str) -> (u32, u32) {
-        let mut count_7 = 0;
-        let mut count_30 = 0;
+    /// Retrieves the completion history stats for a recurring task, using dynamically
+    /// scaled windows based on the task's recurrence frequency.
+    pub fn get_completion_history_stats(
+        &self,
+        uid: &str,
+        rrule: &str,
+    ) -> ((u32, u32, &'static str), (u32, u32, &'static str)) {
+        let (days1, key1, days2, key2) = if rrule.contains("FREQ=YEARLY") {
+            (1095, "window_3_years", 1825, "window_5_years")
+        } else if rrule.contains("FREQ=MONTHLY") {
+            (180, "window_6_months", 365, "window_12_months")
+        } else if rrule.contains("FREQ=WEEKLY") {
+            (28, "window_4_weeks", 84, "window_12_weeks")
+        } else {
+            (7, "window_7_days", 30, "window_30_days")
+        };
+
+        let mut count1 = 0;
+        let mut count2 = 0;
         let now = chrono::Utc::now();
 
         if let Some(sources) = self.related_from_index.get(uid) {
@@ -1486,18 +1500,17 @@ impl TaskStore {
                         .any(|p| p.key == "X-CFAIT-HISTORY-OF" && p.value == uid)
                     && let Some(comp) = t.completion_date()
                 {
-                    let days = (now - comp).num_days();
-                    // Allow slight future drifts (e.g. timezone variations)
-                    if (-1..=7).contains(&days) {
-                        count_7 += 1;
+                    let days_diff = (now - comp).num_days();
+                    if (-1..=days1 as i64).contains(&days_diff) {
+                        count1 += 1;
                     }
-                    if (-1..=30).contains(&days) {
-                        count_30 += 1;
+                    if (-1..=days2 as i64).contains(&days_diff) {
+                        count2 += 1;
                     }
                 }
             }
         }
-        (count_7, count_30)
+        ((count1, days1, key1), (count2, days2, key2))
     }
 
     /// Calculates the current progress for a given goal definition.

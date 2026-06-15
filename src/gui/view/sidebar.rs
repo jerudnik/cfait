@@ -714,3 +714,104 @@ pub fn view_sidebar_locations(app: &GuiApp) -> Element<'_, Message> {
 
     column![header, list_content].spacing(0).into()
 }
+
+// --- GOALS ---
+pub fn view_sidebar_goals(app: &GuiApp) -> Element<'_, Message> {
+    let mut col = column![].spacing(10);
+
+    if app.core_config.goals.is_empty() {
+        col = col.push(
+            container(
+                text("No goals configured in config.toml")
+                    .size(12)
+                    .color(Color::from_rgb(0.5, 0.5, 0.5)),
+            )
+            .padding(10),
+        );
+    } else {
+        let mut keys: Vec<&String> = app.core_config.goals.keys().collect();
+        keys.sort();
+
+        for key in keys {
+            let goal = &app.core_config.goals[key];
+            let progress = app.store.calculate_goal_progress(key, goal);
+            let target = goal.target;
+            let pct = if target > 0 {
+                (progress as f32 / target as f32).min(1.0)
+            } else {
+                0.0
+            };
+
+            let period_str = match goal.period {
+                crate::config::GoalPeriod::Daily => rust_i18n::t!("goal_period_daily"),
+                crate::config::GoalPeriod::Weekly => rust_i18n::t!("goal_period_weekly"),
+                crate::config::GoalPeriod::Monthly => rust_i18n::t!("goal_period_monthly"),
+                crate::config::GoalPeriod::Yearly => rust_i18n::t!("goal_period_yearly"),
+            };
+
+            let title = text(format!("{} ({})", key, period_str)).size(14);
+            let prog_text = text(rust_i18n::t!(
+                "goal_progress",
+                current = progress,
+                target = target
+            ))
+            .size(12)
+            .color(Color::from_rgb(0.6, 0.6, 0.6));
+
+            let bar_bg = container(Space::new().width(Length::Fill).height(6.0)).style(|_| {
+                container::Style {
+                    background: Some(Color::from_rgb(0.2, 0.2, 0.2).into()),
+                    border: iced::Border {
+                        radius: 3.0.into(),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }
+            });
+
+            let bar_fg = container(
+                Space::new()
+                    .width(Length::FillPortion((pct * 100.0).max(1.0) as u16))
+                    .height(6.0),
+            )
+            .style(move |theme: &Theme| container::Style {
+                background: Some(if pct >= 1.0 {
+                    Color::from_rgb(0.2, 0.8, 0.2).into()
+                } else {
+                    theme.extended_palette().primary.base.color.into()
+                }),
+                border: iced::Border {
+                    radius: 3.0.into(),
+                    ..Default::default()
+                },
+                ..Default::default()
+            });
+
+            let empty_space =
+                Space::new().width(Length::FillPortion((100.0 - pct * 100.0).max(0.0) as u16));
+            let bar_container = iced::widget::stack![bar_bg, row![bar_fg, empty_space]];
+
+            let btn = button(column![title, bar_container, prog_text].spacing(4))
+                .style(button::text)
+                .width(Length::Fill)
+                .padding(8);
+
+            let btn = if key.starts_with('#') {
+                btn.on_press(Message::JumpToTag(key.trim_start_matches('#').to_string()))
+            } else if key.starts_with("@@") {
+                btn.on_press(Message::JumpToLocation(
+                    key.trim_start_matches("@@").to_string(),
+                ))
+            } else {
+                btn
+            };
+
+            col = col.push(btn);
+        }
+    }
+
+    scrollable(col)
+        .height(Length::Fill)
+        .id(app.sidebar_scrollable_id.clone())
+        .into()
+}

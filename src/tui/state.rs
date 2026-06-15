@@ -131,6 +131,7 @@ pub struct AppState {
     pub expanded_tags: HashSet<String>,
     pub expanded_locations: HashSet<String>,
 
+    pub goals: HashMap<String, crate::config::Goal>,
     pub needs_redraw: bool,
 }
 
@@ -157,6 +158,8 @@ impl AppState {
         l_state.select(Some(0));
         let mut c_state = ListState::default();
         c_state.select(Some(0));
+
+        let config = crate::config::Config::load(ctx.as_ref()).unwrap_or_default();
 
         Self {
             ctx: ctx.clone(),
@@ -238,6 +241,7 @@ impl AppState {
             expanded_done_groups: HashSet::new(),
             expanded_tags: HashSet::new(),
             expanded_locations: HashSet::new(),
+            goals: config.goals,
             needs_redraw: false,
         }
     }
@@ -423,6 +427,7 @@ impl AppState {
             SidebarMode::Calendars => self.get_filtered_calendars().len(),
             SidebarMode::Categories => self.cached_categories.len(),
             SidebarMode::Locations => self.cached_locations.len(),
+            SidebarMode::Goals => self.goals.len(),
         }
     }
 

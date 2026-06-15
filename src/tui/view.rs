@@ -326,6 +326,67 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 items,
             )
         }
+        SidebarMode::Goals => {
+            let mut items: Vec<ListItem> = Vec::new();
+            if state.goals.is_empty() {
+                items.push(ListItem::new(Line::from(Span::styled(
+                    "No goals configured.",
+                    Style::default().fg(Color::DarkGray),
+                ))));
+            } else {
+                let mut keys: Vec<&String> = state.goals.keys().collect();
+                keys.sort();
+                for key in keys {
+                    let goal = &state.goals[key];
+                    let progress = state.store.calculate_goal_progress(key, goal);
+                    let target = goal.target;
+
+                    let period_str = match goal.period {
+                        crate::config::GoalPeriod::Daily => rust_i18n::t!("goal_period_daily"),
+                        crate::config::GoalPeriod::Weekly => rust_i18n::t!("goal_period_weekly"),
+                        crate::config::GoalPeriod::Monthly => rust_i18n::t!("goal_period_monthly"),
+                        crate::config::GoalPeriod::Yearly => rust_i18n::t!("goal_period_yearly"),
+                    };
+
+                    let title = format!("{} ({})", key, period_str);
+                    let prog_text =
+                        rust_i18n::t!("goal_progress", current = progress, target = target)
+                            .to_string();
+
+                    let pct = if target > 0 {
+                        (progress as f32 / target as f32).min(1.0)
+                    } else {
+                        0.0
+                    };
+                    let bar_len = 10;
+                    let filled = (pct * bar_len as f32).round() as usize;
+                    let bar = format!("[{}{}]", "=".repeat(filled), " ".repeat(bar_len - filled));
+
+                    let color = if pct >= 1.0 {
+                        Color::Green
+                    } else {
+                        Color::Yellow
+                    };
+
+                    let text = Text::from(vec![
+                        Line::from(Span::styled(
+                            title,
+                            Style::default().add_modifier(Modifier::BOLD),
+                        )),
+                        Line::from(vec![
+                            Span::styled(bar, Style::default().fg(color)),
+                            Span::raw(format!(" {}", prog_text)),
+                        ]),
+                        Line::from(""), // spacing
+                    ]);
+                    items.push(ListItem::new(text));
+                }
+            }
+            (
+                format!(" \u{f4de} {}", rust_i18n::t!("goals")).to_string(),
+                items,
+            )
+        }
     };
 
     let sidebar = List::new(sidebar_items)
@@ -853,24 +914,34 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         }
 
         // --- History (for recurring tasks) ---
-        if task.rrule.is_some() {
-            let (c7, c30) = state.store.get_completion_history_stats(&task.uid);
-            if c30 > 0 {
+        if let Some(rrule) = &task.rrule {
+            let (stat1, stat2) = state.store.get_completion_history_stats(&task.uid, rrule);
+            let (c1, _, k1) = stat1;
+            let (c2, _, k2) = stat2;
+            if c2 > 0 {
                 details_md.push_str(&format!("### {}\n", t!("habit_history")));
-                if c7 == 1 {
-                    details_md.push_str(&format!("- {}\n", t!("habit_completed_7_days.one")));
+                let w1 = rust_i18n::t!(k1).to_string();
+                if c1 == 1 {
+                    details_md.push_str(&format!(
+                        "- {}\n",
+                        t!("habit_completed_in_past.one", window = w1)
+                    ));
                 } else {
                     details_md.push_str(&format!(
                         "- {}\n",
-                        t!("habit_completed_7_days.other", count = c7)
+                        t!("habit_completed_in_past.other", count = c1, window = w1)
                     ));
                 }
-                if c30 == 1 {
-                    details_md.push_str(&format!("- {}\n\n", t!("habit_completed_30_days.one")));
+                let w2 = rust_i18n::t!(k2).to_string();
+                if c2 == 1 {
+                    details_md.push_str(&format!(
+                        "- {}\n\n",
+                        t!("habit_completed_in_past.one", window = w2)
+                    ));
                 } else {
                     details_md.push_str(&format!(
                         "- {}\n\n",
-                        t!("habit_completed_30_days.other", count = c30)
+                        t!("habit_completed_in_past.other", count = c2, window = w2)
                     ));
                 }
             }

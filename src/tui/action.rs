@@ -15,7 +15,8 @@ use crate::model::{CalendarListEntry, Task};
 pub enum SidebarMode {
     Calendars,
     Categories,
-    Locations, // NEW
+    Locations,
+    Goals,
 }
 
 #[derive(Debug)]

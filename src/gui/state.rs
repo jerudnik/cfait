@@ -32,7 +32,8 @@ pub enum SidebarMode {
     #[default]
     Calendars,
     Categories,
-    Locations, // NEW
+    Locations,
+    Goals,
 }
 
 #[derive(PartialEq, Clone, Copy, Debug, Default)]

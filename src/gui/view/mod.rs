@@ -123,6 +123,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 SidebarMode::Calendars => app.get_filtered_calendars().len() as f32 * 44.0,
                 SidebarMode::Categories => app.cached_categories.len() as f32 * 34.0,
                 SidebarMode::Locations => app.cached_locations.len() as f32 * 34.0,
+                SidebarMode::Goals => app.core_config.goals.len() as f32 * 60.0,
             };
             let available_height = app.current_window_size.height - 110.0;
             let show_logo = (available_height - content_height) > 140.0;
@@ -1069,12 +1070,29 @@ fn view_sidebar(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
     .style(tooltip_style)
     .delay(Duration::from_millis(700));
 
-    let tabs = row![btn_cals, btn_tags, btn_locs].spacing(2);
+    let btn_goals = tooltip(
+        button(container(icon::icon(icon::GOAL).size(18)).center_x(Length::Fill))
+            .padding(8)
+            .width(Length::Fill)
+            .style(if app.sidebar_mode == SidebarMode::Goals {
+                active_style
+            } else {
+                button::text
+            })
+            .on_press(Message::SidebarModeChanged(SidebarMode::Goals)),
+        text(format!("{} (4)", rust_i18n::t!("goals"))).size(12),
+        tooltip::Position::Bottom,
+    )
+    .style(tooltip_style)
+    .delay(Duration::from_millis(700));
+
+    let tabs = row![btn_cals, btn_tags, btn_locs, btn_goals].spacing(2);
 
     let content = match app.sidebar_mode {
         SidebarMode::Calendars => view_sidebar_calendars(app),
         SidebarMode::Categories => view_sidebar_categories(app),
         SidebarMode::Locations => crate::gui::view::sidebar::view_sidebar_locations(app),
+        SidebarMode::Goals => crate::gui::view::sidebar::view_sidebar_goals(app),
     };
 
     let settings_btn = iced::widget::button(

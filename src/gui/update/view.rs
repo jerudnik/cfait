@@ -97,6 +97,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                             return handle(app, Message::FocusLocation(loc.full_key.clone()));
                         }
                     }
+                    SidebarMode::Goals => {}
                 }
             }
             Task::none()
@@ -131,6 +132,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         return handle(app, Message::LocationToggled(loc.full_key.clone()));
                     }
                 }
+                SidebarMode::Goals => {}
             }
             Task::none()
         }
@@ -154,6 +156,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         return handle(app, Message::LocationToggled(loc.full_key.clone()));
                     }
                 }
+                SidebarMode::Goals => {}
             }
             Task::none()
         }
@@ -282,6 +285,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         SidebarMode::Calendars => app.get_filtered_calendars().len(),
                         SidebarMode::Categories => app.cached_categories.len(),
                         SidebarMode::Locations => app.cached_locations.len(),
+                        SidebarMode::Goals => app.core_config.goals.len(),
                     };
                     if max > 0 {
                         let y_offset = app.sidebar_selection_idx as f32
@@ -363,6 +367,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                     SidebarMode::Calendars => app.get_filtered_calendars().len(),
                     SidebarMode::Categories => app.cached_categories.len(),
                     SidebarMode::Locations => app.cached_locations.len(),
+                    SidebarMode::Goals => app.core_config.goals.len(),
                 };
                 if max > 0 {
                     app.sidebar_selection_idx = (app.sidebar_selection_idx + 1) % max;
@@ -472,6 +477,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                     SidebarMode::Calendars => app.get_filtered_calendars().len(),
                     SidebarMode::Categories => app.cached_categories.len(),
                     SidebarMode::Locations => app.cached_locations.len(),
+                    SidebarMode::Goals => app.core_config.goals.len(),
                 };
                 if max > 0 {
                     if app.sidebar_selection_idx == 0 {

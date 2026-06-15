@@ -391,6 +391,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                             );
                         }
                     }
+                    SidebarMode::Goals => {}
                 }
                 return Task::none();
             }

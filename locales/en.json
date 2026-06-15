@@ -255,14 +255,18 @@
     "goal_period_monthly": "Monthly",
     "goal_period_yearly": "Yearly",
     "habit_history": "History",
-    "habit_completed_7_days": {
-        "one": "Completed 1 time in the last 7 days",
-        "other": "Completed %{count} times in the last 7 days"
+    "habit_completed_in_past": {
+        "one": "Completed 1 time in the past %{window}",
+        "other": "Completed %{count} times in the past %{window}"
     },
-    "habit_completed_30_days": {
-        "one": "Completed 1 time in the last 30 days",
-        "other": "Completed %{count} times in the last 30 days"
-    },
+    "window_7_days": "7 days",
+    "window_30_days": "30 days",
+    "window_4_weeks": "4 weeks",
+    "window_12_weeks": "12 weeks",
+    "window_6_months": "6 months",
+    "window_12_months": "12 months",
+    "window_3_years": "3 years",
+    "window_5_years": "5 years",
     "help": "Help",
     "help_about": "Help & about",
     "help_about_tab": " About ",
