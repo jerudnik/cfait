@@ -442,7 +442,13 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::AddGoal => {
-            let key = app.goal_input_key.trim().to_string();
+            let mut key = app.goal_input_key.trim().to_string();
+            if !key.starts_with('#')
+                && !key.starts_with("@@")
+                && !key.to_lowercase().starts_with("loc:")
+            {
+                key = format!("#{}", key);
+            }
             let target_str = app.goal_input_target.trim();
 
             let target = if app.goal_input_type == crate::config::GoalType::Duration {
@@ -453,6 +459,8 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             };
 
             if !key.is_empty() && target > 0 {
+                let old_config = app.core_config.clone();
+
                 if let Some(old_key) = &app.editing_goal_key
                     && old_key != &key
                 {
@@ -466,6 +474,8 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 };
 
                 app.core_config.goals.insert(key, goal);
+                app.core_config
+                    .update_sync_timestamp_if_changed(&old_config);
 
                 app.editing_goal_key = None;
                 app.goal_input_key.clear();
@@ -483,7 +493,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 app.goal_input_key.clear();
                 app.goal_input_target.clear();
             }
+            let old_config = app.core_config.clone();
             app.core_config.goals.remove(&key);
+            app.core_config
+                .update_sync_timestamp_if_changed(&old_config);
             save_config(app);
             Task::none()
         }

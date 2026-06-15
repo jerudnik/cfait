@@ -1719,6 +1719,8 @@ impl CfaitMobile {
                 }
             }
             if config_changed {
+                let old_config = Config::load(self.ctx.as_ref()).unwrap_or_default();
+                config.update_sync_timestamp_if_changed(&old_config);
                 config.save(self.ctx.as_ref()).map_err(MobileError::from)?;
             }
             let trimmed = clean_input.trim();
@@ -1804,6 +1806,8 @@ impl CfaitMobile {
             }
 
             if config_changed {
+                let old_config = Config::load(self.ctx.as_ref()).unwrap_or_default();
+                config.update_sync_timestamp_if_changed(&old_config);
                 config.save(self.ctx.as_ref()).map_err(MobileError::from)?;
             }
 
