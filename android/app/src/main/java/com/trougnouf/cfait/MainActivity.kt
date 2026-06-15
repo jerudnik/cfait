@@ -184,6 +184,10 @@ fun CfaitNavHost(
     // Data State
     var calendars by remember { mutableStateOf<List<MobileCalendar>>(emptyList()) }
     val listStates = remember { mutableStateMapOf<String, LazyListState>() }
+    var goals by remember { mutableStateOf<Map<String, com.trougnouf.cfait.core.MobileGoal>>(emptyMap()) }
+    var defaultDurationGoalMins by remember { mutableIntStateOf(60) }
+    var sessionsCountAsCompletions by remember { mutableStateOf(false) }
+    var showGoalsTab by remember { mutableStateOf(true) }
     var tasks by remember { mutableStateOf<List<MobileTask>>(emptyList()) }
     var tags by remember { mutableStateOf<List<MobileTag>>(emptyList()) }
     var locations by remember { mutableStateOf<List<MobileLocation>>(emptyList()) }
@@ -310,6 +314,10 @@ fun CfaitNavHost(
                 calendars = api.getCalendars()
                 defaultCalHref = config.defaultCalendar
                 defaultPriority = config.defaultPriority.toInt() // Fetch config value
+                goals = config.goals
+                defaultDurationGoalMins = config.defaultDurationGoalMins.toInt()
+                sessionsCountAsCompletions = config.sessionsCountAsCompletions
+                showGoalsTab = config.showGoalsTab
                 hasUnsynced = api.hasUnsyncedChanges()
                 showQuickFilter = config.showQuickFilter
                 quickFilterTerm = config.quickFilterTerm
@@ -514,6 +522,10 @@ fun CfaitNavHost(
                 tabPosition = tabPosition,
                 tabAutoHide = tabAutoHide, // <-- ADD THIS LINE
                 listStates = listStates,
+                goals = goals,
+                showGoalsTab = showGoalsTab,
+                defaultDurationGoalMins = defaultDurationGoalMins,
+                sessionsCountAsCompletions = sessionsCountAsCompletions,
                 onGlobalRefresh = { fastStart() },
                 onSettings = { navController.navigate("settings") },
                 onTaskClick = { uid -> navController.navigate("detail/$uid") },
@@ -575,6 +587,9 @@ fun CfaitNavHost(
             var showQuickFilterAdv by remember { mutableStateOf(showQuickFilter) }
             var quickFilterTermAdv by remember { mutableStateOf(quickFilterTerm) }
             var quickFilterIconAdv by remember { mutableStateOf(quickFilterIcon) }
+            var defaultDurationGoalMinsAdv by remember { mutableStateOf(defaultDurationGoalMins.toString()) }
+            var sessionsCountAsCompletionsAdv by remember { mutableStateOf(sessionsCountAsCompletions) }
+            var showGoalsTabAdv by remember { mutableStateOf(showGoalsTab) }
 
             LaunchedEffect(Unit) {
                 try {
@@ -587,6 +602,9 @@ fun CfaitNavHost(
                     showQuickFilterAdv = cfg.showQuickFilter
                     quickFilterTermAdv = cfg.quickFilterTerm
                     quickFilterIconAdv = cfg.quickFilterIcon
+                    defaultDurationGoalMinsAdv = cfg.defaultDurationGoalMins.toString()
+                    sessionsCountAsCompletionsAdv = cfg.sessionsCountAsCompletions
+                    showGoalsTabAdv = cfg.showGoalsTab
                 } catch (e: Exception) {
                     if (e is CancellationException) throw e
                     // ignore
@@ -606,6 +624,9 @@ fun CfaitNavHost(
                 showQuickFilter = showQuickFilterAdv,
                 quickFilterTerm = quickFilterTermAdv,
                 quickFilterIcon = quickFilterIconAdv,
+                defaultDurationGoalMins = defaultDurationGoalMinsAdv,
+                sessionsCountAsCompletions = sessionsCountAsCompletionsAdv,
+                showGoalsTab = showGoalsTabAdv,
                 tabPosition = tabPosition,
                 tabAutoHide = tabAutoHide,
                 onTabPositionChange = onTabPositionChange,
@@ -618,6 +639,9 @@ fun CfaitNavHost(
                 onShowQuickFilterChange = { showQuickFilterAdv = it },
                 onQuickFilterTermChange = { quickFilterTermAdv = it },
                 onQuickFilterIconChange = { quickFilterIconAdv = it },
+                onDefaultDurationGoalMinsChange = { defaultDurationGoalMinsAdv = it },
+                onSessionsCountAsCompletionsChange = { sessionsCountAsCompletionsAdv = it },
+                onShowGoalsTabChange = { showGoalsTabAdv = it },
                 onBack = {
                     // Save on exit
                     try {
@@ -625,6 +649,7 @@ fun CfaitNavHost(
                         val r = localRoots.toUIntOrNull() ?: 20u
                         val s = localSubs.toUIntOrNull() ?: 5u
                         val t = localTrash.toUIntOrNull() ?: 14u
+                        val dur = defaultDurationGoalMinsAdv.toUIntOrNull() ?: 60u
                         api.saveConfig(
                             cfg.copy(
                                 password = "",
@@ -635,7 +660,10 @@ fun CfaitNavHost(
                                 showOngoingNotifications = showOngoingNotifs,
                                 showQuickFilter = showQuickFilterAdv,
                                 quickFilterTerm = quickFilterTermAdv,
-                                quickFilterIcon = quickFilterIconAdv
+                                quickFilterIcon = quickFilterIconAdv,
+                                defaultDurationGoalMins = dur,
+                                sessionsCountAsCompletions = sessionsCountAsCompletionsAdv,
+                                showGoalsTab = showGoalsTabAdv
                             )
                         )
                     } catch (e: Exception) {

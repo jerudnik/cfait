@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -65,6 +66,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.trougnouf.cfait.R
 import com.trougnouf.cfait.core.*
+import com.trougnouf.cfait.core.MobileGoalType
+import com.trougnouf.cfait.core.MobileGoalPeriod
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -120,6 +123,10 @@ fun HomeScreen(
     tabPosition: String,
     tabAutoHide: Boolean = true,
     listStates: SnapshotStateMap<String, LazyListState>,
+    goals: Map<String, com.trougnouf.cfait.core.MobileGoal>,
+    showGoalsTab: Boolean,
+    defaultDurationGoalMins: Int,
+    sessionsCountAsCompletions: Boolean,
     onGlobalRefresh: () -> Unit,
     onSettings: () -> Unit,
     onTaskClick: (String) -> Unit,
@@ -142,6 +149,7 @@ fun HomeScreen(
     var lastSyncFailed by remember { mutableStateOf(false) }
     var localHasUnsynced by remember { mutableStateOf(hasUnsynced) }
     var isPullRefreshing by remember { mutableStateOf(false) }
+    val goalIcon = rememberSaveable { NfIcons.GOAL_ICONS.random() }
 
     val enabledCals = remember(calendars) {
         val filtered = calendars.filter { !it.isDisabled }
@@ -995,6 +1003,12 @@ fun HomeScreen(
                             selected = sidebarTab == 2,
                             onClick = { sidebarTab = 2 },
                             icon = { NfIcon(locationTabIcon) })
+                        if (showGoalsTab) {
+                            Tab(
+                                selected = sidebarTab == 3,
+                                onClick = { sidebarTab = 3 },
+                                icon = { NfIcon(goalIcon) })
+                        }
                     }
 
                     if (sidebarTab == 1) {
@@ -1034,7 +1048,7 @@ fun HomeScreen(
                             }
                         }
                         HorizontalDivider()
-                    } else if (sidebarTab == 2) {
+                    } else {
                         val isAllLocsSelected = filterLocations.isEmpty()
                         val iconStr = if (isAllLocsSelected) NfIcons.MAP else NfIcons.MAP_MARKER_MULTIPLE
 
@@ -1241,7 +1255,7 @@ fun HomeScreen(
                                     }
                                 )
                             }
-                        } else {
+                        } else if (sidebarTab == 2) {
                             items(locations) { loc ->
                                 val isSelected = filterLocations.contains(loc.name)
                                 val iconStr = if (isSelected) NfIcons.CHECK_CIRCLE else NfIcons.MAP_PIN
@@ -1269,6 +1283,80 @@ fun HomeScreen(
                                     },
                                     isTag = false
                                 )
+                            }
+                        } else if (sidebarTab == 3) {
+                            if (goals.isEmpty()) {
+                                item {
+                                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                        Text(stringResource(R.string.goals_empty), fontSize = 13.sp, color = Color.Gray, textAlign = TextAlign.Center)
+                                    }
+                                }
+                            } else {
+                                val sortedKeys = goals.keys.sorted()
+                                items(sortedKeys) { key ->
+                                    val goal = goals[key]!!
+                                    val progress = calculateGoalProgress(key, goal, tasks, sessionsCountAsCompletions, defaultDurationGoalMins)
+                                    val target = goal.target.toInt()
+                                    val pct = if (target > 0) (progress.toFloat() / target).coerceAtMost(1f) else 0f
+
+                                    val periodStr = when(goal.period) {
+                                        MobileGoalPeriod.DAILY -> stringResource(R.string.goal_period_daily)
+                                        MobileGoalPeriod.WEEKLY -> stringResource(R.string.goal_period_weekly)
+                                        MobileGoalPeriod.MONTHLY -> stringResource(R.string.goal_period_monthly)
+                                        MobileGoalPeriod.QUARTERLY -> stringResource(R.string.goal_period_quarterly)
+                                        MobileGoalPeriod.HALF_YEARLY -> stringResource(R.string.goal_period_half_yearly)
+                                        MobileGoalPeriod.YEARLY -> stringResource(R.string.goal_period_yearly)
+                                    }
+
+                                    val (cStr, tStr) = if (goal.goalType == MobileGoalType.DURATION) {
+                                        formatGoalDuration(progress, target)
+                                    } else {
+                                        Pair(progress.toString(), target.toString())
+                                    }
+
+                                    val progText = stringResource(R.string.goal_progress, cStr, tStr)
+
+                                    val isTag = key.startsWith("#")
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                if (isTag) {
+                                                    filterTags = setOf(key.removePrefix("#"))
+                                                    sidebarTab = 1
+                                                } else if (key.startsWith("@@")) {
+                                                    filterLocations = setOf(key.removePrefix("@@"))
+                                                    sidebarTab = 2
+                                                }
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("$key ($periodStr)", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                            Spacer(Modifier.height(4.dp))
+                                            Box(modifier = Modifier.fillMaxWidth().height(6.dp).background(Color.DarkGray, RoundedCornerShape(3.dp))) {
+                                                Box(modifier = Modifier.fillMaxWidth(pct).fillMaxHeight().background(if (pct >= 1f) Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary, RoundedCornerShape(3.dp)))
+                                            }
+                                            Spacer(Modifier.height(4.dp))
+                                            Text(progText, fontSize = 12.sp, color = Color.Gray)
+                                        }
+                                        Spacer(Modifier.width(12.dp))
+                                        IconButton(onClick = {
+                                            if (isTag) {
+                                                filterTags = setOf(key.removePrefix("#"))
+                                                scope.launch { drawerState.close() }
+                                            } else if (key.startsWith("@@")) {
+                                                filterLocations = setOf(key.removePrefix("@@"))
+                                                scope.launch { drawerState.close() }
+                                            }
+                                        }) {
+                                            NfIcon(NfIcons.ARROW_RIGHT, 14.sp)
+                                        }
+                                    }
+                                    HorizontalDivider()
+                                }
                             }
                         }
                         item {

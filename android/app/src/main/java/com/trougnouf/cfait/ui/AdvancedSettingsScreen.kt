@@ -37,6 +37,9 @@ fun AdvancedSettingsScreen(
     showQuickFilter: Boolean,
     quickFilterTerm: String,
     quickFilterIcon: String,
+    defaultDurationGoalMins: String,
+    sessionsCountAsCompletions: Boolean,
+    showGoalsTab: Boolean,
     tabPosition: String,
     tabAutoHide: Boolean,
     onTabPositionChange: (String) -> Unit,
@@ -49,6 +52,9 @@ fun AdvancedSettingsScreen(
     onShowQuickFilterChange: (Boolean) -> Unit,
     onQuickFilterTermChange: (String) -> Unit,
     onQuickFilterIconChange: (String) -> Unit,
+    onDefaultDurationGoalMinsChange: (String) -> Unit,
+    onSessionsCountAsCompletionsChange: (Boolean) -> Unit,
+    onShowGoalsTabChange: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -180,6 +186,38 @@ fun AdvancedSettingsScreen(
             HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
             // Quick Filter Section
+            // Goals / Habits Extras (Data Management extension)
+            Text(
+                stringResource(R.string.goals),
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            OutlinedTextField(
+                value = defaultDurationGoalMins,
+                onValueChange = onDefaultDurationGoalMinsChange,
+                label = { Text(stringResource(R.string.implicit_goal_duration)) },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+            Text(
+                stringResource(R.string.implicit_goal_duration_explain),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Switch(
+                    checked = sessionsCountAsCompletions,
+                    onCheckedChange = onSessionsCountAsCompletionsChange
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.sessions_count_as_completions))
+            }
+            HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
             Text(
                 stringResource(R.string.quick_filter_title),
                 fontWeight = FontWeight.Bold,
@@ -194,6 +232,14 @@ fun AdvancedSettingsScreen(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.quick_filter_show_button))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                Switch(
+                    checked = showGoalsTab,
+                    onCheckedChange = onShowGoalsTabChange
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.show_goals_tab))
             }
             OutlinedTextField(
                 value = quickFilterTerm,
