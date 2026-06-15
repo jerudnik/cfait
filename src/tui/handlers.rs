@@ -1682,18 +1682,36 @@ pub async fn handle_key_event(
                 }
             }
             KeyCode::Char('x') => {
-                if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone()) {
-                    let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                    let intent = AppIntent::CancelTask { uid: uid.clone() };
+                if state.active_focus == Focus::Main {
+                    if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone()) {
+                        let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
+                        let intent = AppIntent::CancelTask { uid: uid.clone() };
 
-                    let actions = state.store.apply_task_intent(&intent, &config);
-                    state.refresh_filtered_view();
-                    update_alarms(state);
+                        let actions = state.store.apply_task_intent(&intent, &config);
+                        state.refresh_filtered_view();
+                        update_alarms(state);
 
-                    let tx = action_tx.clone();
-                    tokio::spawn(async move {
-                        let _ = tx.send(Action::PersistBatch(actions)).await;
-                    });
+                        let tx = action_tx.clone();
+                        tokio::spawn(async move {
+                            let _ = tx.send(Action::PersistBatch(actions)).await;
+                        });
+                    }
+                } else if state.active_focus == Focus::Sidebar
+                    && state.sidebar_mode == SidebarMode::Goals
+                    && let Some(idx) = state.cal_state.selected()
+                {
+                    let mut keys: Vec<_> = state.goals.keys().cloned().collect();
+                    keys.sort();
+                    if let Some(key) = keys.get(idx) {
+                        state.goals.remove(key);
+                        if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                            let old = cfg.clone();
+                            cfg.goals = state.goals.clone();
+                            cfg.update_sync_timestamp_if_changed(&old);
+                            let _ = cfg.save(state.ctx.as_ref());
+                        }
+                        state.refresh_filtered_view();
+                    }
                 }
             }
             KeyCode::Char('+') => {
@@ -1733,22 +1751,40 @@ pub async fn handle_key_event(
                 }
             }
             KeyCode::Delete => {
-                if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone()) {
-                    let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                    let intent = if key.modifiers.contains(KeyModifiers::CONTROL) {
-                        AppIntent::DeleteTaskTree { uid: uid.clone() }
-                    } else {
-                        AppIntent::DeleteTask { uid: uid.clone() }
-                    };
+                if state.active_focus == Focus::Main {
+                    if let Some(uid) = state.get_selected_task().map(|t| t.uid.clone()) {
+                        let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
+                        let intent = if key.modifiers.contains(KeyModifiers::CONTROL) {
+                            AppIntent::DeleteTaskTree { uid: uid.clone() }
+                        } else {
+                            AppIntent::DeleteTask { uid: uid.clone() }
+                        };
 
-                    let actions = state.store.apply_task_intent(&intent, &config);
-                    state.refresh_filtered_view();
-                    update_alarms(state);
+                        let actions = state.store.apply_task_intent(&intent, &config);
+                        state.refresh_filtered_view();
+                        update_alarms(state);
 
-                    let tx = action_tx.clone();
-                    tokio::spawn(async move {
-                        let _ = tx.send(Action::PersistBatch(actions)).await;
-                    });
+                        let tx = action_tx.clone();
+                        tokio::spawn(async move {
+                            let _ = tx.send(Action::PersistBatch(actions)).await;
+                        });
+                    }
+                } else if state.active_focus == Focus::Sidebar
+                    && state.sidebar_mode == SidebarMode::Goals
+                    && let Some(idx) = state.cal_state.selected()
+                {
+                    let mut keys: Vec<_> = state.goals.keys().cloned().collect();
+                    keys.sort();
+                    if let Some(key) = keys.get(idx) {
+                        state.goals.remove(key);
+                        if let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                            let old = cfg.clone();
+                            cfg.goals = state.goals.clone();
+                            cfg.update_sync_timestamp_if_changed(&old);
+                            let _ = cfg.save(state.ctx.as_ref());
+                        }
+                        state.refresh_filtered_view();
+                    }
                 }
             }
             KeyCode::Char('c') => {

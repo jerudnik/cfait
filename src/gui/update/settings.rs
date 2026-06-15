@@ -412,7 +412,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::GoalTargetInput(v) => {
-            if v.is_empty() || v.chars().all(|c| c.is_numeric()) {
+            if v.is_empty() || v.chars().all(|c| c.is_ascii_alphanumeric()) {
                 app.goal_input_target = v;
             }
             Task::none()
@@ -443,7 +443,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
         Message::AddGoal => {
             let key = app.goal_input_key.trim().to_string();
-            let target = app.goal_input_target.trim().parse::<u32>().unwrap_or(0);
+            let target_str = app.goal_input_target.trim();
+
+            let target = if app.goal_input_type == crate::config::GoalType::Duration {
+                crate::model::parser::parse_duration(target_str)
+                    .unwrap_or_else(|| target_str.parse().unwrap_or(0))
+            } else {
+                target_str.parse().unwrap_or(0)
+            };
 
             if !key.is_empty() && target > 0 {
                 if let Some(old_key) = &app.editing_goal_key

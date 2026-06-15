@@ -163,12 +163,8 @@ pub fn extract_inline_goals(input: &str) -> (String, HashMap<String, crate::conf
 
                     let mut goal_type = crate::config::GoalType::Count;
                     let target = if let Some(dur) = parse_duration(target_str) {
-                        if target_str.chars().any(|c| c.is_ascii_alphabetic()) {
-                            goal_type = crate::config::GoalType::Duration;
-                            dur
-                        } else {
-                            target_str.parse().unwrap_or(0)
-                        }
+                        goal_type = crate::config::GoalType::Duration;
+                        dur
                     } else {
                         target_str.parse().unwrap_or(0)
                     };

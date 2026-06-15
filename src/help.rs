@@ -263,6 +263,21 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
             ],
         },
         HelpSection {
+            title: rust_i18n::t!("help_goals").to_string(),
+            items: vec![
+                HelpItem {
+                    keys: "#tag:=goal:X:period".to_string(),
+                    desc: rust_i18n::t!("help_goals_count").to_string(),
+                    example: "#reading:=goal:5:weekly".to_string(),
+                },
+                HelpItem {
+                    keys: "@@loc:=goal:dur:period".to_string(),
+                    desc: rust_i18n::t!("help_goals_duration").to_string(),
+                    example: "@@gym:=goal:2h:daily".to_string(),
+                },
+            ],
+        },
+        HelpSection {
             title: format!("Description & Sub-tasks (inside {})", '\u{f01c6}'),
             items: vec![
                 HelpItem {
