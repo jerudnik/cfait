@@ -155,49 +155,52 @@ pub fn extract_inline_goals(input: &str) -> (String, HashMap<String, crate::conf
                 }
             }
 
-            if is_valid
-                && let Some(goal_str) = right.strip_prefix("goal:") {
-                    let goal_parts: Vec<&str> = goal_str.split(':').collect();
-                    if goal_parts.len() == 2 {
-                        let target_str = goal_parts[0];
-                        let period_str = goal_parts[1];
+            if is_valid && let Some(goal_str) = right.strip_prefix("goal:") {
+                let goal_parts: Vec<&str> = goal_str.split(':').collect();
+                if goal_parts.len() == 2 {
+                    let target_str = goal_parts[0];
+                    let period_str = goal_parts[1];
 
-                        let mut goal_type = crate::config::GoalType::Count;
-                        let target = if let Some(dur) = parse_duration(target_str) {
-                            if target_str.chars().any(|c| c.is_ascii_alphabetic()) {
-                                goal_type = crate::config::GoalType::Duration;
-                                dur
-                            } else {
-                                target_str.parse().unwrap_or(0)
-                            }
+                    let mut goal_type = crate::config::GoalType::Count;
+                    let target = if let Some(dur) = parse_duration(target_str) {
+                        if target_str.chars().any(|c| c.is_ascii_alphabetic()) {
+                            goal_type = crate::config::GoalType::Duration;
+                            dur
                         } else {
                             target_str.parse().unwrap_or(0)
-                        };
-
-                        let period = match period_str.to_lowercase().as_str() {
-                            "daily" | "d" => Some(crate::config::GoalPeriod::Daily),
-                            "weekly" | "w" => Some(crate::config::GoalPeriod::Weekly),
-                            "monthly" | "m" | "mo" => Some(crate::config::GoalPeriod::Monthly),
-                            "quarterly" | "q" => Some(crate::config::GoalPeriod::Quarterly),
-                            "semiannual" | "halfyearly" | "h" | "hy" => Some(crate::config::GoalPeriod::HalfYearly),
-                            "yearly" | "y" => Some(crate::config::GoalPeriod::Yearly),
-                            _ => None,
-                        };
-
-                        if target > 0 && period.is_some() {
-                            new_goals.insert(
-                                key,
-                                crate::config::Goal {
-                                    goal_type,
-                                    target,
-                                    period: period.unwrap(),
-                                },
-                            );
-                            cleaned_words.push(left.to_string());
-                            continue;
                         }
+                    } else {
+                        target_str.parse().unwrap_or(0)
+                    };
+
+                    let period = match period_str.to_lowercase().as_str() {
+                        "daily" | "d" => Some(crate::config::GoalPeriod::Daily),
+                        "weekly" | "w" => Some(crate::config::GoalPeriod::Weekly),
+                        "monthly" | "m" | "mo" => Some(crate::config::GoalPeriod::Monthly),
+                        "quarterly" | "q" => Some(crate::config::GoalPeriod::Quarterly),
+                        "semiannual" | "halfyearly" | "h" | "hy" => {
+                            Some(crate::config::GoalPeriod::HalfYearly)
+                        }
+                        "yearly" | "y" => Some(crate::config::GoalPeriod::Yearly),
+                        _ => None,
+                    };
+
+                    if target > 0
+                        && let Some(p) = period
+                    {
+                        new_goals.insert(
+                            key,
+                            crate::config::Goal {
+                                goal_type,
+                                target,
+                                period: p,
+                            },
+                        );
+                        cleaned_words.push(left.to_string());
+                        continue;
                     }
                 }
+            }
         }
         cleaned_words.push(token.to_string());
     }
@@ -1418,6 +1421,34 @@ pub fn parse_duration_range(val: &str) -> Option<(u32, Option<u32>)> {
     }
     let single = parse_single_duration(val)?;
     Some((single, None))
+}
+
+pub fn format_goal_duration(current_mins: u32, target_mins: u32) -> (String, String) {
+    let (c_str, t_str) = if target_mins > 0 && target_mins.is_multiple_of(1440) {
+        let t = target_mins / 1440;
+        let c = current_mins as f32 / 1440.0;
+        (format!("{:.1}d", c).replace(".0d", "d"), format!("{}d", t))
+    } else if target_mins > 0 && target_mins.is_multiple_of(60) {
+        let t = target_mins / 60;
+        let c = current_mins as f32 / 60.0;
+        (format!("{:.1}h", c).replace(".0h", "h"), format!("{}h", t))
+    } else {
+        (format!("{}m", current_mins), format!("{}m", target_mins))
+    };
+
+    let c_suffix: String = c_str.chars().filter(|c| c.is_ascii_alphabetic()).collect();
+    let t_suffix: String = t_str.chars().filter(|c| c.is_ascii_alphabetic()).collect();
+
+    if c_suffix == t_suffix && !c_suffix.is_empty() {
+        let stripped = c_str.trim_end_matches(&c_suffix);
+        (stripped.to_string(), t_str)
+    } else {
+        if current_mins == 0 {
+            ("0".to_string(), t_str)
+        } else {
+            (c_str, t_str)
+        }
+    }
 }
 
 pub fn format_duration_compact(mins: u32) -> String {

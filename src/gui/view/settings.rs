@@ -533,6 +533,23 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .size(12)
                     .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),
+                row![
+                    text(rust_i18n::t!("implicit_goal_duration")).width(Length::Fixed(200.0)),
+                    text_input("60", &app.ob_default_duration_goal_mins_input)
+                        .on_input(Message::SetDefaultDurationGoalMins)
+                        .width(Length::Fixed(60.0))
+                        .padding(5)
+                ]
+                .spacing(10)
+                .align_y(iced::Alignment::Center),
+                text(rust_i18n::t!("implicit_goal_duration_explain"))
+                    .size(12)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6)),
+                Space::new().height(5),
+                checkbox::<Message, iced::Theme, iced::Renderer>(app.sessions_count_as_completions)
+                    .label(rust_i18n::t!("sessions_count_as_completions"))
+                    .on_toggle(Message::SetSessionsCountAsCompletions),
+                Space::new().height(10),
                 text(rust_i18n::t!("logging_label")).size(16),
                 row![
                     text(rust_i18n::t!("log_level_label")).width(Length::Fixed(200.0)),

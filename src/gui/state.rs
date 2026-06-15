@@ -168,6 +168,9 @@ pub struct GuiApp {
     pub ob_trash_retention_input: String,
     pub trash_retention_days: u32,
 
+    pub ob_default_duration_goal_mins_input: String,
+    pub sessions_count_as_completions: bool,
+
     // System
     pub loading: bool,
     pub error_msg: Option<String>,
@@ -458,6 +461,9 @@ impl Default for GuiApp {
             editing_goal_key: None,
             ob_trash_retention_input: "14".to_string(),
             trash_retention_days: 14,
+
+            ob_default_duration_goal_mins_input: "60".to_string(),
+            sessions_count_as_completions: true,
 
             loading: true,
             error_msg: None,

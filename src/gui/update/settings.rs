@@ -88,6 +88,9 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.ob_auto_refresh_input = format_duration_compact(config.auto_refresh_interval_mins);
             app.ob_trash_retention_input = config.trash_retention_days.to_string();
 
+            app.ob_default_duration_goal_mins_input = config.default_duration_goal_mins.to_string();
+            app.sessions_count_as_completions = config.sessions_count_as_completions;
+
             app.ob_max_done_roots_input = config.max_done_roots.to_string();
             app.ob_max_done_subtasks_input = config.max_done_subtasks.to_string();
 
@@ -571,6 +574,24 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                     save_config(app);
                 }
             }
+            Task::none()
+        }
+        Message::SetDefaultDurationGoalMins(val) => {
+            if val.is_empty() || val.chars().all(|c| c.is_numeric()) {
+                app.ob_default_duration_goal_mins_input = val.clone();
+                if let Ok(n) = val.trim().parse::<u32>() {
+                    app.core_config.default_duration_goal_mins = n;
+                    save_config(app);
+                    crate::gui::update::common::refresh_filtered_tasks(app);
+                }
+            }
+            Task::none()
+        }
+        Message::SetSessionsCountAsCompletions(val) => {
+            app.sessions_count_as_completions = val;
+            app.core_config.sessions_count_as_completions = val;
+            save_config(app);
+            crate::gui::update::common::refresh_filtered_tasks(app);
             Task::none()
         }
         Message::SetAutoRefreshInterval(val) => {

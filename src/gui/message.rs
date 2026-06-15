@@ -223,6 +223,8 @@ pub enum Message {
     ObDefaultPriorityChanged(String),
     ObStartGraceChanged(String),
     SetTrashRetention(String),
+    SetDefaultDurationGoalMins(String),
+    SetSessionsCountAsCompletions(bool),
     SetLanguage(String),
 
     // --- Alarms & Reminders ---

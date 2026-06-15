@@ -727,7 +727,7 @@ pub fn view_sidebar_goals(app: &GuiApp) -> Element<'_, Message> {
                         .size(13)
                         .color(Color::from_rgb(0.6, 0.6, 0.6))
                 ]
-                .align_x(iced::alignment::Horizontal::Center)
+                .align_x(iced::alignment::Horizontal::Center),
             )
             .width(Length::Fill)
             .padding(10),
@@ -756,10 +756,17 @@ pub fn view_sidebar_goals(app: &GuiApp) -> Element<'_, Message> {
             };
 
             let title = text(format!("{} ({})", key, period_str)).size(14);
+
+            let (cur_str, tar_str) = if goal.goal_type == crate::config::GoalType::Duration {
+                crate::model::parser::format_goal_duration(progress, target)
+            } else {
+                (progress.to_string(), target.to_string())
+            };
+
             let prog_text = text(rust_i18n::t!(
                 "goal_progress",
-                current = progress,
-                target = target
+                current = cur_str,
+                target = tar_str
             ))
             .size(12)
             .color(Color::from_rgb(0.6, 0.6, 0.6));
@@ -775,44 +782,63 @@ pub fn view_sidebar_goals(app: &GuiApp) -> Element<'_, Message> {
                 }
             });
 
-            let bar_fg = container(
-                Space::new()
-                    .width(Length::FillPortion((pct * 100.0).max(1.0) as u16))
-                    .height(6.0),
-            )
-            .style(move |theme: &Theme| container::Style {
-                background: Some(if pct >= 1.0 {
-                    Color::from_rgb(0.2, 0.8, 0.2).into()
-                } else {
-                    theme.extended_palette().primary.base.color.into()
-                }),
-                border: iced::Border {
-                    radius: 3.0.into(),
+            let fg_portion = (pct * 1000.0).clamp(0.0, 1000.0) as u16;
+            let bg_portion = 1000 - fg_portion;
+
+            let bar_fg =
+                container(Space::new().height(6.0)).style(move |theme: &Theme| container::Style {
+                    background: Some(if pct >= 1.0 {
+                        Color::from_rgb(0.2, 0.8, 0.2).into()
+                    } else {
+                        theme.extended_palette().primary.base.color.into()
+                    }),
+                    border: iced::Border {
+                        radius: 3.0.into(),
+                        ..Default::default()
+                    },
                     ..Default::default()
-                },
-                ..Default::default()
-            });
+                });
 
-            let empty_space =
-                Space::new().width(Length::FillPortion((100.0 - pct * 100.0).max(0.0) as u16));
-            let bar_container = iced::widget::stack![bar_bg, row![bar_fg, empty_space]];
+            let bar_row = if fg_portion == 0 {
+                row![Space::new().width(Length::Fill)]
+            } else if bg_portion == 0 {
+                row![bar_fg.width(Length::Fill)]
+            } else {
+                row![
+                    bar_fg.width(Length::FillPortion(fg_portion)),
+                    Space::new().width(Length::FillPortion(bg_portion))
+                ]
+            };
 
-            let btn = button(column![title, bar_container, prog_text].spacing(4))
+            let bar_container = iced::widget::stack![bar_bg, bar_row];
+
+            let content_btn = button(column![title, bar_container, prog_text].spacing(4))
                 .style(button::text)
                 .width(Length::Fill)
                 .padding(8);
 
-            let btn = if key.starts_with('#') {
-                btn.on_press(Message::JumpToTag(key.trim_start_matches('#').to_string()))
+            let content_btn = if key.starts_with('#') {
+                content_btn.on_press(Message::JumpToTag(key.trim_start_matches('#').to_string()))
             } else if key.starts_with("@@") {
-                btn.on_press(Message::JumpToLocation(
+                content_btn.on_press(Message::JumpToLocation(
                     key.trim_start_matches("@@").to_string(),
                 ))
             } else {
-                btn
+                content_btn
             };
 
-            col = col.push(btn);
+            let delete_btn = button(
+                icon::icon(icon::CROSS)
+                    .size(14)
+                    .color(Color::from_rgb(0.8, 0.4, 0.4)),
+            )
+            .style(button::text)
+            .padding(8)
+            .on_press(Message::RemoveGoal(key.clone()));
+
+            let goal_row = row![content_btn, delete_btn].align_y(iced::Alignment::Center);
+
+            col = col.push(goal_row);
         }
     }
 

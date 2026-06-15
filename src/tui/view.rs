@@ -345,14 +345,26 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         crate::config::GoalPeriod::Daily => rust_i18n::t!("goal_period_daily"),
                         crate::config::GoalPeriod::Weekly => rust_i18n::t!("goal_period_weekly"),
                         crate::config::GoalPeriod::Monthly => rust_i18n::t!("goal_period_monthly"),
-                        crate::config::GoalPeriod::Quarterly => rust_i18n::t!("goal_period_quarterly"),
-                        crate::config::GoalPeriod::HalfYearly => rust_i18n::t!("goal_period_half_yearly"),
+                        crate::config::GoalPeriod::Quarterly => {
+                            rust_i18n::t!("goal_period_quarterly")
+                        }
+                        crate::config::GoalPeriod::HalfYearly => {
+                            rust_i18n::t!("goal_period_half_yearly")
+                        }
                         crate::config::GoalPeriod::Yearly => rust_i18n::t!("goal_period_yearly"),
                     };
 
                     let title = format!("{} ({})", key, period_str);
+
+                    let (cur_str, tar_str) = if goal.goal_type == crate::config::GoalType::Duration
+                    {
+                        crate::model::parser::format_goal_duration(progress, target)
+                    } else {
+                        (progress.to_string(), target.to_string())
+                    };
+
                     let prog_text =
-                        rust_i18n::t!("goal_progress", current = progress, target = target)
+                        rust_i18n::t!("goal_progress", current = cur_str, target = tar_str)
                             .to_string();
 
                     let pct = if target > 0 {

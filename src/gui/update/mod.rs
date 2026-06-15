@@ -77,6 +77,8 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::SetSnoozeShort(_)
         | Message::SetSnoozeLong(_)
         | Message::SetTrashRetention(_)
+        | Message::SetDefaultDurationGoalMins(_)
+        | Message::SetSessionsCountAsCompletions(_)
         | Message::SetAutoRefreshInterval(_)
         | Message::SetCreateEventsForTasks(_)
         | Message::SetDeleteEventsOnCompletion(_)

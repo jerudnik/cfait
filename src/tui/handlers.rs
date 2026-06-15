@@ -539,9 +539,9 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
             crate::model::parser::extract_inline_goals(&state.new_task_title);
         let (clean_input, new_aliases) =
             crate::model::parser::extract_inline_aliases(&clean_input_1);
-        
+
         let mut config_changed = false;
-        
+
         if !new_goals.is_empty() {
             for (k, v) in new_goals {
                 state.goals.insert(k, v);
@@ -555,15 +555,14 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
             }
             config_changed = true;
         }
-        
-        if config_changed
-            && let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
-                let old = cfg.clone();
-                cfg.tag_aliases = state.tag_aliases.clone();
-                cfg.goals = state.goals.clone();
-                cfg.update_sync_timestamp_if_changed(&old);
-                let _ = cfg.save(state.ctx.as_ref());
-            }
+
+        if config_changed && let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+            let old = cfg.clone();
+            cfg.tag_aliases = state.tag_aliases.clone();
+            cfg.goals = state.goals.clone();
+            cfg.update_sync_timestamp_if_changed(&old);
+            let _ = cfg.save(state.ctx.as_ref());
+        }
 
         let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
         let def_time =
@@ -1026,16 +1025,15 @@ pub async fn handle_key_event(
                         config_changed = true;
                     }
                 }
-                
-                if config_changed
-                    && let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
-                        let old = cfg.clone();
-                        cfg.tag_aliases = state.tag_aliases.clone();
-                        cfg.goals = state.goals.clone();
-                        cfg.update_sync_timestamp_if_changed(&old);
-                        let _ = cfg.save(state.ctx.as_ref());
-                    }
-                
+
+                if config_changed && let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                    let old = cfg.clone();
+                    cfg.tag_aliases = state.tag_aliases.clone();
+                    cfg.goals = state.goals.clone();
+                    cfg.update_sync_timestamp_if_changed(&old);
+                    let _ = cfg.save(state.ctx.as_ref());
+                }
+
                 if !new_aliases.is_empty() || config_changed {
                     let trimmed = clean_input.trim();
                     let is_alias_only = trimmed.is_empty()
@@ -1116,9 +1114,9 @@ pub async fn handle_key_event(
                     crate::model::parser::extract_inline_goals(&state.input_buffer);
                 let (clean_input, new_aliases): (String, HashMap<String, Vec<String>>) =
                     extract_inline_aliases(&clean_input_1);
-                
+
                 let mut config_changed = false;
-                
+
                 if !new_goals.is_empty() {
                     for (k, v) in new_goals {
                         state.goals.insert(k, v);
@@ -1144,16 +1142,15 @@ pub async fn handle_key_event(
                         config_changed = true;
                     }
                 }
-                
-                if config_changed
-                    && let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
-                        let old = cfg.clone();
-                        cfg.tag_aliases = state.tag_aliases.clone();
-                        cfg.goals = state.goals.clone();
-                        cfg.update_sync_timestamp_if_changed(&old);
-                        let _ = cfg.save(state.ctx.as_ref());
-                    }
-                
+
+                if config_changed && let Ok(mut cfg) = Config::load(state.ctx.as_ref()) {
+                    let old = cfg.clone();
+                    cfg.tag_aliases = state.tag_aliases.clone();
+                    cfg.goals = state.goals.clone();
+                    cfg.update_sync_timestamp_if_changed(&old);
+                    let _ = cfg.save(state.ctx.as_ref());
+                }
+
                 let target_uid: Option<String> = state.editing_uid.clone();
 
                 if let Some(uid) = target_uid

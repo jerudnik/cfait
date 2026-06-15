@@ -332,6 +332,10 @@ fn default_trash_retention() -> u32 {
     14
 }
 
+fn default_duration_goal_mins() -> u32 {
+    60
+}
+
 fn default_log_level() -> LogLevel {
     LogLevel::Info
 }
@@ -494,6 +498,12 @@ pub struct Config {
     #[serde(default = "default_trash_retention")]
     pub trash_retention_days: u32, // Integer: Days to keep items in local trash before permanent delete. 0 to disable trash.
 
+    #[serde(default = "default_duration_goal_mins")]
+    pub default_duration_goal_mins: u32,
+
+    #[serde(default = "default_true")]
+    pub sessions_count_as_completions: bool,
+
     #[serde(default = "default_max_done_roots")]
     pub max_done_roots: usize,
     #[serde(default = "default_max_done_subtasks")]
@@ -589,6 +599,10 @@ pub struct SyncableConfig {
     pub delete_events_on_completion: bool,
     #[serde(default = "default_trash_retention")]
     pub trash_retention_days: u32,
+    #[serde(default = "default_duration_goal_mins")]
+    pub default_duration_goal_mins: u32,
+    #[serde(default = "default_true")]
+    pub sessions_count_as_completions: bool,
     #[serde(default = "default_max_done_roots")]
     pub max_done_roots: usize,
     #[serde(default = "default_max_done_subtasks")]
@@ -651,6 +665,8 @@ impl Default for Config {
             delete_events_on_completion: false,
             auto_refresh_interval_mins: 30,
             trash_retention_days: 14,
+            default_duration_goal_mins: 60,
+            sessions_count_as_completions: true,
             strikethrough_completed: false,
             max_done_roots: 20,
             max_done_subtasks: 5,
@@ -696,6 +712,8 @@ impl Config {
             create_events_for_tasks: self.create_events_for_tasks,
             delete_events_on_completion: self.delete_events_on_completion,
             trash_retention_days: self.trash_retention_days,
+            default_duration_goal_mins: self.default_duration_goal_mins,
+            sessions_count_as_completions: self.sessions_count_as_completions,
             max_done_roots: self.max_done_roots,
             max_done_subtasks: self.max_done_subtasks,
             show_ongoing_notifications: self.show_ongoing_notifications,
@@ -728,6 +746,8 @@ impl Config {
         self.create_events_for_tasks = sync.create_events_for_tasks;
         self.delete_events_on_completion = sync.delete_events_on_completion;
         self.trash_retention_days = sync.trash_retention_days;
+        self.default_duration_goal_mins = sync.default_duration_goal_mins;
+        self.sessions_count_as_completions = sync.sessions_count_as_completions;
         self.max_done_roots = sync.max_done_roots;
         self.max_done_subtasks = sync.max_done_subtasks;
         self.show_ongoing_notifications = sync.show_ongoing_notifications;

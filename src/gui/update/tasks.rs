@@ -1050,7 +1050,7 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
         }
         config_changed = true;
     }
-    
+
     if config_changed {
         save_config(app);
     }

@@ -1520,6 +1520,10 @@ impl TaskStore {
 
     /// Calculates the current progress for a given goal definition.
     pub fn calculate_goal_progress(&self, key: &str, goal: &crate::config::Goal) -> u32 {
+        let config = crate::config::Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let default_dur = config.default_duration_goal_mins;
+        let count_sessions = config.sessions_count_as_completions;
+
         let now = chrono::Utc::now();
         let start_of_period = match goal.period {
             crate::config::GoalPeriod::Daily => {
@@ -1616,20 +1620,55 @@ impl TaskStore {
                     {
                         progress += 1;
                     }
+                    if count_sessions {
+                        for session in &t.sessions {
+                            if session.end >= start_ts {
+                                progress += 1;
+                            }
+                        }
+                    }
                 } else if goal.goal_type == crate::config::GoalType::Duration {
+                    let mut task_time_in_period = 0;
                     for session in &t.sessions {
                         if session.end >= start_ts {
                             let overlap_start = session.start.max(start_ts);
                             if session.end > overlap_start {
-                                progress += (session.end - overlap_start) as u32 / 60;
+                                task_time_in_period += (session.end - overlap_start) as u32 / 60;
                             }
                         }
                     }
                     if let Some(start) = t.last_started_at
                         && start >= start_ts
                     {
-                        progress += (now.timestamp() - start) as u32 / 60;
+                        task_time_in_period += (now.timestamp() - start) as u32 / 60;
                     }
+
+                    // For history snapshots representing past completions (which had sessions cleared),
+                    // include their aggregated time_spent_seconds if completed in the period.
+                    if t.status == crate::model::TaskStatus::Completed
+                        && t.unmapped_properties
+                            .iter()
+                            .any(|p| p.key == "X-CFAIT-HISTORY-OF")
+                        && t.sessions.is_empty()
+                        && t.time_spent_seconds > 0
+                        && let Some(comp) = t.completion_date()
+                        && comp.timestamp() >= start_ts
+                    {
+                        task_time_in_period += (t.time_spent_seconds / 60) as u32;
+                    }
+
+                    // Implicit time addition: If no explicit time was logged for a task completed in this period,
+                    // add the estimated (or default) duration to the goal progress.
+                    if t.status == crate::model::TaskStatus::Completed
+                        && let Some(comp) = t.completion_date()
+                        && comp.timestamp() >= start_ts
+                        && task_time_in_period == 0
+                        && t.time_spent_seconds == 0
+                    {
+                        task_time_in_period += t.estimated_duration.unwrap_or(default_dur);
+                    }
+
+                    progress += task_time_in_period;
                 }
             }
         }

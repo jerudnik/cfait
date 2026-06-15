@@ -378,7 +378,7 @@ async fn main() -> Result<()> {
             // Allow ad-hoc alias definition via CLI
             let (clean_input_1, new_goals) = cfait::model::extract_inline_goals(&input);
             let (clean_input, new_aliases) = cfait::model::extract_inline_aliases(&clean_input_1);
-            
+
             let mut config_changed = false;
             if !new_goals.is_empty() {
                 config.goals.extend(new_goals);
@@ -532,8 +532,9 @@ async fn main() -> Result<()> {
 
             if !input.trim().is_empty() {
                 let (clean_input_1, new_goals) = cfait::model::extract_inline_goals(&input);
-                let (clean_input, new_aliases) = cfait::model::extract_inline_aliases(&clean_input_1);
-                
+                let (clean_input, new_aliases) =
+                    cfait::model::extract_inline_aliases(&clean_input_1);
+
                 let mut config_changed = false;
                 if !new_goals.is_empty() {
                     config.goals.extend(new_goals);

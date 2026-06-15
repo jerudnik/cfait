@@ -1690,21 +1690,20 @@ impl CfaitMobile {
         let mut config = Config::load(self.ctx.as_ref()).unwrap_or_default();
         let (clean_input_1, new_goals) = crate::model::extract_inline_goals(&input);
         let (clean_input, new_aliases) = crate::model::extract_inline_aliases(&clean_input_1);
-        
-        let mut config_changed = false;
+
+        let config_changed = !new_goals.is_empty() || !new_aliases.is_empty();
+
         if !new_goals.is_empty() {
             config.goals.extend(new_goals);
-            config_changed = true;
         }
-        
+
         if !new_aliases.is_empty() {
             for (k, v) in &new_aliases {
                 crate::model::validate_alias_integrity(k, v, &config.tag_aliases)
                     .map_err(MobileError::from)?;
             }
             config.tag_aliases.extend(new_aliases.clone());
-            config_changed = true;
-            
+
             let mut store = self.controller.store.lock().await;
             let all_modified: Vec<_> = new_aliases
                 .iter()
@@ -1775,10 +1774,10 @@ impl CfaitMobile {
         let (clean_input_1, new_goals) = crate::model::extract_inline_goals(&input);
         let (clean_input, new_aliases) = crate::model::extract_inline_aliases(&clean_input_1);
 
-        let mut config_changed = false;
+        let config_changed = !new_goals.is_empty() || !new_aliases.is_empty();
+
         if !new_goals.is_empty() {
             config.goals.extend(new_goals);
-            config_changed = true;
         }
 
         if !new_aliases.is_empty() {
@@ -1787,8 +1786,7 @@ impl CfaitMobile {
                     .map_err(MobileError::from)?;
             }
             config.tag_aliases.extend(new_aliases.clone());
-            config_changed = true;
-            
+
             let mut store = self.controller.store.lock().await;
             let all_modified: Vec<_> = new_aliases
                 .iter()
@@ -1804,7 +1802,7 @@ impl CfaitMobile {
                         .map_err(MobileError::from)?;
                 }
             }
-            
+
             if config_changed {
                 config.save(self.ctx.as_ref()).map_err(MobileError::from)?;
             }
