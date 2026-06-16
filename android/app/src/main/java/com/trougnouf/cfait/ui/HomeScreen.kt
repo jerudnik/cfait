@@ -67,7 +67,6 @@ import androidx.compose.ui.unit.sp
 import com.trougnouf.cfait.R
 import com.trougnouf.cfait.core.*
 import com.trougnouf.cfait.core.MobileGoalType
-import com.trougnouf.cfait.core.MobileGoalPeriod
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
