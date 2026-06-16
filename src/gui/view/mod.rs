@@ -401,6 +401,29 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 };
             }
 
+            let shortcut = match *action {
+                TaskAction::CompleteAndShift => " (Shift+Space)",
+                TaskAction::ToggleDetails => " (L)",
+                TaskAction::ToggleTimer => " (s)",
+                TaskAction::StopTimer => " (S)",
+                TaskAction::AddSession => " (t)",
+                TaskAction::IncreasePriority => " (+)",
+                TaskAction::DecreasePriority => " (-)",
+                TaskAction::Edit => " (e)",
+                TaskAction::Yank => " (y)",
+                TaskAction::CreateSubtask => " (C)",
+                TaskAction::DuplicateTree => " (Ctrl+D)",
+                TaskAction::Promote => " (<)",
+                TaskAction::Move => " (M)",
+                TaskAction::Cancel => " (x)",
+                TaskAction::Delete => " (Del)",
+                TaskAction::DeleteTree => " (Ctrl+Del)",
+                TaskAction::OpenCoordinates => " (g)",
+                TaskAction::OpenUrl => " (o)",
+                _ => "",
+            };
+            label.push_str(shortcut);
+
             let (icon_element, msg, is_danger): (Element<'_, Message>, Message, bool) = match action
             {
                 TaskAction::ToggleDetails => {

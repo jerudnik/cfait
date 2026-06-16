@@ -663,6 +663,10 @@ impl Task {
             return 8;
         }
 
+        if self.pinned {
+            return 0;
+        }
+
         let now = Utc::now();
 
         // De-prioritize future or blocked tasks, but ONLY if they are not already ongoing.
@@ -680,10 +684,6 @@ impl Task {
             if effectively_blocked {
                 return 6;
             }
-        }
-
-        if self.pinned {
-            return 0;
         }
 
         let is_urgent = self.effective_priority > 0 && self.effective_priority <= urgent_prio;

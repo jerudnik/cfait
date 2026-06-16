@@ -207,7 +207,7 @@ Users map tracking goals to tags/locations (e.g., `#reading := goal:2h/w`).
     *   `S`: Stop/Reset timer.
     *   `x`: Cancel task.
     *   `+` / `-`: Increase/Decrease priority.
-    *   `e`: Edit title. `Ctrl+E` (or `E` in TUI): Edit description (Markdown).
+    *   `e`: Edit title. `E`: Edit description (Markdown). `Ctrl+E`: Create new task with description.
     *   `Delete`: Move to trash. `Ctrl+Delete`: Delete entire tree.
     *   `t`: Log time session manually.
 *   **Tree/Relationships:** 
