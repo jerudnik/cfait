@@ -63,6 +63,7 @@ Evaluated instantly during text input. Supported across all clients.
 | `done:` | Mark completed / Set percentage. | `done:2024-01-01`, `done:50%` |
 | `spent:` | Log time spent manually. | `spent:1h` |
 | `rec:` or `@` | Recurrence (`RRULE`). | `@daily`, `rec:every 2 weeks` |
+| `@after` | Relative recurrence (shifts from completion). | `@after 1w`, `@after 2mo` |
 | `until` | End date for recurrence. | `@daily until 2025-12-31` |
 | `except` | Exclusion dates (`EXDATE`). | `@daily except sat,sun` |
 | `+cal` / `-cal` | Force/prevent companion Calendar Event. | `+cal` |
