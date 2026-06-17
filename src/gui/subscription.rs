@@ -24,11 +24,15 @@ pub fn subscription(app: &GuiApp) -> Subscription<Message> {
     subs.push(crate::gui::async_ops::worker_subscription(app.ctx.clone()));
 
     if matches!(app.state, AppState::Onboarding | AppState::Settings) {
-        subs.push(keyboard::listen().filter_map(|event| {
-            if let keyboard::Event::KeyPressed { key, modifiers, .. } = event
-                && key == keyboard::Key::Named(Named::Tab)
-            {
-                return Some(Message::CycleFocus(!modifiers.shift()));
+        let is_settings = matches!(app.state, AppState::Settings);
+        subs.push(keyboard::listen().filter_map(move |event| {
+            if let keyboard::Event::KeyPressed { key, modifiers, .. } = event {
+                if key == keyboard::Key::Named(Named::Tab) {
+                    return Some(Message::CycleFocus(!modifiers.shift()));
+                }
+                if is_settings && key == keyboard::Key::Named(Named::Escape) {
+                    return Some(Message::CancelSettings);
+                }
             }
             None
         }));
