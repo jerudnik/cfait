@@ -16,27 +16,10 @@ pub static ACTIVE_FOCUS: once_cell::sync::Lazy<std::sync::RwLock<Focus>> =
     once_cell::sync::Lazy::new(|| std::sync::RwLock::new(Focus::default()));
 
 pub fn subscription(app: &GuiApp) -> Subscription<Message> {
-    use iced::keyboard::key::Named;
-
     let mut subs = Vec::new();
 
     // Start background syncing worker
     subs.push(crate::gui::async_ops::worker_subscription(app.ctx.clone()));
-
-    if matches!(app.state, AppState::Onboarding | AppState::Settings) {
-        let is_settings = matches!(app.state, AppState::Settings);
-        subs.push(keyboard::listen().filter_map(move |event| {
-            if let keyboard::Event::KeyPressed { key, modifiers, .. } = event {
-                if key == keyboard::Key::Named(Named::Tab) {
-                    return Some(Message::CycleFocus(!modifiers.shift()));
-                }
-                if is_settings && key == keyboard::Key::Named(Named::Escape) {
-                    return Some(Message::CancelSettings);
-                }
-            }
-            None
-        }));
-    }
 
     match app.state {
         AppState::Active => {
@@ -46,6 +29,12 @@ pub fn subscription(app: &GuiApp) -> Subscription<Message> {
         }
         AppState::Help(_, _) => {
             subs.push(event::listen_with(handle_help_hotkey));
+        }
+        AppState::Settings => {
+            subs.push(event::listen_with(handle_settings_hotkey));
+        }
+        AppState::Onboarding => {
+            subs.push(event::listen_with(handle_onboarding_hotkey));
         }
         _ => {}
     }
@@ -79,6 +68,41 @@ pub fn subscription(app: &GuiApp) -> Subscription<Message> {
     }
 
     Subscription::batch(subs)
+}
+
+fn handle_settings_hotkey(
+    evt: iced::Event,
+    _status: iced::event::Status,
+    _id: iced::window::Id,
+) -> Option<Message> {
+    if let iced::Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. }) = evt {
+        match key.as_ref() {
+            keyboard::Key::Named(keyboard::key::Named::Tab) => {
+                Some(Message::CycleFocus(!modifiers.shift()))
+            }
+            keyboard::Key::Named(keyboard::key::Named::Escape) => Some(Message::CancelSettings),
+            _ => None,
+        }
+    } else {
+        None
+    }
+}
+
+fn handle_onboarding_hotkey(
+    evt: iced::Event,
+    _status: iced::event::Status,
+    _id: iced::window::Id,
+) -> Option<Message> {
+    if let iced::Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. }) = evt {
+        match key.as_ref() {
+            keyboard::Key::Named(keyboard::key::Named::Tab) => {
+                Some(Message::CycleFocus(!modifiers.shift()))
+            }
+            _ => None,
+        }
+    } else {
+        None
+    }
 }
 
 fn handle_help_hotkey(
