@@ -24,6 +24,7 @@ use iced::widget::{
 use iced::{Color, Element, Length, Theme, Vector};
 
 pub const COLOR_LOCATION: Color = Color::from_rgb(0.4, 0.4, 0.6);
+pub const CONTEXT_MENU_WIDTH: f32 = 190.0;
 
 pub fn is_action_available(
     action: &crate::config::TaskAction,
@@ -694,7 +695,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         ));
 
         let menu_container = container(menu_scrollable)
-            .width(Length::Fixed(190.0))
+            .width(Length::Fixed(CONTEXT_MENU_WIDTH))
             .max_height(max_available_height)
             .padding(4)
             .style(|theme: &Theme| {
@@ -716,7 +717,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             });
 
         // Position the menu exactly by the mouse
-        let menu_width = 190.0;
+        let menu_width = CONTEXT_MENU_WIDTH;
         let estimated_menu_height = (num_items as f32 * 34.0 + 8.0).min(max_available_height);
 
         let mut top_padding = pt.y;
