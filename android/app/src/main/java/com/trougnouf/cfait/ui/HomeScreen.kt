@@ -463,6 +463,14 @@ fun HomeScreen(
 
                     // *** CALL THE NEW DESCRIPTION API ***
                     val newUid = api.addTaskWithDescription(text, desc)
+                    if (newUid == "ALIAS_UPDATED" || newUid.isEmpty()) {
+                        onDataChanged()
+                        lastSyncFailed = false
+                        updateTaskList()
+                        triggerBackgroundSync(context, api)
+                        return@launch
+                    }
+
                     if (creatingChildUid != null) {
                         api.setParent(newUid, creatingChildUid!!)
                         if (!childLockActive) creatingChildUid = null

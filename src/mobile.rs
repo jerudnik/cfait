@@ -1854,11 +1854,13 @@ impl CfaitMobile {
                         .map_err(MobileError::from)?;
                 }
             }
-            if config_changed {
-                let old_config = Config::load(self.ctx.as_ref()).unwrap_or_default();
-                config.update_sync_timestamp_if_changed(&old_config);
-                config.save(self.ctx.as_ref()).map_err(MobileError::from)?;
-            }
+        }
+
+        if config_changed {
+            let old_config = Config::load(self.ctx.as_ref()).unwrap_or_default();
+            config.update_sync_timestamp_if_changed(&old_config);
+            config.save(self.ctx.as_ref()).map_err(MobileError::from)?;
+
             let trimmed = clean_input.trim();
             if trimmed.is_empty()
                 || (!trimmed.contains(' ')
@@ -1874,6 +1876,9 @@ impl CfaitMobile {
         }
         let def_time = NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
         let mut task = Task::new(&clean_input, &config.tag_aliases, def_time);
+        if task.summary.trim().is_empty() {
+            return Ok("".to_string());
+        }
         #[cfg(target_os = "android")]
         log::debug!(
             "Created task: uid={}, summary='{}', alarms={}",
@@ -1940,12 +1945,12 @@ impl CfaitMobile {
                         .map_err(MobileError::from)?;
                 }
             }
+        }
 
-            if config_changed {
-                let old_config = Config::load(self.ctx.as_ref()).unwrap_or_default();
-                config.update_sync_timestamp_if_changed(&old_config);
-                config.save(self.ctx.as_ref()).map_err(MobileError::from)?;
-            }
+        if config_changed {
+            let old_config = Config::load(self.ctx.as_ref()).unwrap_or_default();
+            config.update_sync_timestamp_if_changed(&old_config);
+            config.save(self.ctx.as_ref()).map_err(MobileError::from)?;
 
             let trimmed = clean_input.trim();
             if trimmed.is_empty()
@@ -1969,6 +1974,9 @@ impl CfaitMobile {
             crate::model::extractor::extract_markdown_tasks(&description);
 
         let mut task = Task::new(&clean_input, &config.tag_aliases, def_time);
+        if task.summary.trim().is_empty() && cleaned_desc.is_empty() {
+            return Ok("".to_string());
+        }
         if !cleaned_desc.is_empty() {
             if task.description.is_empty() {
                 task.description = cleaned_desc;

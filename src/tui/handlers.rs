@@ -1064,6 +1064,14 @@ pub async fn handle_key_event(
                         NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
 
                     let mut task = Task::new(&clean_input, &state.tag_aliases, def_time);
+
+                    if task.summary.trim().is_empty() && task.description.trim().is_empty() {
+                        state.mode = InputMode::Normal;
+                        state.reset_input();
+                        state.creating_child_of = None;
+                        return None;
+                    }
+
                     task.calendar_href = href.clone();
                     task.parent_uid = state.creating_child_of.clone();
 

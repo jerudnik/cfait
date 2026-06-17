@@ -1176,6 +1176,13 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
     } else if !clean_input.is_empty() {
         let mut new_task = TodoTask::new(&clean_input, &app.tag_aliases, config_time);
 
+        if new_task.summary.trim().is_empty() && cleaned_desc.is_empty() {
+            app.input_value = text_editor::Content::new();
+            app.description_value = text_editor::Content::new();
+            app.creating_with_desc = false;
+            return Task::none();
+        }
+
         if !cleaned_desc.is_empty() {
             if new_task.description.is_empty() {
                 new_task.description = cleaned_desc;

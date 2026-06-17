@@ -76,12 +76,60 @@ pub fn parse_alias_values(input: &str) -> Vec<String> {
     parts.into_iter().filter(|s| !s.is_empty()).collect()
 }
 
+fn merge_assignment_tokens(parts: &[(usize, usize, String)]) -> Vec<String> {
+    let mut merged_tokens: Vec<String> = Vec::new();
+    let mut i = 0;
+    while i < parts.len() {
+        let mut tok = parts[i].2.clone();
+
+        if tok == ":=" {
+            if let Some(prev) = merged_tokens.last_mut() {
+                prev.push_str(":=");
+                if i + 1 < parts.len() {
+                    prev.push_str(&parts[i + 1].2);
+                    i += 1;
+                }
+            }
+            i += 1;
+            continue;
+        } else if (tok.ends_with(":=") || parts[i + 1].2.starts_with(":=")) && i + 1 < parts.len() {
+            tok.push_str(&parts[i + 1].2);
+            i += 1;
+        }
+
+        merged_tokens.push(tok);
+        i += 1;
+    }
+
+    let mut final_tokens = Vec::new();
+    let mut j = 0;
+    while j < merged_tokens.len() {
+        let mut tok = merged_tokens[j].clone();
+        if tok.contains(":=") {
+            while j + 1 < merged_tokens.len() {
+                let next = &merged_tokens[j + 1];
+                if tok.ends_with(',') || next == "," || next.starts_with(',') {
+                    tok.push_str(next);
+                    j += 1;
+                } else {
+                    break;
+                }
+            }
+        }
+        final_tokens.push(tok);
+        j += 1;
+    }
+
+    final_tokens
+}
+
 pub fn extract_inline_aliases(input: &str) -> (String, HashMap<String, Vec<String>>) {
     let parts = split_input_respecting_quotes(input);
+    let merged = merge_assignment_tokens(&parts);
     let mut cleaned_words = Vec::new();
     let mut new_aliases = HashMap::new();
 
-    for (_, _, token) in parts {
+    for token in merged {
         if token.contains(":=")
             && !token.starts_with('\\')
             && let Some((left, right)) = token.split_once(":=")
@@ -127,10 +175,11 @@ pub fn extract_inline_aliases(input: &str) -> (String, HashMap<String, Vec<Strin
 
 pub fn extract_inline_goals(input: &str) -> (String, HashMap<String, crate::config::Goal>) {
     let parts = split_input_respecting_quotes(input);
+    let merged = merge_assignment_tokens(&parts);
     let mut cleaned_words = Vec::new();
     let mut new_goals = HashMap::new();
 
-    for (_, _, token) in parts {
+    for token in merged {
         if token.contains(":=")
             && !token.starts_with('\\')
             && let Some((left, right)) = token.split_once(":=")
@@ -211,7 +260,7 @@ pub fn extract_inline_goals(input: &str) -> (String, HashMap<String, crate::conf
                 }
             }
         }
-        cleaned_words.push(token.to_string());
+        cleaned_words.push(token);
     }
     (cleaned_words.join(" "), new_goals)
 }

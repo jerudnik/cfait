@@ -160,7 +160,7 @@
     "display_limits": "Display limits",
     "done": "Done",
     "due_within_days": "Due within (days):",
-    "duplicate_single_task": "Duplicate task",
+    "duplicate_single_task": "Duplicate",
     "duplicate_task": "Duplicate task tree",
     "edit": "Edit",
     "edit_description_instructions": "Write notes or subtasks (- [ ]). Ctrl+S to save.",
