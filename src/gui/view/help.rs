@@ -196,7 +196,7 @@ pub fn view_help<'a>(tab: HelpTab, app: &'a GuiApp) -> Element<'a, Message> {
 
             content_col = content_col.push(shortcuts_header);
 
-            for section in crate::help::get_shortcuts_help() {
+            for section in crate::help::get_shortcuts_help(true) {
                 content_col = content_col.push(help_card(&section.title, &section.items));
             }
         }

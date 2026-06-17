@@ -1676,7 +1676,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             let data = if tab == crate::help::HelpTab::Syntax {
                 crate::help::get_syntax_help()
             } else {
-                crate::help::get_shortcuts_help()
+                crate::help::get_shortcuts_help(false)
             };
 
             for sec in data {

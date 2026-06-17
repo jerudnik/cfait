@@ -311,52 +311,61 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
     ]
 }
 
-pub fn get_shortcuts_help() -> Vec<HelpSection> {
+pub fn get_shortcuts_help(is_gui: bool) -> Vec<HelpSection> {
+    let mut nav_items = vec![
+        HelpItem {
+            keys: "?".to_string(),
+            desc: rust_i18n::t!("help_about").to_string(),
+            example: "".to_string(),
+        },
+        HelpItem {
+            keys: "Tab".to_string(),
+            desc: rust_i18n::t!("help_keyboard_switch_focus").to_string(),
+            example: "".to_string(),
+        },
+        HelpItem {
+            keys: "j / k / Dn / Up".to_string(),
+            desc: rust_i18n::t!("help_keyboard_move_selection").to_string(),
+            example: "".to_string(),
+        },
+        HelpItem {
+            keys: "PgDn / PgUp".to_string(),
+            desc: rust_i18n::t!("help_keyboard_scroll_page").to_string(),
+            example: "".to_string(),
+        },
+    ];
+
+    if is_gui {
+        nav_items.push(HelpItem {
+            keys: "Ctrl + / - / 0".to_string(),
+            desc: rust_i18n::t!("help_keyboard_zoom_ui").to_string(),
+            example: rust_i18n::t!("help_keyboard_zoom_note").to_string(),
+        });
+    }
+
+    nav_items.push(HelpItem {
+        keys: "z".to_string(),
+        desc: "Fold / Unfold Task Tree".to_string(),
+        example: "".to_string(),
+    });
+    nav_items.push(HelpItem {
+        keys: "Shift + r".to_string(),
+        desc: rust_i18n::t!("jump_to_random_task").to_string(),
+        example: "".to_string(),
+    });
+
+    if is_gui {
+        nav_items.push(HelpItem {
+            keys: "Ctrl + ,".to_string(),
+            desc: rust_i18n::t!("settings").to_string(),
+            example: "".to_string(),
+        });
+    }
+
     vec![
         HelpSection {
             title: "Navigation & general".to_string(),
-            items: vec![
-                HelpItem {
-                    keys: "?".to_string(),
-                    desc: rust_i18n::t!("help_about").to_string(),
-                    example: "".to_string(),
-                },
-                HelpItem {
-                    keys: "Tab".to_string(),
-                    desc: rust_i18n::t!("help_keyboard_switch_focus").to_string(),
-                    example: "".to_string(),
-                },
-                HelpItem {
-                    keys: "j / k / Dn / Up".to_string(),
-                    desc: rust_i18n::t!("help_keyboard_move_selection").to_string(),
-                    example: "".to_string(),
-                },
-                HelpItem {
-                    keys: "PgDn / PgUp".to_string(),
-                    desc: rust_i18n::t!("help_keyboard_scroll_page").to_string(),
-                    example: "".to_string(),
-                },
-                HelpItem {
-                    keys: "Ctrl + / - / 0".to_string(),
-                    desc: rust_i18n::t!("help_keyboard_zoom_ui").to_string(),
-                    example: rust_i18n::t!("help_keyboard_zoom_note").to_string(),
-                },
-                HelpItem {
-                    keys: "z".to_string(),
-                    desc: "Fold / Unfold Task Tree".to_string(),
-                    example: "".to_string(),
-                },
-                HelpItem {
-                    keys: "Shift + r".to_string(),
-                    desc: rust_i18n::t!("jump_to_random_task").to_string(),
-                    example: "".to_string(),
-                },
-                HelpItem {
-                    keys: "Ctrl + ,".to_string(),
-                    desc: rust_i18n::t!("settings").to_string(),
-                    example: "".to_string(),
-                },
-            ],
+            items: nav_items,
         },
         HelpSection {
             title: rust_i18n::t!("edit").to_string(),
