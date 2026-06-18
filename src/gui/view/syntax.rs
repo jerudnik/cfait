@@ -129,6 +129,13 @@ impl Highlighter for SmartInputHighlighter {
                             ..Default::default()
                         }),
                     },
+                    SyntaxType::Goal => highlighter::Format {
+                        color: Some(Color::from_rgb(0.2, 0.8, 0.6)), // Sea Green
+                        font: Some(Font {
+                            weight: iced::font::Weight::Bold,
+                            ..Default::default()
+                        }),
+                    },
                     SyntaxType::Calendar => highlighter::Format {
                         // Added handler
                         color: Some(Color::from_rgb(0.91, 0.11, 0.38)), // #E91E63 Pink

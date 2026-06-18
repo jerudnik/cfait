@@ -1280,6 +1280,9 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         SyntaxType::Description => Style::default().fg(Color::Gray),
                         SyntaxType::Reminder => Style::default().fg(Color::LightRed),
                         SyntaxType::Operator => Style::default().fg(Color::Magenta), // Highlight boolean/operator tokens
+                        SyntaxType::Goal => Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
                         SyntaxType::Calendar => Style::default().fg(Color::Magenta), // Added for +cal/-cal
                         SyntaxType::Pin => Style::default().fg(Color::LightRed), // Added for +pin/-pin
                         SyntaxType::Filter => Style::default().fg(Color::Cyan), // Added for search operators / filters

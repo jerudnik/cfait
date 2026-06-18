@@ -113,6 +113,7 @@ pub enum MobileSyntaxType {
     Pin,
     Filter,
     Operator,
+    Goal,
 }
 
 impl From<SyntaxType> for MobileSyntaxType {
@@ -134,6 +135,7 @@ impl From<SyntaxType> for MobileSyntaxType {
             SyntaxType::Pin => MobileSyntaxType::Pin,
             SyntaxType::Filter => MobileSyntaxType::Filter,
             SyntaxType::Operator => MobileSyntaxType::Operator,
+            SyntaxType::Goal => MobileSyntaxType::Goal,
         }
     }
 }

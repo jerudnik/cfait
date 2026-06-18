@@ -30,6 +30,7 @@ pub enum SyntaxType {
     Pin,      // +pin, -pin
     Filter,   // is:done, < / > operators, duration filters, etc.
     Operator, // Boolean / operator tokens: |, -, (, ), AND/OR/NOT
+    Goal,     // goal:
 }
 
 #[derive(Debug)]
@@ -784,6 +785,8 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 }
             } else if word_lower.starts_with("desc:") {
                 matched_kind = Some(SyntaxType::Description);
+            } else if word_lower.starts_with("goal:") {
+                matched_kind = Some(SyntaxType::Goal);
             } else if word.starts_with('!') && word.len() > 1 && word[1..].parse::<u8>().is_ok() {
                 matched_kind = Some(SyntaxType::Priority);
             } else if word.starts_with('~') || word_lower.starts_with("est:") {

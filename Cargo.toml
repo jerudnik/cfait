@@ -55,7 +55,7 @@ anyhow = "1.0"
 rrule = "0.14"
 serde_json = "1.0"
 # Single Source of Truth internationalization support (reads JSON locales)
-isolang = { version = "2.4.0", features = ["local_names", "english_names"] }
+isolang = { version = "2.4", features = ["local_names", "english_names"] }
 rust-i18n = "4"
 sys-locale = "0.3"
 rustls-native-certs = "0.8"
