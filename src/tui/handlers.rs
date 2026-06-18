@@ -569,6 +569,9 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
             chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
 
         let mut parent = Task::new(&clean_input, &state.tag_aliases, def_time);
+        if parent.summary.trim().is_empty() && !clean_input.trim().is_empty() {
+            parent.summary = clean_input.clone();
+        }
         if !clean_desc.is_empty() {
             if parent.description.is_empty() {
                 parent.description = clean_desc;
@@ -1066,10 +1069,14 @@ pub async fn handle_key_event(
                     let mut task = Task::new(&clean_input, &state.tag_aliases, def_time);
 
                     if task.summary.trim().is_empty() && task.description.trim().is_empty() {
-                        state.mode = InputMode::Normal;
-                        state.reset_input();
-                        state.creating_child_of = None;
-                        return None;
+                        if !clean_input.trim().is_empty() {
+                            task.summary = clean_input.clone();
+                        } else {
+                            state.mode = InputMode::Normal;
+                            state.reset_input();
+                            state.creating_child_of = None;
+                            return None;
+                        }
                     }
 
                     task.calendar_href = href.clone();
