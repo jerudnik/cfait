@@ -92,7 +92,7 @@ fn merge_assignment_tokens(parts: &[(usize, usize, String)]) -> Vec<String> {
             }
             i += 1;
             continue;
-        } else if (tok.ends_with(":=") || parts[i + 1].2.starts_with(":=")) && i + 1 < parts.len() {
+        } else if i + 1 < parts.len() && (tok.ends_with(":=") || parts[i + 1].2.starts_with(":=")) {
             tok.push_str(&parts[i + 1].2);
             i += 1;
         }
