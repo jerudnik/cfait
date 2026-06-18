@@ -188,7 +188,6 @@ fun CfaitNavHost(
     var defaultDurationGoalMins by remember { mutableIntStateOf(60) }
     var sessionsCountAsCompletions by remember { mutableStateOf(false) }
     var showGoalsTab by remember { mutableStateOf(true) }
-    var showTaskGoalsInSidebar by remember { mutableStateOf(true) }
     var tasks by remember { mutableStateOf<List<MobileTask>>(emptyList()) }
     var tags by remember { mutableStateOf<List<MobileTag>>(emptyList()) }
     var locations by remember { mutableStateOf<List<MobileLocation>>(emptyList()) }
@@ -204,22 +203,6 @@ fun CfaitNavHost(
     var showQuickFilter by remember { mutableStateOf(true) }
     var quickFilterTerm by remember { mutableStateOf("is:ready") }
     var quickFilterIcon by remember { mutableStateOf("f0fa9") }
-
-    // Lift state for advanced settings so it persists across navigation
-    var maxDoneRoots by remember { mutableStateOf("20") }
-    var maxDoneSubtasks by remember { mutableStateOf("5") }
-
-    // Init from config on load
-    LaunchedEffect(Unit) {
-        try {
-            val cfg = api.getConfig()
-            maxDoneRoots = cfg.maxDoneRoots.toString()
-            maxDoneSubtasks = cfg.maxDoneSubtasks.toString()
-        } catch (e: Exception) {
-            if (e is CancellationException) throw e
-            // ignore init errors here
-        }
-    }
 
     // ICS Import State
     var icsContentToImport by remember { mutableStateOf<String?>(null) }
@@ -320,7 +303,7 @@ fun CfaitNavHost(
                 defaultDurationGoalMins = config.defaultDurationGoalMins.toInt()
                 sessionsCountAsCompletions = config.sessionsCountAsCompletions
                 showGoalsTab = config.showGoalsTab
-                showTaskGoalsInSidebar = config.showTaskGoalsInSidebar
+
                 hasUnsynced = api.hasUnsyncedChanges()
                 showQuickFilter = config.showQuickFilter
                 quickFilterTerm = config.quickFilterTerm
@@ -583,104 +566,15 @@ fun CfaitNavHost(
         }
 
         composable("settings/advanced") {
-            // Load fresh on entry
-            var localRoots by remember { mutableStateOf("20") }
-            var localSubs by remember { mutableStateOf("5") }
-            var localTrash by remember { mutableStateOf("14") }
-            var deleteEvents by remember { mutableStateOf(false) }
-            var showOngoingNotifs by remember { mutableStateOf(true) }
-            var showQuickFilterAdv by remember { mutableStateOf(showQuickFilter) }
-            var quickFilterTermAdv by remember { mutableStateOf(quickFilterTerm) }
-            var quickFilterIconAdv by remember { mutableStateOf(quickFilterIcon) }
-            var defaultDurationGoalMinsAdv by remember { mutableStateOf(defaultDurationGoalMins.toString()) }
-            var sessionsCountAsCompletionsAdv by remember { mutableStateOf(sessionsCountAsCompletions) }
-            var showGoalsTabAdv by remember { mutableStateOf(showGoalsTab) }
-            var showTaskGoalsInSidebarAdv by remember { mutableStateOf(showTaskGoalsInSidebar) }
-
-            LaunchedEffect(Unit) {
-                try {
-                    val cfg = api.getConfig()
-                    localRoots = cfg.maxDoneRoots.toString()
-                    localSubs = cfg.maxDoneSubtasks.toString()
-                    localTrash = cfg.trashRetention.toString()
-                    deleteEvents = cfg.deleteEventsOnCompletion
-                    showOngoingNotifs = cfg.showOngoingNotifications
-                    showQuickFilterAdv = cfg.showQuickFilter
-                    quickFilterTermAdv = cfg.quickFilterTerm
-                    quickFilterIconAdv = cfg.quickFilterIcon
-                    defaultDurationGoalMinsAdv = cfg.defaultDurationGoalMins.toString()
-                    sessionsCountAsCompletionsAdv = cfg.sessionsCountAsCompletions
-                    showGoalsTabAdv = cfg.showGoalsTab
-                    showTaskGoalsInSidebarAdv = cfg.showTaskGoalsInSidebar
-                } catch (e: Exception) {
-                    if (e is CancellationException) throw e
-                    // ignore
-                }
-            }
-
-            // Get shared preferences in composable scope
-            val sharedPrefs = context.getSharedPreferences("cfait_ui_prefs", Context.MODE_PRIVATE)
-
             AdvancedSettingsScreen(
                 api = api,
-                maxDoneRoots = localRoots,
-                maxDoneSubtasks = localSubs,
-                trashRetention = localTrash,
-                deleteEventsOnCompletion = deleteEvents,
-                showOngoingNotifications = showOngoingNotifs,
-                showQuickFilter = showQuickFilterAdv,
-                quickFilterTerm = quickFilterTermAdv,
-                quickFilterIcon = quickFilterIconAdv,
-                defaultDurationGoalMins = defaultDurationGoalMinsAdv,
-                sessionsCountAsCompletions = sessionsCountAsCompletionsAdv,
-                showGoalsTab = showGoalsTabAdv,
-                showTaskGoalsInSidebar = showTaskGoalsInSidebarAdv,
                 tabPosition = tabPosition,
                 tabAutoHide = tabAutoHide,
                 onTabPositionChange = onTabPositionChange,
                 onTabAutoHideChange = onTabAutoHideChange,
-                onMaxDoneRootsChange = { localRoots = it },
-                onMaxDoneSubtasksChange = { localSubs = it },
-                onTrashRetentionChange = { localTrash = it },
-                onDeleteEventsChange = { deleteEvents = it },
-                onShowOngoingNotificationsChange = { showOngoingNotifs = it },
-                onShowQuickFilterChange = { showQuickFilterAdv = it },
-                onQuickFilterTermChange = { quickFilterTermAdv = it },
-                onQuickFilterIconChange = { quickFilterIconAdv = it },
-                onDefaultDurationGoalMinsChange = { defaultDurationGoalMinsAdv = it },
-                onSessionsCountAsCompletionsChange = { sessionsCountAsCompletionsAdv = it },
-                onShowGoalsTabChange = { showGoalsTabAdv = it },
-                onShowTaskGoalsInSidebarChange = { showTaskGoalsInSidebarAdv = it },
                 onBack = {
-                    // Save on exit
-                    try {
-                        val cfg = api.getConfig()
-                        val r = localRoots.toUIntOrNull() ?: 20u
-                        val s = localSubs.toUIntOrNull() ?: 5u
-                        val t = localTrash.toUIntOrNull() ?: 14u
-                        val dur = defaultDurationGoalMinsAdv.toUIntOrNull() ?: 60u
-                        api.saveConfig(
-                            cfg.copy(
-                                password = "",
-                                trashRetention = t,
-                                maxDoneRoots = r,
-                                maxDoneSubtasks = s,
-                                deleteEventsOnCompletion = deleteEvents,
-                                showOngoingNotifications = showOngoingNotifs,
-                                showQuickFilter = showQuickFilterAdv,
-                                quickFilterTerm = quickFilterTermAdv,
-                                quickFilterIcon = quickFilterIconAdv,
-                                defaultDurationGoalMins = dur,
-                                sessionsCountAsCompletions = sessionsCountAsCompletionsAdv,
-                                showGoalsTab = showGoalsTabAdv,
-                                showTaskGoalsInSidebar = showTaskGoalsInSidebarAdv
-                            )
-                        )
-                    } catch (e: Exception) {
-                        if (e is CancellationException) throw e
-                        // swallow save error
-                    }
                     navController.popBackStack()
+                    refreshLists()
                 }
             )
         }

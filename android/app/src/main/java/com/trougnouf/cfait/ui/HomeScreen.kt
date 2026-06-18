@@ -1372,6 +1372,21 @@ fun HomeScreen(
                                         }) {
                                             NfIcon(NfIcons.ARROW_RIGHT, 14.sp)
                                         }
+                                        IconButton(onClick = {
+                                            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                                try {
+                                                    val cfg = api.getConfig()
+                                                    val newGoals = cfg.goals.toMutableMap()
+                                                    newGoals.remove(goal.key)
+                                                    api.saveConfig(cfg.copy(goals = newGoals))
+                                                    onDataChanged()
+                                                } catch (e: Exception) {
+                                                    if (e is CancellationException) throw e
+                                                }
+                                            }
+                                        }) {
+                                            NfIcon(NfIcons.CROSS, 14.sp, MaterialTheme.colorScheme.error)
+                                        }
                                     }
                                     HorizontalDivider()
                                 }
