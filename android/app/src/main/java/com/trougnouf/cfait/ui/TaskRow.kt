@@ -494,7 +494,7 @@ fun TaskRow(
                         )
                     }
 
-                    if (task.rruleHistoryCount > 0u || task.goalTargetStr != null || task.goalHistory.isNotEmpty()) {
+                    if (task.rruleHistoryStat != null || task.goalTargetStr != null || task.goalHistory.isNotEmpty()) {
                         HorizontalDivider(Modifier.padding(vertical = 8.dp))
                         Text(
                             androidx.compose.ui.res.stringResource(R.string.habit_history),
@@ -504,16 +504,8 @@ fun TaskRow(
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
 
-                        if (task.rruleHistoryCount > 0u) {
-                            val ctx = androidx.compose.ui.platform.LocalContext.current
-                            val windowResId = ctx.resources.getIdentifier(task.rruleHistoryWindow, "string", ctx.packageName)
-                            val windowStr = if (windowResId != 0) androidx.compose.ui.res.stringResource(windowResId) else "7 days"
-                            val textStat = if (task.rruleHistoryCount == 1u) {
-                                androidx.compose.ui.res.stringResource(R.string.habit_completed_in_past_one, windowStr)
-                            } else {
-                                androidx.compose.ui.res.stringResource(R.string.habit_completed_in_past_other, task.rruleHistoryCount.toInt(), windowStr)
-                            }
-                            Text("• $textStat", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (task.rruleHistoryStat != null) {
+                            Text("• ${task.rruleHistoryStat}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
 
                         if (task.goalTargetStr != null) {

@@ -4758,8 +4758,7 @@ data class MobileTask(
     var `goalProgressStr`: kotlin.String?,
     var `goalTargetStr`: kotlin.String?,
     var `goalHistory`: List<kotlin.Float>,
-    var `rruleHistoryCount`: kotlin.UInt,
-    var `rruleHistoryWindow`: kotlin.String,
+    var `rruleHistoryStat`: kotlin.String?,
     var `visibleCategories`: List<kotlin.String>,
     var `visibleLocation`: kotlin.String?,
 ) {
@@ -4824,8 +4823,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterSequenceFloat.read(buf),
-            FfiConverterUInt.read(buf),
-            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
             FfiConverterSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
         )
@@ -4884,8 +4882,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
                 FfiConverterOptionalString.allocationSize(value.`goalProgressStr`) +
                 FfiConverterOptionalString.allocationSize(value.`goalTargetStr`) +
                 FfiConverterSequenceFloat.allocationSize(value.`goalHistory`) +
-                FfiConverterUInt.allocationSize(value.`rruleHistoryCount`) +
-                FfiConverterString.allocationSize(value.`rruleHistoryWindow`) +
+                FfiConverterOptionalString.allocationSize(value.`rruleHistoryStat`) +
                 FfiConverterSequenceString.allocationSize(value.`visibleCategories`) +
                 FfiConverterOptionalString.allocationSize(value.`visibleLocation`)
         )
@@ -4946,8 +4943,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
         FfiConverterOptionalString.write(value.`goalProgressStr`, buf)
         FfiConverterOptionalString.write(value.`goalTargetStr`, buf)
         FfiConverterSequenceFloat.write(value.`goalHistory`, buf)
-        FfiConverterUInt.write(value.`rruleHistoryCount`, buf)
-        FfiConverterString.write(value.`rruleHistoryWindow`, buf)
+        FfiConverterOptionalString.write(value.`rruleHistoryStat`, buf)
         FfiConverterSequenceString.write(value.`visibleCategories`, buf)
         FfiConverterOptionalString.write(value.`visibleLocation`, buf)
     }

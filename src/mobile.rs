@@ -219,8 +219,7 @@ pub struct MobileTask {
     pub goal_progress_str: Option<String>,
     pub goal_target_str: Option<String>,
     pub goal_history: Vec<f32>,
-    pub rrule_history_count: u32,
-    pub rrule_history_window: String,
+    pub rrule_history_stat: Option<String>,
 
     // UI Visual resolution fields
     pub visible_categories: Vec<String>,
@@ -282,8 +281,7 @@ impl MobileTask {
             goal_progress_str: None,
             goal_target_str: None,
             goal_history: vec![],
-            rrule_history_count: 0,
-            rrule_history_window: String::new(),
+            rrule_history_stat: None,
             visible_categories: vec![],
             visible_location: None,
         }
@@ -627,13 +625,24 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
     let mut goal_progress_str = None;
     let mut goal_target_str = None;
     let mut goal_history = Vec::new();
-    let mut rrule_history_count = 0;
-    let mut rrule_history_window = String::new();
+    let mut rrule_history_stat = None;
 
     if let Some(rrule) = &t.rrule {
         let (count, _, key) = store.get_completion_history_stats(&t.uid, rrule);
-        rrule_history_count = count;
-        rrule_history_window = key.to_string();
+        if count > 0 {
+            let window_str = rust_i18n::t!(key).to_string();
+            let text = if count == 1 {
+                rust_i18n::t!("habit_completed_in_past.one", window = window_str).to_string()
+            } else {
+                rust_i18n::t!(
+                    "habit_completed_in_past.other",
+                    count = count,
+                    window = window_str
+                )
+                .to_string()
+            };
+            rrule_history_stat = Some(text);
+        }
     }
 
     if let Some(goal) = &t.goal {
@@ -707,8 +716,7 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
         goal_progress_str,
         goal_target_str,
         goal_history,
-        rrule_history_count,
-        rrule_history_window,
+        rrule_history_stat,
         visible_categories: t.visible_categories.clone(),
         visible_location: t.visible_location.clone(),
     }
