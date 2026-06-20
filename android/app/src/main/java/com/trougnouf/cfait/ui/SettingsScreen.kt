@@ -39,6 +39,10 @@ import androidx.core.content.FileProvider
 import com.trougnouf.cfait.R
 import com.trougnouf.cfait.core.CfaitMobile
 import com.trougnouf.cfait.core.MobileCalendar
+import com.trougnouf.cfait.core.MobileGoalType
+import com.trougnouf.cfait.core.MobileIntervalUnit
+import com.trougnouf.cfait.core.MobileGoal
+import com.trougnouf.cfait.core.MobileInterval
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.io.File
@@ -76,6 +80,22 @@ fun SettingsScreen(
     var defTime by remember { mutableStateOf("09:00") }
     var autoRefresh by remember { mutableStateOf("30m") }
     var createEventsForTasks by remember { mutableStateOf(false) }
+
+    var aliases by remember { mutableStateOf<Map<String, List<String>>>(emptyMap()) }
+    var newAliasKey by remember { mutableStateOf("") }
+    var newAliasTags by remember { mutableStateOf("") }
+
+    var goals by remember { mutableStateOf<Map<String, MobileGoal>>(emptyMap()) }
+    var goalInputKey by remember { mutableStateOf("") }
+    var goalInputTarget by remember { mutableStateOf("") }
+    var goalInputType by remember { mutableStateOf(MobileGoalType.COUNT) }
+    var goalInputAmount by remember { mutableStateOf("1") }
+    var goalInputUnit by remember { mutableStateOf(MobileIntervalUnit.WEEKS) }
+    var editingGoalKey by remember { mutableStateOf<String?>(null) }
+    var defaultDurationGoalMins by remember { mutableStateOf("60") }
+    var sessionsCountAsCompletions by remember { mutableStateOf(false) }
+    var showGoalsTab by remember { mutableStateOf(true) }
+    var showTaskGoalsInSidebar by remember { mutableStateOf(true) }
 
     // State maintained purely for saving without overwriting backend values
     var deleteEventsOnCompletion by remember { mutableStateOf(false) }
@@ -193,6 +213,12 @@ fun SettingsScreen(
         autoRefresh = formatDuration(cfg.autoRefreshInterval)
         createEventsForTasks = cfg.createEventsForTasks
         deleteEventsOnCompletion = cfg.deleteEventsOnCompletion
+        aliases = cfg.tagAliases
+        goals = cfg.goals
+        defaultDurationGoalMins = cfg.defaultDurationGoalMins.toString()
+        sessionsCountAsCompletions = cfg.sessionsCountAsCompletions
+        showGoalsTab = cfg.showGoalsTab
+        showTaskGoalsInSidebar = cfg.showTaskGoalsInSidebar
 
         if (isInitialLoad) {
             initialCreateEventsState = cfg.createEventsForTasks
@@ -247,7 +273,13 @@ fun SettingsScreen(
             snoozeShort = sShort,
             createEventsForTasks = createEventsForTasks,
             deleteEventsOnCompletion = deleteEventsOnCompletion,
-            autoRefreshInterval = aRefresh
+            autoRefreshInterval = aRefresh,
+            tagAliases = aliases,
+            goals = goals,
+            defaultDurationGoalMins = defaultDurationGoalMins.toUIntOrNull() ?: 60u,
+            sessionsCountAsCompletions = sessionsCountAsCompletions,
+            showGoalsTab = showGoalsTab,
+            showTaskGoalsInSidebar = showTaskGoalsInSidebar
         )
         api.saveConfig(newCfg)
     }
@@ -901,7 +933,280 @@ fun SettingsScreen(
                 }
             }
 
-            // 8. Advanced Settings
+            // 8. Tag Aliases
+            item {
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
+                Text(
+                    stringResource(R.string.tag_aliases),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                aliases.keys.toList().sorted().forEach { key ->
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                        Text(
+                            if (key.startsWith("@@")) key else "#$key",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.width(80.dp)
+                        )
+                        Text("→", modifier = Modifier.padding(horizontal = 8.dp))
+                        Text(aliases[key]?.joinToString(", ") ?: "", modifier = Modifier.weight(1f))
+                        IconButton(onClick = {
+                            scope.launch {
+                                api.removeAlias(key)
+                                reload()
+                                com.trougnouf.cfait.ui.triggerBackgroundSync(context, api)
+                            }
+                        }) { NfIcon(NfIcons.CROSS, 16.sp, MaterialTheme.colorScheme.error) }
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                    OutlinedTextField(
+                        value = newAliasKey,
+                        onValueChange = { newAliasKey = it },
+                        label = { Text(stringResource(R.string.alias_key_label)) },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text(stringResource(R.string.placeholder_key_tag)) },
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    OutlinedTextField(
+                        value = newAliasTags,
+                        onValueChange = { newAliasTags = it },
+                        label = { Text(stringResource(R.string.alias_value_label)) },
+                        placeholder = { Text(stringResource(R.string.placeholder_values)) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = {
+                        if (newAliasKey.isNotBlank() && newAliasTags.isNotBlank()) {
+                            val tags = newAliasTags.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                            scope.launch {
+                                try {
+                                    api.addAlias(newAliasKey.trimStart('#'), tags)
+                                    newAliasKey = ""
+                                    newAliasTags = ""
+                                    reload()
+                                    if (status.startsWith("Error")) status = ""
+                                    com.trougnouf.cfait.ui.triggerBackgroundSync(context, api)
+                                } catch (e: Exception) {
+                                    if (e is kotlinx.coroutines.CancellationException) throw e
+                                    status = context.getString(R.string.error_adding_alias, e.message ?: "")
+                                }
+                            }
+                        }
+                    }) { NfIcon(NfIcons.ADD) }
+                }
+                if (status.isNotEmpty()) {
+                    Text(status, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            // 9. Goals
+            item {
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
+                Text(
+                    stringResource(R.string.goals),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(
+                        checked = showGoalsTab,
+                        onCheckedChange = { showGoalsTab = it; saveToDisk() }
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.show_goals_tab))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
+                    Switch(
+                        checked = showTaskGoalsInSidebar,
+                        onCheckedChange = { showTaskGoalsInSidebar = it; saveToDisk() }
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.show_task_goals_in_sidebar))
+                }
+                OutlinedTextField(
+                    value = defaultDurationGoalMins,
+                    onValueChange = { defaultDurationGoalMins = it },
+                    label = { Text(stringResource(R.string.implicit_goal_duration)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+                Text(
+                    stringResource(R.string.implicit_goal_duration_explain),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(
+                        checked = sessionsCountAsCompletions,
+                        onCheckedChange = { sessionsCountAsCompletions = it; saveToDisk() }
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.sessions_count_as_completions))
+                }
+
+                goals.keys.toList().sorted().forEach { key ->
+                    val goal = goals[key]!!
+                    val isEditingThis = editingGoalKey == key
+                    val typeStr = if (goal.goalType == MobileGoalType.DURATION) stringResource(R.string.goal_type_duration) else stringResource(R.string.goal_type_count)
+                    val unitStr = when(goal.interval.unit) {
+                        MobileIntervalUnit.DAYS -> "d"
+                        MobileIntervalUnit.WEEKS -> "w"
+                        MobileIntervalUnit.MONTHS -> "mo"
+                        MobileIntervalUnit.YEARS -> "y"
+                    }
+                    val periodStr = if (goal.interval.amount == 1u) "/$unitStr" else "/${goal.interval.amount}$unitStr"
+
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                        Text(
+                            key,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isEditingThis) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1.5f)
+                        )
+                        Text(typeStr, modifier = Modifier.weight(1f), fontSize = 12.sp)
+                        Text(goal.target.toString(), modifier = Modifier.weight(0.5f), fontSize = 12.sp)
+                        Text(periodStr, modifier = Modifier.weight(1f), fontSize = 12.sp)
+
+                        IconButton(onClick = {
+                            editingGoalKey = key
+                            goalInputKey = key
+                            goalInputTarget = goal.target.toString()
+                            goalInputType = goal.goalType
+                            goalInputAmount = goal.interval.amount.toString()
+                            goalInputUnit = goal.interval.unit
+                        }) { NfIcon(NfIcons.EDIT, 16.sp, MaterialTheme.colorScheme.secondary) }
+
+                        IconButton(onClick = {
+                            if (editingGoalKey == key) {
+                                editingGoalKey = null
+                                goalInputKey = ""
+                                goalInputTarget = ""
+                            }
+                            val newGoals = goals.toMutableMap()
+                            newGoals.remove(key)
+                            goals = newGoals
+                            saveToDisk()
+                        }) { NfIcon(NfIcons.CROSS, 16.sp, MaterialTheme.colorScheme.error) }
+                    }
+                }
+
+                Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = goalInputKey,
+                            onValueChange = { goalInputKey = it },
+                            label = { Text(stringResource(R.string.alias_key_label)) },
+                            modifier = Modifier.weight(1.5f),
+                            singleLine = true
+                        )
+                        DropdownPicker(
+                            label = "Type",
+                            selected = goalInputType,
+                            options = listOf(
+                                MobileGoalType.COUNT to stringResource(R.string.goal_type_count),
+                                MobileGoalType.DURATION to stringResource(R.string.goal_type_duration)
+                            ),
+                            onSelect = { goalInputType = it },
+                            modifier = Modifier.weight(1.5f).padding(top = 8.dp)
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = goalInputTarget,
+                            onValueChange = { goalInputTarget = it },
+                            label = { Text("Target") },
+                            modifier = Modifier.weight(1.5f),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = goalInputAmount,
+                            onValueChange = { goalInputAmount = it },
+                            label = { Text("Amount") },
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                        DropdownPicker(
+                            label = "Unit",
+                            selected = goalInputUnit,
+                            options = listOf(
+                                MobileIntervalUnit.DAYS to stringResource(R.string.interval_unit_days),
+                                MobileIntervalUnit.WEEKS to stringResource(R.string.interval_unit_weeks),
+                                MobileIntervalUnit.MONTHS to stringResource(R.string.interval_unit_months),
+                                MobileIntervalUnit.YEARS to stringResource(R.string.interval_unit_years)
+                            ),
+                            onSelect = { goalInputUnit = it },
+                            modifier = Modifier.weight(1.5f).padding(top = 8.dp)
+                        )
+                        if (editingGoalKey != null) {
+                            IconButton(onClick = {
+                                if (goalInputKey.isNotBlank() && goalInputTarget.isNotBlank()) {
+                                    var safeKey = goalInputKey.trim()
+                                    if (safeKey.lowercase().startsWith("loc:")) safeKey = "@@" + safeKey.substring(4).trim()
+                                    else if (!safeKey.startsWith("#") && !safeKey.startsWith("@@")) safeKey = "#$safeKey"
+
+                                    val targetVal = if (goalInputType == MobileGoalType.DURATION) {
+                                        api.parseDurationString(goalInputTarget)?.toInt() ?: goalInputTarget.toIntOrNull() ?: 0
+                                    } else {
+                                        goalInputTarget.toIntOrNull() ?: 0
+                                    }
+
+                                    if (targetVal > 0) {
+                                        val newGoals = goals.toMutableMap()
+                                        if (editingGoalKey != safeKey) newGoals.remove(editingGoalKey)
+                                        val amt = goalInputAmount.toUIntOrNull()?.coerceAtLeast(1u) ?: 1u
+                                        newGoals[safeKey] = MobileGoal(goalInputType, targetVal.toUInt(), MobileInterval(amt, goalInputUnit))
+                                        goals = newGoals
+                                        editingGoalKey = null
+                                        goalInputKey = ""
+                                        goalInputTarget = ""
+                                        goalInputAmount = "1"
+                                        saveToDisk()
+                                    }
+                                }
+                            }) { NfIcon(NfIcons.CHECK, 20.sp, MaterialTheme.colorScheme.primary) }
+                            
+                            IconButton(onClick = {
+                                editingGoalKey = null
+                                goalInputKey = ""
+                                goalInputTarget = ""
+                                goalInputAmount = "1"
+                            }) { NfIcon(NfIcons.CROSS, 20.sp, MaterialTheme.colorScheme.error) }
+                        } else {
+                            IconButton(onClick = {
+                                if (goalInputKey.isNotBlank() && goalInputTarget.isNotBlank()) {
+                                    var safeKey = goalInputKey.trim()
+                                    if (safeKey.lowercase().startsWith("loc:")) safeKey = "@@" + safeKey.substring(4).trim()
+                                    else if (!safeKey.startsWith("#") && !safeKey.startsWith("@@")) safeKey = "#$safeKey"
+
+                                    val targetVal = if (goalInputType == MobileGoalType.DURATION) {
+                                        api.parseDurationString(goalInputTarget)?.toInt() ?: goalInputTarget.toIntOrNull() ?: 0
+                                    } else {
+                                        goalInputTarget.toIntOrNull() ?: 0
+                                    }
+
+                                    if (targetVal > 0) {
+                                        val newGoals = goals.toMutableMap()
+                                        val amt = goalInputAmount.toUIntOrNull()?.coerceAtLeast(1u) ?: 1u
+                                        newGoals[safeKey] = MobileGoal(goalInputType, targetVal.toUInt(), MobileInterval(amt, goalInputUnit))
+                                        goals = newGoals
+                                        goalInputKey = ""
+                                        goalInputTarget = ""
+                                        goalInputAmount = "1"
+                                        saveToDisk()
+                                    }
+                                }
+                            }) { NfIcon(NfIcons.ADD) }
+                        }
+                    }
+                }
+            }
+
+            // 10. Advanced Settings
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 Button(onClick = onAdvanced, modifier = Modifier.fillMaxWidth()) {
