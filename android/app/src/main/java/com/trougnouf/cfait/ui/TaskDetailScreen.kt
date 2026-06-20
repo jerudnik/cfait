@@ -555,7 +555,7 @@ fun TaskDetailScreen(
                     OutlinedTextField(
                         value = sessionInput,
                         onValueChange = { sessionInput = it },
-                        placeholder = { Text(com.trougnouf.cfait.ui.randomSessionExample(), color = androidx.compose.ui.graphics.Color.Gray) },
+                        placeholder = { Text("${stringResource(R.string.eg)} ${com.trougnouf.cfait.ui.randomSessionExample()}", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )

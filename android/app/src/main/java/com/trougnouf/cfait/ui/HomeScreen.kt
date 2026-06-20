@@ -973,7 +973,7 @@ fun HomeScreen(
                 OutlinedTextField(
                     value = sessionInputText,
                     onValueChange = { sessionInputText = it },
-                    placeholder = { Text(com.trougnouf.cfait.ui.randomSessionExample(), color = Color.Gray) },
+                    placeholder = { Text("${stringResource(R.string.eg)} ${com.trougnouf.cfait.ui.randomSessionExample()}", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1366,7 +1366,7 @@ fun HomeScreen(
                                     val displayTitle = if (isTask) {
                                         goal.periodStr // Rust populates this with "Summary - period"
                                     } else {
-                                        "${goal.key} (${goal.targetStr}/${goal.periodStr})"
+                                        "${goal.key} (${goal.periodStr})"
                                     }
 
                                     Row(
