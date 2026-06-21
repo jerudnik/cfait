@@ -73,7 +73,11 @@ pub fn refresh_filtered_tasks(app: &mut GuiApp) {
     let mut task_goals = Vec::new();
     if config.show_task_goals_in_sidebar {
         for (href, map) in app.store.calendars.iter() {
-            if app.hidden_calendars.contains(href) || app.disabled_calendars.contains(href) {
+            if app.hidden_calendars.contains(href)
+                || app.disabled_calendars.contains(href)
+                || href == crate::storage::LOCAL_TRASH_HREF
+                || href == "local://recovery"
+            {
                 continue;
             }
             for t in map.values() {

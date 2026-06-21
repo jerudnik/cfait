@@ -1542,6 +1542,8 @@ impl TaskStore {
             for s_uid in sources {
                 if let Some(t) = self.get_task_ref(s_uid)
                     && t.status == crate::model::TaskStatus::Completed
+                    && t.calendar_href != crate::storage::LOCAL_TRASH_HREF
+                    && t.calendar_href != "local://recovery"
                     && t.unmapped_properties
                         .iter()
                         .any(|p| p.key == "X-CFAIT-HISTORY-OF" && p.value == uid)
@@ -1582,7 +1584,10 @@ impl TaskStore {
             key
         };
 
-        for map in self.calendars.values() {
+        for (href, map) in &self.calendars {
+            if href == crate::storage::LOCAL_TRASH_HREF || href == "local://recovery" {
+                continue;
+            }
             for t in map.values() {
                 let matches = if is_tag {
                     t.categories

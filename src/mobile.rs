@@ -1775,7 +1775,10 @@ impl CfaitMobile {
             let _now = chrono::Utc::now();
             let mut task_goals = Vec::new();
             for (href, map) in store.calendars.iter() {
-                if hidden.contains(href) {
+                if hidden.contains(href)
+                    || href == crate::storage::LOCAL_TRASH_HREF
+                    || href == "local://recovery"
+                {
                     continue;
                 }
                 for t in map.values() {

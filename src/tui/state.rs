@@ -383,7 +383,11 @@ impl AppState {
         let mut task_goals = Vec::new();
         if config.show_task_goals_in_sidebar {
             for (href, map) in self.store.calendars.iter() {
-                if self.hidden_calendars.contains(href) || self.disabled_calendars.contains(href) {
+                if self.hidden_calendars.contains(href)
+                    || self.disabled_calendars.contains(href)
+                    || href == crate::storage::LOCAL_TRASH_HREF
+                    || href == "local://recovery"
+                {
                     continue;
                 }
                 for t in map.values() {
