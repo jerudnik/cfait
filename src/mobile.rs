@@ -647,7 +647,11 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
 
     if let Some(goal) = &t.goal {
         let progress = store.calculate_goal_progress(&format!("task:{}", t.uid), goal);
-        let (c_str, t_str) = crate::model::parser::format_goal_duration(progress, goal.target);
+        let (c_str, t_str) = if goal.goal_type == crate::config::GoalType::Duration {
+            crate::model::parser::format_goal_duration(progress, goal.target)
+        } else {
+            (progress.to_string(), goal.target.to_string())
+        };
         goal_progress_str = Some(c_str);
         goal_target_str = Some(goal.format_target_display(&t_str));
     }
@@ -1744,8 +1748,12 @@ impl CfaitMobile {
         let mut evaluated_goals = Vec::new();
         for (key, goal) in &config.goals {
             let progress = store.calculate_goal_progress(key, goal);
-            let (progress_str, target_str) =
-                crate::model::parser::format_goal_duration(progress, goal.target);
+            let (progress_str, target_str) = if goal.goal_type == crate::config::GoalType::Duration
+            {
+                crate::model::parser::format_goal_duration(progress, goal.target)
+            } else {
+                (progress.to_string(), goal.target.to_string())
+            };
             let pct = if goal.target > 0 {
                 (progress as f32 / goal.target as f32).min(1.0)
             } else {
@@ -1781,7 +1789,11 @@ impl CfaitMobile {
                         let progress =
                             store.calculate_goal_progress(&format!("task:{}", t.uid), goal);
                         let (progress_str, target_str) =
-                            crate::model::parser::format_goal_duration(progress, goal.target);
+                            if goal.goal_type == crate::config::GoalType::Duration {
+                                crate::model::parser::format_goal_duration(progress, goal.target)
+                            } else {
+                                (progress.to_string(), goal.target.to_string())
+                            };
                         let pct = if goal.target > 0 {
                             (progress as f32 / goal.target as f32).min(1.0)
                         } else {
