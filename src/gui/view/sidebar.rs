@@ -351,10 +351,14 @@ pub fn view_sidebar_categories(app: &GuiApp) -> Element<'_, Message> {
     let tags_column = if all_cats.is_empty() {
         column![
             container(
-                text(rust_i18n::t!("no_tags_found"))
-                    .size(14)
-                    .color(Color::from_rgb(0.5, 0.5, 0.5)),
+                column![
+                    text(rust_i18n::t!("no_tags_found"))
+                        .size(13)
+                        .color(Color::from_rgb(0.6, 0.6, 0.6))
+                ]
+                .align_x(iced::alignment::Horizontal::Center),
             )
+            .width(Length::Fill)
             .padding(10)
         ]
     } else {
@@ -588,10 +592,14 @@ pub fn view_sidebar_locations(app: &GuiApp) -> Element<'_, Message> {
 
     let list_content: Element<'_, Message> = if all_locs.is_empty() {
         container(
-            text(rust_i18n::t!("no_locations"))
-                .size(14)
-                .color(Color::from_rgb(0.5, 0.5, 0.5)),
+            column![
+                text(rust_i18n::t!("no_locations"))
+                    .size(13)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6))
+            ]
+            .align_x(iced::alignment::Horizontal::Center),
         )
+        .width(Length::Fill)
         .padding(10)
         .into()
     } else {

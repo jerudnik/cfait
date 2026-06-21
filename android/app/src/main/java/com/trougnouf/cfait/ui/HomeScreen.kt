@@ -1292,6 +1292,13 @@ fun HomeScreen(
                                 }
                             }
                         } else if (sidebarTab == 1) {
+                            if (tags.isEmpty()) {
+                                item {
+                                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                        Text(stringResource(R.string.no_tags_found), fontSize = 13.sp, color = Color.Gray, textAlign = TextAlign.Center)
+                                    }
+                                }
+                            }
                             items(tags) { tag ->
                                 val isUncat = tag.isUncategorized
                                 val rawDisplay = tag.displayName
@@ -1322,6 +1329,13 @@ fun HomeScreen(
                                 )
                             }
                         } else if (sidebarTab == 2) {
+                            if (locations.isEmpty()) {
+                                item {
+                                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                        Text(stringResource(R.string.no_locations), fontSize = 13.sp, color = Color.Gray, textAlign = TextAlign.Center)
+                                    }
+                                }
+                            }
                             items(locations) { loc ->
                                 val isSelected = filterLocations.contains(loc.name)
                                 val iconStr = if (isSelected) NfIcons.CHECK_CIRCLE else NfIcons.MAP_PIN

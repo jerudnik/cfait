@@ -210,9 +210,14 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             // Use cached categories derived from the last filter() call instead of
             // performing a global store scan here.
             let all_cats = &state.cached_categories;
-            let items: Vec<ListItem> = all_cats
-                .iter()
-                .map(|item| {
+            let mut items: Vec<ListItem> = Vec::new();
+            if all_cats.is_empty() {
+                items.push(ListItem::new(Line::from(Span::styled(
+                    rust_i18n::t!("no_tags_found").to_string(),
+                    Style::default().fg(Color::DarkGray),
+                ))));
+            } else {
+                items.extend(all_cats.iter().map(|item| {
                     let selected = if state.selected_categories.contains(&item.full_key) {
                         "[x]"
                     } else {
@@ -259,8 +264,8 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         ];
                         ListItem::new(Line::from(spans))
                     }
-                })
-                .collect();
+                }));
+            }
             // ATTRIBUTION: If empty AND tags are selected -> Red Border
             if is_filter_empty && !state.selected_categories.is_empty() {
                 sidebar_border_style = Style::default().fg(Color::Red).add_modifier(Modifier::BOLD);
@@ -279,9 +284,14 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             // Use cached locations derived from the last filter() call instead of
             // scanning the store here.
             let all_locs = &state.cached_locations;
-            let items: Vec<ListItem> = all_locs
-                .iter()
-                .map(|item| {
+            let mut items: Vec<ListItem> = Vec::new();
+            if all_locs.is_empty() {
+                items.push(ListItem::new(Line::from(Span::styled(
+                    rust_i18n::t!("no_locations").to_string(),
+                    Style::default().fg(Color::DarkGray),
+                ))));
+            } else {
+                items.extend(all_locs.iter().map(|item| {
                     let selected = if state.selected_locations.contains(&item.full_key) {
                         "[x]"
                     } else {
@@ -315,8 +325,8 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         Span::raw(format!("{} ({})", item.display_name, item.count)),
                     ];
                     ListItem::new(Line::from(spans))
-                })
-                .collect();
+                }));
+            }
             // ATTRIBUTION: If empty AND locations are selected -> Red Border
             if is_filter_empty && !state.selected_locations.is_empty() {
                 sidebar_border_style = Style::default().fg(Color::Red).add_modifier(Modifier::BOLD);
