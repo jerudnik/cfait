@@ -144,7 +144,7 @@ pub fn save_config(app: &mut GuiApp) -> Config {
     cfg.ui_scale = app.ui_scale;
     cfg.show_priority_numbers = app.show_priority_numbers;
     cfg.tag_aliases = app.tag_aliases.clone();
-    cfg.sort_cutoff_months = app.sort_cutoff_months;
+    cfg.sort_cutoff_days = app.sort_cutoff_days;
     cfg.theme = app.current_theme;
     cfg.urgent_days_horizon = app.urgent_days;
     cfg.urgent_priority_threshold = app.urgent_prio;

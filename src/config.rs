@@ -292,7 +292,7 @@ fn default_true() -> bool {
     true
 }
 fn default_cutoff() -> Option<u32> {
-    Some(2)
+    Some(30)
 }
 
 // Configuration version constant for migration handling
@@ -637,7 +637,7 @@ pub struct Config {
     #[serde(default = "default_ui_scale")]
     pub ui_scale: f32,
     #[serde(default = "default_cutoff")]
-    pub sort_cutoff_months: Option<u32>,
+    pub sort_cutoff_days: Option<u32>,
     /// When `true`, rank-4 (standard tasks with a due date within the cutoff) are sorted
     /// by priority first, then by due date.  Default is `false` (date-first).
     #[serde(default)]
@@ -763,7 +763,7 @@ pub struct SyncableConfig {
     #[serde(default)]
     pub hide_aliases_in_sidebar: bool,
     #[serde(default)]
-    pub sort_cutoff_months: Option<u32>,
+    pub sort_cutoff_days: Option<u32>,
     #[serde(default)]
     pub sort_standard_by_priority: bool,
     #[serde(default)]
@@ -840,7 +840,7 @@ impl Default for Config {
             hide_fully_completed_tags: true,
             hide_aliases_in_sidebar: true,
             ui_scale: 1.0,
-            sort_cutoff_months: Some(2),
+            sort_cutoff_days: Some(30),
             sort_standard_by_priority: false,
             sort_preset: SortPreset::default(),
             tag_aliases: HashMap::new(),
@@ -892,7 +892,7 @@ impl Config {
             hide_completed: self.hide_completed,
             hide_fully_completed_tags: self.hide_fully_completed_tags,
             hide_aliases_in_sidebar: self.hide_aliases_in_sidebar,
-            sort_cutoff_months: self.sort_cutoff_months,
+            sort_cutoff_days: self.sort_cutoff_days,
             sort_standard_by_priority: self.sort_standard_by_priority,
             sort_preset: self.sort_preset,
             urgent_days_horizon: self.urgent_days_horizon,
@@ -927,7 +927,7 @@ impl Config {
         self.hide_completed = sync.hide_completed;
         self.hide_fully_completed_tags = sync.hide_fully_completed_tags;
         self.hide_aliases_in_sidebar = sync.hide_aliases_in_sidebar;
-        self.sort_cutoff_months = sync.sort_cutoff_months;
+        self.sort_cutoff_days = sync.sort_cutoff_days;
         self.sort_standard_by_priority = sync.sort_standard_by_priority;
         self.sort_preset = sync.sort_preset;
         self.urgent_days_horizon = sync.urgent_days_horizon;
@@ -1147,7 +1147,7 @@ impl Config {
             // -- Section Headers --
             if trimmed.starts_with("default_calendar =") {
                 out.push_str("\n# --- UI & Behavior ---\n");
-            } else if trimmed.starts_with("sort_cutoff_months =") {
+            } else if trimmed.starts_with("sort_cutoff_days =") {
                 out.push_str("\n# --- Sorting & Ranking Logic ---\n");
             } else if trimmed.starts_with("auto_reminders =") {
                 out.push_str("\n# --- Notifications & Reminders ---\n");
@@ -1216,11 +1216,9 @@ impl Config {
             } else if trimmed.starts_with("theme =") {
                 out.push_str(line);
                 out.push_str(" # String: App Theme (RustyDark, Light, Dark, etc). In the TUI, light themes adapt text contrast for light terminal backgrounds.");
-            } else if trimmed.starts_with("sort_cutoff_months =") {
+            } else if trimmed.starts_with("sort_cutoff_days =") {
                 out.push_str(line);
-                out.push_str(
-                    " # Integer/None: Tasks due beyond this many months are ranked lower.",
-                );
+                out.push_str(" # Integer/None: Tasks due beyond this many days are ranked lower.");
             } else if trimmed.starts_with("urgent_days_horizon =") {
                 out.push_str(line);
                 out.push_str(

@@ -195,7 +195,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         hide_fully_completed_tags,
         hide_aliases_in_sidebar,
         tag_aliases,
-        sort_cutoff,
+        sort_cutoff_days,
         allow_insecure,
         enable_local_mode,
         hidden_calendars,
@@ -219,7 +219,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
         cfg.hide_fully_completed_tags,
         cfg.hide_aliases_in_sidebar,
         cfg.tag_aliases,
-        cfg.sort_cutoff_months,
+        cfg.sort_cutoff_days,
         cfg.allow_insecure_certs,
         cfg.enable_local_mode,
         cfg.hidden_calendars,
@@ -249,7 +249,7 @@ pub async fn run(ctx: Arc<dyn AppContext>) -> Result<()> {
     app_state.strikethrough_completed = cfg.strikethrough_completed;
     app_state.hide_fully_completed_tags = hide_fully_completed_tags;
     app_state.hide_aliases_in_sidebar = hide_aliases_in_sidebar;
-    app_state.sort_cutoff_months = sort_cutoff;
+    app_state.sort_cutoff_days = sort_cutoff_days;
     app_state.sort_standard_by_priority = cfg.sort_standard_by_priority;
     app_state.tag_aliases = tag_aliases;
     app_state.hidden_calendars = hidden_calendars.into_iter().collect();

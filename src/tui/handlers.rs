@@ -748,7 +748,7 @@ pub fn handle_app_event(state: &mut AppState, event: AppEvent, default_cal: &Opt
             state.hide_completed = cfg.hide_completed;
             state.hide_fully_completed_tags = cfg.hide_fully_completed_tags;
             state.hide_aliases_in_sidebar = cfg.hide_aliases_in_sidebar;
-            state.sort_cutoff_months = cfg.sort_cutoff_months;
+            state.sort_cutoff_days = cfg.sort_cutoff_days;
             state.sort_standard_by_priority = cfg.sort_standard_by_priority;
             state.urgent_days = cfg.urgent_days_horizon;
             state.urgent_prio = cfg.urgent_priority_threshold;

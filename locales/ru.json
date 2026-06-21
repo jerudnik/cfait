@@ -374,7 +374,7 @@
     "placeholder_key_tag": "#тэг",
     "placeholder_values": "@@локация, #тэг_б, !1",
     "preferences": "Настройки",
-    "priority_cutoff_months": "Порог приоритета (месяцы):",
+    "priority_cutoff_days": "Порог приоритета (дни):",
     "priority_le": "Приоритет <= (!):",
     "priority_rules": "Правила приоритета:",
     "promote_remove_parent": "Повысить (убрать родителя)",

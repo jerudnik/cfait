@@ -32,8 +32,8 @@ impl SessionState {
         hidden.extend(config.disabled_calendars.clone());
 
         let cutoff = config
-            .sort_cutoff_months
-            .map(|m| chrono::Utc::now() + chrono::Duration::days(m as i64 * 30));
+            .sort_cutoff_days
+            .map(|d| chrono::Utc::now() + chrono::Duration::days(d as i64));
 
         let selected_categories: HashSet<String> =
             self.selected_categories.iter().cloned().collect();

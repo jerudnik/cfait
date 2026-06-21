@@ -50,7 +50,7 @@ fun AdvancedSettingsScreen(
     var quickFilterIcon by remember { mutableStateOf("f0fa9") }
 
     var sortStandardByPriority by remember { mutableStateOf(false) }
-    var sortMonths by remember { mutableStateOf("2") }
+    var sortDays by remember { mutableStateOf("30") }
     var urgentDays by remember { mutableStateOf("1") }
     var urgentPrio by remember { mutableStateOf("1") }
     var defaultPriority by remember { mutableStateOf("5") }
@@ -70,7 +70,7 @@ fun AdvancedSettingsScreen(
             quickFilterIcon = cfg.quickFilterIcon
 
             sortStandardByPriority = cfg.sortStandardByPriority
-            sortMonths = cfg.sortCutoffMonths?.toString() ?: ""
+            sortDays = cfg.sortCutoffDays?.toString() ?: ""
             urgentDays = cfg.urgentDays.toString()
             urgentPrio = cfg.urgentPrio.toString()
             defaultPriority = cfg.defaultPriority.toString()
@@ -96,7 +96,7 @@ fun AdvancedSettingsScreen(
                 quickFilterIcon = quickFilterIcon,
 
                 sortStandardByPriority = sortStandardByPriority,
-                sortCutoffMonths = sortMonths.toUIntOrNull(),
+                sortCutoffDays = sortDays.toUIntOrNull(),
                 urgentDays = urgentDays.toUIntOrNull() ?: 1u,
                 urgentPrio = urgentPrio.toUByteOrNull() ?: 1u,
                 defaultPriority = defaultPriority.toUByteOrNull() ?: 5u,
@@ -184,13 +184,14 @@ fun AdvancedSettingsScreen(
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.sort_standard_by_priority_label))
             }
+            
+            Spacer(Modifier.height(16.dp))
             Text(
-                stringResource(R.string.priority_rules),
+                stringResource(R.string.settings_urgent_definition),
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 8.dp)
+                fontSize = 16.sp
             )
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
                 Text(stringResource(R.string.due_within_days), modifier = Modifier.weight(1f))
                 OutlinedTextField(
                     value = urgentDays,
@@ -200,7 +201,7 @@ fun AdvancedSettingsScreen(
                     singleLine = true
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
                 Text(stringResource(R.string.priority_le), modifier = Modifier.weight(1f))
                 OutlinedTextField(
                     value = urgentPrio,
@@ -210,7 +211,57 @@ fun AdvancedSettingsScreen(
                     singleLine = true
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+            Text(
+                stringResource(R.string.settings_urgent_explain),
+                fontSize = 12.sp,
+                color = androidx.compose.ui.graphics.Color.Gray,
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            )
+
+            Text(
+                stringResource(R.string.settings_timeframes_cutoffs),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                Text(stringResource(R.string.priority_cutoff_days), modifier = Modifier.weight(1f))
+                OutlinedTextField(
+                    value = sortDays,
+                    onValueChange = { sortDays = it },
+                    modifier = Modifier.width(80.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
+            Text(
+                stringResource(R.string.settings_cutoff_explain),
+                fontSize = 12.sp,
+                color = androidx.compose.ui.graphics.Color.Gray,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                Text(stringResource(R.string.start_grace_days), modifier = Modifier.weight(1f))
+                OutlinedTextField(
+                    value = startGracePeriodDays,
+                    onValueChange = { startGracePeriodDays = it },
+                    modifier = Modifier.width(80.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
+            Text(
+                stringResource(R.string.settings_start_grace_explain),
+                fontSize = 12.sp,
+                color = androidx.compose.ui.graphics.Color.Gray,
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            )
+
+            Text(
+                stringResource(R.string.settings_defaults),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
                 Text(stringResource(R.string.default_priority_label), modifier = Modifier.weight(1f))
                 OutlinedTextField(
                     value = defaultPriority,
@@ -221,31 +272,12 @@ fun AdvancedSettingsScreen(
                 )
             }
             Text(
-                stringResource(R.string.sorting_timeframes),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 8.dp)
+                stringResource(R.string.settings_default_prio_explain),
+                fontSize = 12.sp,
+                color = androidx.compose.ui.graphics.Color.Gray,
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
             )
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                Text(stringResource(R.string.start_grace_days), modifier = Modifier.weight(1f))
-                OutlinedTextField(
-                    value = startGracePeriodDays,
-                    onValueChange = { startGracePeriodDays = it },
-                    modifier = Modifier.width(80.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                Text(stringResource(R.string.priority_cutoff_months), modifier = Modifier.weight(1f))
-                OutlinedTextField(
-                    value = sortMonths,
-                    onValueChange = { sortMonths = it },
-                    modifier = Modifier.width(80.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-            }
+
             HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
             // Display Limits Section

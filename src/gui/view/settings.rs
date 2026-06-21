@@ -372,6 +372,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .label(rust_i18n::t!("sort_standard_by_priority_label"))
                     .on_toggle(Message::ToggleSortStandardByPriority),
                 Space::new().height(10),
+                text(rust_i18n::t!("settings_sort_behavior")).size(16),
                 row![
                     text(rust_i18n::t!("sorting_preset_label")).width(Length::Fixed(200.0)),
                     iced::widget::pick_list(
@@ -384,8 +385,11 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                 ]
                 .spacing(10)
                 .align_y(iced::Alignment::Center),
+                text(rust_i18n::t!("settings_sort_preset_explain"))
+                    .size(12)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),
-                text(rust_i18n::t!("priority_rules")).size(16),
+                text(rust_i18n::t!("settings_urgent_definition")).size(16),
                 row![
                     text(rust_i18n::t!("due_within_days")).width(Length::Fixed(150.0)),
                     text_input("1", &app.ob_urgent_days_input)
@@ -404,17 +408,23 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                 ]
                 .spacing(10)
                 .align_y(iced::Alignment::Center),
+                text(rust_i18n::t!("settings_urgent_explain"))
+                    .size(12)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6)),
+                Space::new().height(10),
+                text(rust_i18n::t!("settings_timeframes_cutoffs")).size(16),
                 row![
-                    text(rust_i18n::t!("default_priority_label")).width(Length::Fixed(150.0)),
-                    text_input("5", &app.ob_default_priority_input)
-                        .on_input(Message::ObDefaultPriorityChanged)
+                    text(rust_i18n::t!("priority_cutoff_days")).width(Length::Fixed(150.0)),
+                    text_input("30", &app.ob_sort_days_input)
+                        .on_input(Message::ObSortDaysChanged)
                         .width(Length::Fixed(60.0))
                         .padding(5)
                 ]
                 .spacing(10)
                 .align_y(iced::Alignment::Center),
-                Space::new().height(10),
-                text(rust_i18n::t!("sorting_timeframes")).size(16),
+                text(rust_i18n::t!("settings_cutoff_explain"))
+                    .size(12)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 row![
                     text(rust_i18n::t!("start_grace_days")).width(Length::Fixed(150.0)),
                     text_input("1", &app.ob_start_grace_input)
@@ -424,15 +434,23 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                 ]
                 .spacing(10)
                 .align_y(iced::Alignment::Center),
+                text(rust_i18n::t!("settings_start_grace_explain"))
+                    .size(12)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6)),
+                Space::new().height(10),
+                text(rust_i18n::t!("settings_defaults")).size(16),
                 row![
-                    text(rust_i18n::t!("priority_cutoff_months")).width(Length::Fixed(150.0)),
-                    text_input("6", &app.ob_sort_months_input)
-                        .on_input(Message::ObSortMonthsChanged)
-                        .width(Length::Fixed(100.0))
+                    text(rust_i18n::t!("default_priority_label")).width(Length::Fixed(150.0)),
+                    text_input("5", &app.ob_default_priority_input)
+                        .on_input(Message::ObDefaultPriorityChanged)
+                        .width(Length::Fixed(60.0))
                         .padding(5)
                 ]
                 .spacing(10)
                 .align_y(iced::Alignment::Center),
+                text(rust_i18n::t!("settings_default_prio_explain"))
+                    .size(12)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),
                 text(rust_i18n::t!("display_limits")).size(16),
                 row![

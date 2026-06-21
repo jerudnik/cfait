@@ -85,7 +85,7 @@ pub struct AppState {
     pub hide_aliases_in_sidebar: bool,
     pub strikethrough_completed: bool,
     pub show_priority_numbers: bool,
-    pub sort_cutoff_months: Option<u32>,
+    pub sort_cutoff_days: Option<u32>,
     pub sort_standard_by_priority: bool,
 
     pub theme: crate::config::AppTheme,
@@ -218,7 +218,7 @@ impl AppState {
             show_quick_filter: true,
             show_goals_tab: config.show_goals_tab,
             goal_icon: GOAL_ICONS[fastrand::usize(..GOAL_ICONS.len())],
-            sort_cutoff_months: Some(2),
+            sort_cutoff_days: Some(30),
             sort_standard_by_priority: false,
             theme: crate::config::AppTheme::default(),
             // Initialize sidebar caches as empty; they will be populated by refresh_filtered_view()
@@ -304,10 +304,9 @@ impl AppState {
             &self.active_search_query
         };
 
-        let cutoff_date = if let Some(months) = self.sort_cutoff_months {
+        let cutoff_date = if let Some(days) = self.sort_cutoff_days {
             let now = chrono::Utc::now();
-            let days = months as i64 * 30;
-            Some(now + chrono::Duration::days(days))
+            Some(now + chrono::Duration::days(days as i64))
         } else {
             None
         };

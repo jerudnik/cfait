@@ -374,7 +374,7 @@
     "placeholder_key_tag": "#štítek",
     "placeholder_values": "@@loc, #štítek_b, !1",
     "preferences": "Předvolby",
-    "priority_cutoff_months": "Práh priority (měsíce):",
+    "priority_cutoff_days": "Práh priority (dny):",
     "priority_le": "Priorita <= (!):",
     "priority_rules": "Pravidla priorit:",
     "promote_remove_parent": "Povýšit (odebrat rodiče)",

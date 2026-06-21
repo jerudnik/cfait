@@ -199,7 +199,7 @@ pub enum Message {
     // --- System & Network Events ---
     ConfigLoaded(Result<Box<Config>, String>),
     ConfigUpdated(Box<Config>),
-    ObSortMonthsChanged(String),
+    ObSortDaysChanged(String),
     ThemeChanged(AppTheme),
     Loaded(LoadedResult),
     TasksRefreshed(Result<(String, Vec<TodoTask>), String>),

@@ -32,9 +32,9 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
             app.hidden_calendars = config.hidden_calendars.clone().into_iter().collect();
             app.disabled_calendars = config.disabled_calendars.clone().into_iter().collect();
-            app.sort_cutoff_months = config.sort_cutoff_months;
-            app.ob_sort_months_input = match config.sort_cutoff_months {
-                Some(m) => m.to_string(),
+            app.sort_cutoff_days = config.sort_cutoff_days;
+            app.ob_sort_days_input = match config.sort_cutoff_days {
+                Some(d) => d.to_string(),
                 None => "".to_string(),
             };
             app.ob_insecure = config.allow_insecure_certs;
@@ -169,7 +169,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
             app.hidden_calendars = config.hidden_calendars.clone().into_iter().collect();
             app.disabled_calendars = config.disabled_calendars.clone().into_iter().collect();
-            app.sort_cutoff_months = config.sort_cutoff_months;
+            app.sort_cutoff_days = config.sort_cutoff_days;
             app.tag_aliases = config.tag_aliases.clone();
             app.hide_completed = config.hide_completed;
             app.hide_fully_completed_tags = config.hide_fully_completed_tags;
@@ -213,8 +213,8 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
             app.pinned_actions = config.pinned_actions.clone();
 
-            app.ob_sort_months_input = match config.sort_cutoff_months {
-                Some(m) => m.to_string(),
+            app.ob_sort_days_input = match config.sort_cutoff_days {
+                Some(d) => d.to_string(),
                 None => "".to_string(),
             };
             app.ob_urgent_days_input = app.urgent_days.to_string();
@@ -290,10 +290,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.calendars.extend(app.local_cals_editing.clone());
             app.sort_calendars();
 
-            if app.ob_sort_months_input.trim().is_empty() {
-                app.sort_cutoff_months = None;
-            } else if let Ok(n) = app.ob_sort_months_input.trim().parse::<u32>() {
-                app.sort_cutoff_months = Some(n);
+            if app.ob_sort_days_input.trim().is_empty() {
+                app.sort_cutoff_days = None;
+            } else if let Ok(n) = app.ob_sort_days_input.trim().parse::<u32>() {
+                app.sort_cutoff_days = Some(n);
             }
 
             let config_to_save = save_config(app);
@@ -336,10 +336,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.ob_insecure = cfg.allow_insecure_certs;
             app.hidden_calendars = cfg.hidden_calendars.iter().cloned().collect();
             app.tag_aliases = cfg.tag_aliases.clone();
-            app.sort_cutoff_months = cfg.sort_cutoff_months;
+            app.sort_cutoff_days = cfg.sort_cutoff_days;
             app.current_theme = cfg.theme;
-            app.ob_sort_months_input = match cfg.sort_cutoff_months {
-                Some(m) => m.to_string(),
+            app.ob_sort_days_input = match cfg.sort_cutoff_days {
+                Some(d) => d.to_string(),
                 None => "".to_string(),
             };
             app.trash_retention_days = cfg.trash_retention_days;
@@ -604,14 +604,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             save_config(app);
             Task::none()
         }
-        Message::ObSortMonthsChanged(val) => {
+        Message::ObSortDaysChanged(val) => {
             if val.is_empty() || val.chars().all(|c| c.is_numeric()) {
-                app.ob_sort_months_input = val.clone();
+                app.ob_sort_days_input = val.clone();
 
                 if val.trim().is_empty() {
-                    app.sort_cutoff_months = None;
+                    app.sort_cutoff_days = None;
                 } else if let Ok(n) = val.trim().parse::<u32>() {
-                    app.sort_cutoff_months = Some(n);
+                    app.sort_cutoff_days = Some(n);
                 }
                 save_config(app);
                 refresh_filtered_tasks(app);

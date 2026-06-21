@@ -255,7 +255,7 @@
     "placeholder_key_tag": "#tag",
     "placeholder_values": "@@loc, #tag_b, !1",
     "preferences": "Preferenze",
-    "priority_cutoff_months": "Limite di priorità (mesi):",
+    "priority_cutoff_days": "Limite di priorità (giorni):",
     "priority_le": "Priorità <= (!):",
     "priority_rules": "Regole di priorità:",
     "promote_remove_parent": "Promuovi (rimuovi l'attività padre)",

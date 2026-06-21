@@ -414,7 +414,7 @@
     "placeholder_key_tag": "#tag",
     "placeholder_values": "@@loc, #tag_b, !1",
     "preferences": "Voreinstellungen",
-    "priority_cutoff_months": "Prioritätsgrenze (Monate):",
+    "priority_cutoff_days": "Prioritätsgrenze (Tage):",
     "priority_le": "Priorität <= (!):",
     "priority_rules": "Prioritätsregeln:",
     "promote_remove_parent": "Hochstufen (Eltern entfernen)",

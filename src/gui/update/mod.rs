@@ -68,7 +68,7 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::EditGoal(_, _)
         | Message::CancelEditGoal
         | Message::RemoveGoal(_)
-        | Message::ObSortMonthsChanged(_)
+        | Message::ObSortDaysChanged(_)
         | Message::ObUrgentDaysChanged(_)
         | Message::ObUrgentPrioChanged(_)
         | Message::ObDefaultPriorityChanged(_)

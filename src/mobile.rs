@@ -389,7 +389,7 @@ pub struct MobileConfig {
     pub hide_aliases_in_sidebar: bool,
     pub tag_aliases: HashMap<String, Vec<String>>,
     pub disabled_calendars: Vec<String>,
-    pub sort_cutoff_months: Option<u32>,
+    pub sort_cutoff_days: Option<u32>,
     pub sort_standard_by_priority: bool,
     pub sort_preset: String,
     pub urgent_days: u32,
@@ -878,7 +878,7 @@ impl CfaitMobile {
             hide_aliases_in_sidebar: c.hide_aliases_in_sidebar,
             tag_aliases: c.tag_aliases,
             disabled_calendars: c.disabled_calendars,
-            sort_cutoff_months: c.sort_cutoff_months,
+            sort_cutoff_days: c.sort_cutoff_days,
             sort_standard_by_priority: c.sort_standard_by_priority,
             sort_preset: c.sort_preset.to_string(),
             urgent_days: c.urgent_days_horizon,
@@ -997,7 +997,7 @@ impl CfaitMobile {
         c.hide_aliases_in_sidebar = config.hide_aliases_in_sidebar;
         c.tag_aliases = config.tag_aliases;
         c.disabled_calendars = config.disabled_calendars;
-        c.sort_cutoff_months = config.sort_cutoff_months;
+        c.sort_cutoff_days = config.sort_cutoff_days;
         c.sort_standard_by_priority = config.sort_standard_by_priority;
         c.sort_preset = config.sort_preset.parse().unwrap_or_default();
         c.urgent_days_horizon = config.urgent_days;
@@ -1671,8 +1671,8 @@ impl CfaitMobile {
         let search_collapsed_set: HashSet<String> = HashSet::new();
 
         let cutoff_date = config
-            .sort_cutoff_months
-            .map(|m| Utc::now() + chrono::Duration::days(m as i64 * 30));
+            .sort_cutoff_days
+            .map(|d| Utc::now() + chrono::Duration::days(d as i64));
         let filtered = store.filter(FilterOptions {
             active_cal_href: None,
             hidden_calendars: &hidden,
@@ -1886,8 +1886,8 @@ impl CfaitMobile {
         let mut hidden: HashSet<String> = config.hidden_calendars.into_iter().collect();
         hidden.extend(config.disabled_calendars);
         let cutoff_date = config
-            .sort_cutoff_months
-            .map(|m| Utc::now() + chrono::Duration::days(m as i64 * 30));
+            .sort_cutoff_days
+            .map(|d| Utc::now() + chrono::Duration::days(d as i64));
         let filter_res = store.filter(FilterOptions {
             active_cal_href: None,
             hidden_calendars: &hidden,

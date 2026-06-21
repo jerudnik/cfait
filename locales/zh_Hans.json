@@ -437,7 +437,7 @@
     "placeholder_key_tag": "#tag",
     "placeholder_values": "@@loc, #tag_b, !1",
     "preferences": "偏好设置",
-    "priority_cutoff_months": "优先级截止（月）：",
+    "priority_cutoff_days": "优先级截止（天）：",
     "priority_le": "优先级 <= (!)：",
     "priority_rules": "优先级规则：",
     "promote_remove_parent": "提升（移除父任务）",

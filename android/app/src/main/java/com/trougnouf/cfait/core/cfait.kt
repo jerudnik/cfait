@@ -4099,7 +4099,7 @@ data class MobileConfig(
     var `hideAliasesInSidebar`: kotlin.Boolean,
     var `tagAliases`: Map<kotlin.String, List<kotlin.String>>,
     var `disabledCalendars`: List<kotlin.String>,
-    var `sortCutoffMonths`: kotlin.UInt?,
+    var `sortCutoffDays`: kotlin.UInt?,
     var `sortStandardByPriority`: kotlin.Boolean,
     var `sortPreset`: kotlin.String,
     var `urgentDays`: kotlin.UInt,
@@ -4189,7 +4189,7 @@ public object FfiConverterTypeMobileConfig : FfiConverterRustBuffer<MobileConfig
                 FfiConverterBoolean.allocationSize(value.`hideAliasesInSidebar`) +
                 FfiConverterMapStringSequenceString.allocationSize(value.`tagAliases`) +
                 FfiConverterSequenceString.allocationSize(value.`disabledCalendars`) +
-                FfiConverterOptionalUInt.allocationSize(value.`sortCutoffMonths`) +
+                FfiConverterOptionalUInt.allocationSize(value.`sortCutoffDays`) +
                 FfiConverterBoolean.allocationSize(value.`sortStandardByPriority`) +
                 FfiConverterString.allocationSize(value.`sortPreset`) +
                 FfiConverterUInt.allocationSize(value.`urgentDays`) +
@@ -4233,7 +4233,7 @@ public object FfiConverterTypeMobileConfig : FfiConverterRustBuffer<MobileConfig
         FfiConverterBoolean.write(value.`hideAliasesInSidebar`, buf)
         FfiConverterMapStringSequenceString.write(value.`tagAliases`, buf)
         FfiConverterSequenceString.write(value.`disabledCalendars`, buf)
-        FfiConverterOptionalUInt.write(value.`sortCutoffMonths`, buf)
+        FfiConverterOptionalUInt.write(value.`sortCutoffDays`, buf)
         FfiConverterBoolean.write(value.`sortStandardByPriority`, buf)
         FfiConverterString.write(value.`sortPreset`, buf)
         FfiConverterUInt.write(value.`urgentDays`, buf)

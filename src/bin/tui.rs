@@ -695,8 +695,8 @@ async fn main() -> Result<()> {
                 None
             } else {
                 config
-                    .sort_cutoff_months
-                    .map(|m| Utc::now() + chrono::Duration::days(m as i64 * 30))
+                    .sort_cutoff_days
+                    .map(|d| Utc::now() + chrono::Duration::days(d as i64))
             };
 
             // Local empty sets to satisfy FilterOptions references

@@ -460,7 +460,7 @@
     "placeholder_key_tag": "#tag",
     "placeholder_values": "@@loc, #tag_b, !1",
     "preferences": "Préférences",
-    "priority_cutoff_months": "Limite de priorité (mois) :",
+    "priority_cutoff_days": "Limite de priorité (jours) :",
     "priority_le": "Priorité <= (!) :",
     "priority_rules": "Règles de priorité :",
     "promote_remove_parent": "Promouvoir (retirer le parent)",
