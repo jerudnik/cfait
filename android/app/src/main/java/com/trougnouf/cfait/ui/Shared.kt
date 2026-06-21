@@ -188,6 +188,7 @@ object NfIcons {
     val ROCKET_OUTLINE = get(0xf13af)
     val ELEVATOR_UP = get(0xf12c1)
     val ESCALATOR_UP = get(0xf12bf)
+    val SAVE_AS = get(0xeb4a)
     // Extract Subtasks Icons (random variation)
     val SHOVEL = get(0xf0710) // nf-md-shovel
     val BULLDOZER = get(0xf0b22) // nf-md-bulldozer
