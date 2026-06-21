@@ -495,6 +495,7 @@
     "server_connection": "服务器连接",
     "sessions_count_as_completions": "时间会话计入目标完成",
     "settings": "设置",
+    "settings_cutoff_explain": "截止超出此窗口的任务将按无日期任务排序。",
     "settings_timeframes_cutoffs": "时间范围和截止",
     "settings_urgent_definition": "什么使任务成为“紧急”？",
     "settings_urgent_explain": "符合任一规则的任务将跳到列表顶部。",
