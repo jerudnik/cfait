@@ -332,6 +332,7 @@ async fn main() -> Result<()> {
         "add" | "create" => {
             let mut col_href = None;
             let mut desc_text = None;
+            let mut parent_uid_arg = None;
             let mut no_wait = false;
             let mut wait = false;
             let mut i = 2;
@@ -357,6 +358,14 @@ async fn main() -> Result<()> {
                         i += 2;
                     } else {
                         eprintln!("Error: Missing value for --desc");
+                        std::process::exit(1);
+                    }
+                } else if args[i] == "--parent" || args[i] == "-p" {
+                    if i + 1 < args.len() {
+                        parent_uid_arg = Some(args[i + 1].clone());
+                        i += 2;
+                    } else {
+                        eprintln!("Error: Missing value for --parent");
                         std::process::exit(1);
                     }
                 } else {
@@ -404,9 +413,22 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
 
+            let full_parent_uid = if let Some(partial) = parent_uid_arg {
+                let temp_store = build_store_cli(&ctx).await;
+                match resolve_uid(&temp_store, &partial) {
+                    Some(uid) => Some(uid),
+                    None => std::process::exit(1),
+                }
+            } else {
+                None
+            };
+
             let mut task = Task::new(&clean_input, &config.tag_aliases, def_time);
             if let Some(d) = desc_text {
                 task.description = d;
+            }
+            if let Some(p) = full_parent_uid {
+                task.parent_uid = Some(p);
             }
 
             let target_href_input = col_href.unwrap_or_else(|| {
@@ -467,6 +489,8 @@ async fn main() -> Result<()> {
         "edit" => {
             let mut col_href = None;
             let mut desc_text = None;
+            let mut parent_uid_arg = None;
+            let mut clear_parent = false;
             let mut clear_due = false;
             let mut clear_start = false;
             let mut clear_tags = false;
@@ -498,6 +522,17 @@ async fn main() -> Result<()> {
                         eprintln!("Error: Missing value for --desc");
                         std::process::exit(1);
                     }
+                } else if args[i] == "--parent" || args[i] == "-p" {
+                    if i + 1 < args.len() {
+                        parent_uid_arg = Some(args[i + 1].clone());
+                        i += 2;
+                    } else {
+                        eprintln!("Error: Missing value for --parent");
+                        std::process::exit(1);
+                    }
+                } else if args[i] == "--clear-parent" {
+                    clear_parent = true;
+                    i += 1;
                 } else if args[i] == "--clear-due" {
                     clear_due = true;
                     i += 1;
@@ -529,6 +564,21 @@ async fn main() -> Result<()> {
             let full_uid = match resolve_uid(&store, &partial_uid) {
                 Some(uid) => uid,
                 None => std::process::exit(1),
+            };
+
+            let full_parent_uid = if let Some(partial) = parent_uid_arg {
+                match resolve_uid(&store, &partial) {
+                    Some(uid) => {
+                        if uid == full_uid {
+                            eprintln!("{}", rust_i18n::t!("error_cannot_be_child_of_self"));
+                            std::process::exit(1);
+                        }
+                        Some(uid)
+                    }
+                    None => std::process::exit(1),
+                }
+            } else {
+                None
             };
 
             let mut config =
@@ -574,6 +624,18 @@ async fn main() -> Result<()> {
             }
 
             if let Some((task_mut, _)) = store.get_task_mut(&full_uid) {
+                if clear_parent {
+                    if task_mut.parent_uid.is_some() {
+                        task_mut.parent_uid = None;
+                        changed = true;
+                    }
+                } else if let Some(p) = &full_parent_uid
+                    && task_mut.parent_uid.as_deref() != Some(p.as_str())
+                {
+                    task_mut.parent_uid = Some(p.clone());
+                    changed = true;
+                }
+
                 if clear_due && task_mut.due.is_some() {
                     task_mut.due = None;
                     changed = true;

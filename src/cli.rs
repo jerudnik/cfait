@@ -127,7 +127,7 @@ pub fn print_help(binary_name: &str) {
         println!("{}", rust_i18n::t!("cli_action_commands_heading"));
         print_cmd(
             &format!(
-                "{} add <{}> [-c <id>] [--desc <text>] [-n] [-w]",
+                "{} add <{}> [-c <id>] [--desc <text>] [-p <uid>] [-n] [-w]",
                 binary_name,
                 rust_i18n::t!("cli_task_placeholder")
             ),
@@ -135,7 +135,7 @@ pub fn print_help(binary_name: &str) {
         );
         print_cmd(
             &format!(
-                "{} edit <uid> <{}> [-c <id>] [--desc <text>] [--clear-due] [--clear-start] [--clear-tags] [--clear-loc] [-n] [-w]",
+                "{} edit <uid> <{}> [-c <id>] [--desc <text>] [-p <uid>] [--clear-parent] [--clear-due] [--clear-start] [--clear-tags] [--clear-loc] [-n] [-w]",
                 binary_name,
                 rust_i18n::t!("cli_task_placeholder")
             ),

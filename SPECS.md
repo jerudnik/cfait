@@ -243,8 +243,8 @@ Tasks tagged with `#permanent` act as endless trackers. When checked off (Comple
 ## 7. Command Line Interface (CLI)
 Used for headless automation, scripting, and piping. Operates directly on the `TaskStore`.
 
-*   `cfait add <task...>`: Smart input task creation. Flags: `-c <href>`, `--desc <text>`, `-n` (queue to journal, don't wait for network sync).
-*   `cfait edit <uid> <task...>`: Edits metadata using smart syntax. Flags: `--clear-due`, `--clear-start`, `--clear-tags`, `--clear-loc`.
+*   `cfait add <task...>`: Smart input task creation. Flags: `-c <href>`, `--desc <text>`, `-p <uid>` (set parent), `-n` (queue to journal, don't wait for network sync).
+*   `cfait edit <uid> <task...>`: Edits metadata using smart syntax. Flags: `--clear-due`, `--clear-start`, `--clear-tags`, `--clear-loc`, `-p <uid>` (set parent), `--clear-parent`.
 *   `cfait list [--all] [--json] [-c <id>]`: Outputs task tree.
 *   `cfait search <query> [--all] [--json] [-c <id>]`: Searches and outputs tasks.
 *   `cfait view <uid> [--json]`: Outputs detailed task info.
