@@ -1558,9 +1558,37 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         .spacing(0)
     };
 
-    let right_section = row![search_row, window_controls]
+    let mut right_section = row![search_row]
         .spacing(10)
         .align_y(iced::Alignment::Center);
+
+    if app.sidebar_is_hidden {
+        let settings_btn = tooltip(
+            iced::widget::button(icon::icon(icon::SETTINGS_GEAR).size(16))
+                .style(iced::widget::button::text)
+                .padding(4)
+                .on_press(Message::OpenSettings),
+            text(rust_i18n::t!("settings")).size(12),
+            tooltip::Position::Bottom,
+        )
+        .style(tooltip_style)
+        .delay(Duration::from_millis(700));
+
+        let help_btn = tooltip(
+            iced::widget::button(icon::icon(icon::HELP_RHOMBUS).size(16))
+                .style(iced::widget::button::text)
+                .padding(4)
+                .on_press(Message::OpenHelp(crate::help::HelpTab::Syntax)),
+            text(rust_i18n::t!("help")).size(12),
+            tooltip::Position::Bottom,
+        )
+        .style(tooltip_style)
+        .delay(Duration::from_millis(700));
+
+        right_section = right_section.push(settings_btn).push(help_btn);
+    }
+
+    right_section = right_section.push(window_controls);
 
     let header_row = row![left_section, middle_container, right_section]
         .spacing(10)
