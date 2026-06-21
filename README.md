@@ -23,8 +23,8 @@ If you *do* want to sync your tasks across devices, Cfait connects seamlessly to
 ### ✨ Highlights
 
 * ⚡ **Think it, type it:** No clicking through menus. Type `Buy green tea @tomorrow !1 @@dharma_city` to create a high-priority task, due tomorrow, at a specific location.
-* 🧠 **Deep organization:** Go beyond flat lists with hierarchical tags (`#gardening:blackcurrant`), blocking dependencies, and parent/child task trees.
-* ⏱️ **Time & goals:** Start/pause tasks to track time spent. Set estimated durations (`~2h`) or recurring habit goals (`#reading:=goal:5/w`).
+* 🧠 **Deep organization:** Go beyond flat lists with hierarchical tags (`#gardening:kiwai`), blocking dependencies, and parent/child task trees.
+* ⏱️ **Time & goals:** Start/pause tasks to track time spent. Set estimated durations (`~2h`) or recurring habit goals (`#read:book:=goal:5/y`).
 * 🪄 **Dynamic aliases:** Define shortcuts on the fly. Typing `#hiking:=#exercise,@@outside` applies the alias instantly and saves it for future use.
 
 ### 📸 Glimpse

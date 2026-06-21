@@ -263,7 +263,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                 HelpItem {
                     keys: "#permanent".to_string(),
                     desc: rust_i18n::t!("help_org_permanent").to_string(),
-                    example: "Practice guitar ~30m #permanent".to_string(),
+                    example: "Develop photos ~30m-3h #permanent".to_string(),
                 },
             ],
         },
@@ -271,14 +271,25 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
             title: rust_i18n::t!("help_goals").to_string(),
             items: vec![
                 HelpItem {
-                    keys: "#tag:=goal:X/period".to_string(),
-                    desc: rust_i18n::t!("help_goals_count").to_string(),
-                    example: "#reading:=goal:5/w, goal:daily".to_string(),
+                    keys: "goal:val/period".to_string(),
+                    desc: rust_i18n::t!("help_goals_task").to_string(),
+                    example: "Develop photos goal:4/mo, Exercise ~1h goal:2h/w".to_string(),
                 },
                 HelpItem {
-                    keys: "@@loc:=goal:dur/period".to_string(),
-                    desc: rust_i18n::t!("help_goals_duration").to_string(),
-                    example: "@@gym:=goal:2h/d".to_string(),
+                    keys: "#tag:=goal:val/period".to_string(),
+                    desc: rust_i18n::t!("help_goals_global").to_string(),
+                    example: "#read:book:=goal:5/y, @@outside:=goal:2h/d".to_string(),
+                },
+                HelpItem {
+                    keys: "Count vs Duration".to_string(),
+                    desc: rust_i18n::t!("help_goals_types").to_string(),
+                    example: "goal:weekly or goal:1/w (1 instance/week), goal:30m/d (30 mins/day)"
+                        .to_string(),
+                },
+                HelpItem {
+                    keys: "Implicit goals".to_string(),
+                    desc: rust_i18n::t!("help_goals_implicit").to_string(),
+                    example: "Recurring tasks (@daily) inherently act as goals".to_string(),
                 },
             ],
         },
