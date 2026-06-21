@@ -749,157 +749,157 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckApiChecksums(this)
     }
 
-    external fun uniffi_cfait_checksum_func_init_tokio_runtime(): Short
+    external fun uniffi_cfait_checksum_func_init_tokio_runtime(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_add_alias(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_add_alias(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_add_dependency(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_add_dependency(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_add_related_to(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_add_related_to(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_add_session(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_add_session(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_add_task_smart(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_add_task_smart(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_add_task_with_description(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_add_task_with_description(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_change_priority(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_change_priority(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_connect(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_connect(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_create_debug_export(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_create_debug_export(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_create_local_calendar(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_create_local_calendar(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_create_missing_calendar_events(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_create_missing_calendar_events(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_create_remote_calendar(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_create_remote_calendar(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_all_calendar_events(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_all_calendar_events(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_local_calendar(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_local_calendar(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_session(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_session(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_task(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_task(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_task_tree(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_delete_task_tree(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_dismiss_alarm(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_dismiss_alarm(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_dispatch(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_dispatch(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_duplicate_task_tree(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_duplicate_task_tree(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_export_local_ics(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_export_local_ics(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_export_locations_gpx(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_export_locations_gpx(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_extract_subtasks(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_extract_subtasks(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_all_locations(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_all_locations(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_all_tags(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_all_tags(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_available_locales(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_available_locales(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_calendars(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_calendars(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_config(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_config(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_firing_alarms(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_firing_alarms(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_help_data(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_help_data(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_next_alarm_timestamp(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_next_alarm_timestamp(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_next_global_alarm_time(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_next_global_alarm_time(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_ongoing_tasks(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_ongoing_tasks(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_random_task_uid(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_random_task_uid(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_syntax_help(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_syntax_help(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_task_by_uid(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_task_by_uid(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_tasks_related_to(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_tasks_related_to(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_get_view_tasks(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_view_tasks(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_has_any_tasks(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_has_any_tasks(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_has_unsynced_changes(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_has_unsynced_changes(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_import_local_ics(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_import_local_ics(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_isolate_calendar(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_isolate_calendar(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_load_from_cache(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_load_from_cache(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_log_message(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_log_message(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_migrate_local_to(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_migrate_local_to(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_move_task(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_move_task(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_parse_duration_string(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_parse_duration_string(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_parse_smart_string(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_parse_smart_string(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_pause_task(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_pause_task(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_remove_alias(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_remove_alias(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_remove_dependency(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_remove_dependency(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_remove_related_to(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_remove_related_to(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_save_config(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_save_config(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_set_calendar_visibility(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_set_calendar_visibility(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_set_default_calendar(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_set_default_calendar(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_set_locale(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_set_locale(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_set_parent(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_set_parent(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_set_status_cancelled(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_set_status_cancelled(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_set_status_process(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_set_status_process(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_should_keep_notification(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_should_keep_notification(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_snooze_alarm(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_snooze_alarm(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_start_task(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_start_task(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_stop_task(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_stop_task(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_sync(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_sync(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_sync_journal(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_sync_journal(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_toggle_all_calendars(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_toggle_all_calendars(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_toggle_pin(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_toggle_pin(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_toggle_task(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_toggle_task(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_toggle_task_shift(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_toggle_task_shift(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_update_local_calendar(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_update_local_calendar(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_update_remote_calendar(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_update_remote_calendar(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_update_task_description(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_update_task_description(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_update_task_smart(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_update_task_smart(): Int
 
-    external fun uniffi_cfait_checksum_method_cfaitmobile_yank_task(): Short
+    external fun uniffi_cfait_checksum_method_cfaitmobile_yank_task(): Int
 
-    external fun uniffi_cfait_checksum_constructor_cfaitmobile_new(): Short
+    external fun uniffi_cfait_checksum_constructor_cfaitmobile_new(): Int
 
     external fun ffi_cfait_uniffi_contract_version(): Int
 }
@@ -1362,7 +1362,7 @@ internal object UniffiLib {
     external fun ffi_cfait_rust_future_complete_u8(
         `handle`: Long,
         uniffi_out_err: UniffiRustCallStatus,
-    ): Byte
+    ): Int
 
     external fun ffi_cfait_rust_future_poll_i8(
         `handle`: Long,
@@ -1392,7 +1392,7 @@ internal object UniffiLib {
     external fun ffi_cfait_rust_future_complete_u16(
         `handle`: Long,
         uniffi_out_err: UniffiRustCallStatus,
-    ): Short
+    ): Int
 
     external fun ffi_cfait_rust_future_poll_i16(
         `handle`: Long,
@@ -1542,232 +1542,232 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
-    if (lib.uniffi_cfait_checksum_func_init_tokio_runtime() != 54401.toShort()) {
+    if (lib.uniffi_cfait_checksum_func_init_tokio_runtime() != 54401) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_alias() != 54369.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_alias() != 54369) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_dependency() != 46980.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_dependency() != 46980) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_related_to() != 44547.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_related_to() != 44547) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_session() != 41352.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_session() != 41352) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_task_smart() != 4490.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_task_smart() != 4490) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_task_with_description() != 58374.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_add_task_with_description() != 58374) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_change_priority() != 42738.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_change_priority() != 42738) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_connect() != 47390.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_connect() != 47390) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_create_debug_export() != 60195.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_create_debug_export() != 60195) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_create_local_calendar() != 51648.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_create_local_calendar() != 51648) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_create_missing_calendar_events() != 20772.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_create_missing_calendar_events() != 20772) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_create_remote_calendar() != 34031.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_create_remote_calendar() != 34031) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_all_calendar_events() != 61356.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_all_calendar_events() != 61356) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_local_calendar() != 4754.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_local_calendar() != 4754) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_session() != 10164.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_session() != 10164) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_task() != 39654.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_task() != 39654) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_task_tree() != 54165.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_delete_task_tree() != 54165) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_dismiss_alarm() != 49985.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_dismiss_alarm() != 49985) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_dispatch() != 12530.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_dispatch() != 12530) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_duplicate_task_tree() != 29876.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_duplicate_task_tree() != 29876) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_export_local_ics() != 13372.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_export_local_ics() != 13372) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_export_locations_gpx() != 44122.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_export_locations_gpx() != 44122) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_extract_subtasks() != 8770.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_extract_subtasks() != 8770) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_all_locations() != 55689.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_all_locations() != 55689) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_all_tags() != 35057.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_all_tags() != 35057) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_available_locales() != 49739.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_available_locales() != 49739) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_calendars() != 64964.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_calendars() != 64964) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_config() != 49237.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_config() != 49237) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_firing_alarms() != 46005.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_firing_alarms() != 46005) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_help_data() != 42666.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_help_data() != 42666) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_next_alarm_timestamp() != 17664.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_next_alarm_timestamp() != 17664) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_next_global_alarm_time() != 15513.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_next_global_alarm_time() != 15513) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_ongoing_tasks() != 23439.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_ongoing_tasks() != 23439) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_random_task_uid() != 32270.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_random_task_uid() != 32270) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_syntax_help() != 49497.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_syntax_help() != 49497) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_task_by_uid() != 45186.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_task_by_uid() != 45186) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_tasks_related_to() != 40919.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_tasks_related_to() != 40919) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_view_tasks() != 7480.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_view_tasks() != 7480) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_has_any_tasks() != 62656.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_has_any_tasks() != 62656) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_has_unsynced_changes() != 21802.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_has_unsynced_changes() != 21802) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_import_local_ics() != 21641.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_import_local_ics() != 21641) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_isolate_calendar() != 61905.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_isolate_calendar() != 61905) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_load_from_cache() != 45631.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_load_from_cache() != 45631) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_log_message() != 21093.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_log_message() != 21093) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_migrate_local_to() != 42795.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_migrate_local_to() != 42795) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_move_task() != 19055.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_move_task() != 19055) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_parse_duration_string() != 35361.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_parse_duration_string() != 35361) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_parse_smart_string() != 30291.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_parse_smart_string() != 30291) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_pause_task() != 18676.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_pause_task() != 18676) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_remove_alias() != 9368.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_remove_alias() != 9368) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_remove_dependency() != 24134.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_remove_dependency() != 24134) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_remove_related_to() != 37228.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_remove_related_to() != 37228) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_save_config() != 24079.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_save_config() != 24079) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_calendar_visibility() != 45711.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_calendar_visibility() != 45711) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_default_calendar() != 27510.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_default_calendar() != 27510) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_locale() != 46626.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_locale() != 46626) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_parent() != 26586.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_parent() != 26586) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_status_cancelled() != 44409.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_status_cancelled() != 44409) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_status_process() != 55709.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_set_status_process() != 55709) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_should_keep_notification() != 42926.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_should_keep_notification() != 42926) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_snooze_alarm() != 62948.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_snooze_alarm() != 62948) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_start_task() != 29482.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_start_task() != 29482) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_stop_task() != 3659.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_stop_task() != 3659) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_sync() != 10497.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_sync() != 10497) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_sync_journal() != 65062.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_sync_journal() != 65062) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_toggle_all_calendars() != 29217.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_toggle_all_calendars() != 29217) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_toggle_pin() != 5984.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_toggle_pin() != 5984) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_toggle_task() != 64765.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_toggle_task() != 64765) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_toggle_task_shift() != 19733.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_toggle_task_shift() != 19733) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_update_local_calendar() != 6023.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_update_local_calendar() != 6023) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_update_remote_calendar() != 45957.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_update_remote_calendar() != 45957) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_update_task_description() != 34932.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_update_task_description() != 34932) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_update_task_smart() != 32402.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_update_task_smart() != 32402) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_method_cfaitmobile_yank_task() != 57086.toShort()) {
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_yank_task() != 57086) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_cfait_checksum_constructor_cfaitmobile_new() != 10248.toShort()) {
+    if (lib.uniffi_cfait_checksum_constructor_cfaitmobile_new() != 10248) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -1992,6 +1992,8 @@ private class JavaLangRefCleanable(
  */
 public object FfiConverterUByte : FfiConverter<UByte, Byte> {
     override fun lift(value: Byte): UByte = value.toUByte()
+
+    fun lift(value: Int): UByte = value.toUByte()
 
     override fun read(buf: ByteBuffer): UByte = lift(buf.get())
 
