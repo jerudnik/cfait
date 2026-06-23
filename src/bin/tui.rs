@@ -147,24 +147,51 @@ async fn sync_background(
         return Ok(());
     }
 
+    // Read journal to know which calendars are affected BEFORE connect_with_fallback consumes it
+    let journal = cfait::journal::Journal::load(ctx.as_ref());
+    let mut affected_cals = std::collections::HashSet::new();
+    for action in &journal.queue {
+        match action {
+            cfait::journal::Action::Create(t)
+            | cfait::journal::Action::Update(t)
+            | cfait::journal::Action::Delete(t) => {
+                affected_cals.insert(t.calendar_href.clone());
+            }
+            cfait::journal::Action::Move(t, target) => {
+                affected_cals.insert(t.calendar_href.clone());
+                affected_cals.insert(target.clone());
+            }
+        }
+    }
+
     let ctx_clone = ctx.clone();
     let cfg_clone = config.clone();
     let sync_future = async move {
         // Pass an Arc<dyn AppContext> (clone) to the client helper which expects an Arc.
-        if let Ok((client, _, _, _, _)) = cfait::client::RustyClient::connect_with_fallback(
-            ctx_clone.clone(),
-            cfg_clone,
-            Some("CLI"),
-        )
-        .await
+        if let Ok((client, cals, _, active_href, _)) =
+            cfait::client::RustyClient::connect_with_fallback(
+                ctx_clone.clone(),
+                cfg_clone,
+                Some("CLI"),
+            )
+            .await
         {
-            client.sync_journal().await?;
+            let mut cals_to_fetch = Vec::new();
+            for cal in cals {
+                // connect_with_fallback already fetched the active calendar.
+                if affected_cals.contains(&cal.href) && Some(&cal.href) != active_href.as_ref() {
+                    cals_to_fetch.push(cal);
+                }
+            }
+            if !cals_to_fetch.is_empty() {
+                let _ = client.get_all_tasks(&cals_to_fetch).await;
+            }
         }
         Ok(())
     };
 
-    // Give it up to 10 seconds to sync, otherwise gracefully detach
-    match tokio::time::timeout(std::time::Duration::from_secs(10), sync_future).await {
+    // Give it up to 15 seconds to sync, otherwise gracefully detach
+    match tokio::time::timeout(std::time::Duration::from_secs(15), sync_future).await {
         Ok(res) => res,
         Err(_) => Err(rust_i18n::t!("sync_timed_out").to_string()),
     }
@@ -285,7 +312,13 @@ async fn main() -> Result<()> {
             )
             .await
             {
-                Ok(_) => println!("{}", rust_i18n::t!("sync_completed_successfully")),
+                Ok((client, cals, _, _, _)) => {
+                    if let Err(e) = client.get_all_tasks(&cals).await {
+                        eprintln!("{}", rust_i18n::t!("sync_error", error = e.to_string()));
+                        std::process::exit(1);
+                    }
+                    println!("{}", rust_i18n::t!("sync_completed_successfully"));
+                }
                 Err(e) => {
                     eprintln!("{}", rust_i18n::t!("sync_error", error = e.to_string()));
                     std::process::exit(1);
@@ -312,12 +345,16 @@ async fn main() -> Result<()> {
                     match cfait::storage::DaemonLock::try_acquire_exclusive(ctx.as_ref()) {
                         Ok(Some(_lock)) => {
                             println!("{}", rust_i18n::t!("daemon_syncing"));
-                            let _ = cfait::client::RustyClient::connect_with_fallback(
-                                ctx.clone(),
-                                config,
-                                Some("CLI-Daemon"),
-                            )
-                            .await;
+                            if let Ok((client, cals, _, _, _)) =
+                                cfait::client::RustyClient::connect_with_fallback(
+                                    ctx.clone(),
+                                    config,
+                                    Some("CLI-Daemon"),
+                                )
+                                .await
+                            {
+                                let _ = client.get_all_tasks(&cals).await;
+                            }
                         }
                         Ok(None) => {}
                         Err(e) => eprintln!(
