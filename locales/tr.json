@@ -1,1 +1,18 @@
-{}
+{
+    "about_license": "GPL-3.0 lisansı",
+    "about_repository": "Kod Deposu: %{url}",
+    "about_title": "Cfait",
+    "about_version": "%{version} versiyonu",
+    "action_extract_subtasks": "Markdown'dan alt görevler çıkar",
+    "action_open_locations": "Konuma bak (GPX)",
+    "action_pin": "Görevi sabitle",
+    "action_toggle_pin": "Sabitle / Sabitleme",
+    "action_unpin": "Görevi sabitlemeden çıkar",
+    "actions": "Eylemler",
+    "active_alarm": "Aktif alarm",
+    "add": "Ekle",
+    "add_description_tooltip": "Açıklama ve Alt Görevler Ekle (Ctrl+E)",
+    "add_task_to_target": "%{target} için görev ekle",
+    "advanced_settings_button": "Daha fazla ayar",
+    "alarm_due_now": "Teslim tarihi geldi"
+}
