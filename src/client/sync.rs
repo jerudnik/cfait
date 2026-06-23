@@ -158,7 +158,7 @@ impl RustyClient {
         {
             Ok(resp) => {
                 // Sync companion event AFTER the main task succeeds
-                self.sync_companion_event(task, events_enabled, delete_on_completion, false)
+                self.sync_companion_event(task, events_enabled, delete_on_completion, false, true)
                     .await;
 
                 let href = if task.calendar_href.ends_with('/') {
@@ -260,7 +260,7 @@ impl RustyClient {
         {
             Ok(resp) => {
                 // Sync companion event AFTER the main task succeeds
-                self.sync_companion_event(task, events_enabled, delete_on_completion, false)
+                self.sync_companion_event(task, events_enabled, delete_on_completion, false, false)
                     .await;
 
                 let new_href = if task.href.is_empty() {
@@ -389,7 +389,7 @@ impl RustyClient {
         match resp {
             Ok(_) => {
                 // Sync companion event AFTER the main task succeeds
-                self.sync_companion_event(task, events_enabled, delete_on_completion, true)
+                self.sync_companion_event(task, events_enabled, delete_on_completion, true, false)
                     .await;
 
                 Ok(StepResult::new(StepOutcome::Success {
@@ -453,7 +453,7 @@ impl RustyClient {
             Ok(_) => {
                 // Sync companion event for the original task (delete)
                 let _ = self
-                    .sync_companion_event(task, events_enabled, delete_on_completion, true)
+                    .sync_companion_event(task, events_enabled, delete_on_completion, true, false)
                     .await;
 
                 let filename = format!("{}.ics", task.uid);
@@ -474,6 +474,7 @@ impl RustyClient {
                             events_enabled,
                             delete_on_completion,
                             false,
+                            true,
                         )
                         .await;
                 }

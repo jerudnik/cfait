@@ -671,6 +671,7 @@ impl RustyClient {
         config_enabled: bool,
         delete_on_completion: bool,
         is_delete_intent: bool,
+        is_create_intent: bool,
     ) -> bool {
         // Local calendars don't have server-side events
         if task.calendar_href.starts_with("local://") {
@@ -713,16 +714,6 @@ impl RustyClient {
             return true;
         }
 
-        // Use REPORT to find ground truth of companion events
-        let existing_hrefs = self
-            .get_companion_events(&cal_path, Some(&task.uid))
-            .await
-            .unwrap_or_default();
-        let mut existing_filenames: std::collections::HashSet<String> = existing_hrefs
-            .iter()
-            .map(|h| h.split('/').next_back().unwrap_or("").to_string())
-            .collect();
-
         let mut futures: Vec<futures::future::BoxFuture<'_, Result<(), ()>>> = Vec::new();
 
         let generated_events = if should_delete {
@@ -731,12 +722,12 @@ impl RustyClient {
             IcsAdapter::to_event_ics(task)
         };
 
+        let mut generated_suffixes = std::collections::HashSet::new();
+
         // 1. PUT all generated events
         for (suffix, ics_body) in generated_events.iter() {
+            generated_suffixes.insert(suffix.clone());
             let event_filename = format!("{}{}.ics", base_uid, suffix);
-
-            // Remove from existing so we know what's left over to delete
-            existing_filenames.remove(&event_filename);
 
             let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
             let c = client.clone();
@@ -765,39 +756,58 @@ impl RustyClient {
             }));
         }
 
-        // 2. DELETE obsolete events that we actually know exist
-        for obsolete_filename in existing_filenames {
-            let event_path = format!("{}{}", strip_host(&cal_path), obsolete_filename);
-            let c = client.clone();
-            futures.push(Box::pin(async move {
-                match c.request(Delete::new(&event_path).force()).await {
-                    Ok(_) => Ok(()),
-                    Err(WebDavError::BadStatusCode(http::StatusCode::NOT_FOUND)) => Ok(()),
-                    Err(_) => Err(()),
-                }
-            }));
-        }
+        let results = futures::future::join_all(futures).await;
+        let mut success = results.into_iter().all(|r| r.is_ok());
 
-        // 3. FALLBACK FOR LEGACY EVENTS
-        // Check old static suffixes just in case they lack the X-CFAIT-TASK-UID property
-        let static_suffixes = ["", "-start", "-due"];
-        for suffix in static_suffixes {
-            let event_filename = format!("{}{}.ics", base_uid, suffix);
-            if !generated_events.iter().any(|(s, _)| s == suffix) {
-                let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
-                let c = client.clone();
-                futures.push(Box::pin(async move {
-                    match c.request(Delete::new(&event_path).force()).await {
-                        Ok(_) => Ok(()),
-                        Err(WebDavError::BadStatusCode(http::StatusCode::NOT_FOUND)) => Ok(()),
-                        Err(_) => Err(()),
+        // 2. DELETE obsolete standard events using fast blind deletes
+        if !is_create_intent {
+            let mut delete_futures = Vec::new();
+            for suffix in ["", "-start", "-due"] {
+                if !generated_suffixes.contains(suffix) {
+                    let event_filename = format!("{}{}.ics", base_uid, suffix);
+                    let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
+                    let c = client.clone();
+                    delete_futures.push(async move {
+                        match c.request(Delete::new(&event_path).force()).await {
+                            Ok(_) => Ok(()),
+                            Err(WebDavError::BadStatusCode(http::StatusCode::NOT_FOUND)) => Ok(()),
+                            Err(_) => Err(()),
+                        }
+                    });
+                }
+            }
+
+            let delete_results = futures::future::join_all(delete_futures).await;
+            success = success && delete_results.into_iter().all(|r| r.is_ok());
+
+            // 3. Unbounded DELETE for orphaned sessions (stop dynamically after 2 consecutive 404s)
+            let mut i = task.sessions.len();
+            let mut consecutive_404s = 0;
+            while consecutive_404s < 2 {
+                let suffix = format!("-session-{}", i);
+                if !generated_suffixes.contains(&suffix) {
+                    let event_filename = format!("{}{}.ics", base_uid, suffix);
+                    let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
+                    match client.request(Delete::new(&event_path).force()).await {
+                        Ok(_) => {
+                            consecutive_404s = 0; // Found and deleted, reset gap counter
+                        }
+                        Err(WebDavError::BadStatusCode(http::StatusCode::NOT_FOUND)) => {
+                            consecutive_404s += 1;
+                        }
+                        Err(_) => {
+                            success = false;
+                            break; // Stop on unexpected network errors
+                        }
                     }
-                }));
+                } else {
+                    consecutive_404s = 0;
+                }
+                i += 1;
             }
         }
 
-        let results = futures::future::join_all(futures).await;
-        results.into_iter().all(|r| r.is_ok())
+        success
     }
 
     /// Public wrapper for convenience
@@ -809,7 +819,7 @@ impl RustyClient {
         let cfg = Config::load(self.ctx.as_ref()).unwrap_or_default();
         let delete_on_completion = cfg.delete_events_on_completion;
         let res = self
-            .sync_companion_event(task, config_enabled, delete_on_completion, false)
+            .sync_companion_event(task, config_enabled, delete_on_completion, false, false)
             .await;
         Ok(res)
     }
