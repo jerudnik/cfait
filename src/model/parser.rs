@@ -635,7 +635,7 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                     // Just basic check if parser accepts it
                     if parse_smart_date(clean_word).is_some()
                         || parse_weekday_code(clean_word).is_some()
-                        || parse_time_string(clean_word).is_some()
+                        || is_time_format(clean_word)
                     {
                         matched_kind = Some(if is_start {
                             SyntaxType::StartDate
@@ -2846,17 +2846,6 @@ pub fn apply_smart_input(
 
                 task.dtstart = Some(dt1);
                 task.due = Some(dt2);
-            } else if let Some(_stripped) = token_lower.strip_prefix("due:") {
-                let real_val = &token[4..];
-                if let Some(d) = parse_smart_date(real_val) {
-                    let mut temp_consumed = 1;
-                    let (dt, _) =
-                        finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
-                    task.due = Some(dt);
-                    consumed = temp_consumed;
-                } else {
-                    summary_words.push(unescape(token));
-                }
             } else {
                 summary_words.push(unescape(token));
             }
@@ -2927,6 +2916,32 @@ pub fn apply_smart_input(
                     finalize_date_token(d, &stream, i + temp_consumed, &mut temp_consumed);
                 task.due = Some(dt);
                 consumed = temp_consumed;
+            } else if let Some((t1, t2)) = parse_time_range(val) {
+                let now_local = Local::now();
+                let mut target_date = now_local.date_naive();
+                if t1 <= now_local.time() {
+                    target_date += Duration::days(1);
+                }
+                let dt1 =
+                    DateType::Specific(crate::model::item::safe_local_to_utc(target_date, t1));
+
+                let mut target_date_end = target_date;
+                if t2 < t1 {
+                    target_date_end += Duration::days(1);
+                }
+                let dt2 =
+                    DateType::Specific(crate::model::item::safe_local_to_utc(target_date_end, t2));
+
+                task.dtstart = Some(dt1);
+                task.due = Some(dt2);
+            } else if let Some(t) = parse_time_string(val) {
+                let now_local = Local::now();
+                let mut target_date = now_local.date_naive();
+                if t <= now_local.time() {
+                    target_date += Duration::days(1);
+                }
+                let dt = crate::model::item::safe_local_to_utc(target_date, t);
+                task.due = Some(DateType::Specific(dt));
             } else {
                 summary_words.push(unescape(token));
             }
@@ -2955,6 +2970,32 @@ pub fn apply_smart_input(
                 );
                 task.dtstart = Some(dt);
                 consumed = temp_consumed;
+            } else if let Some((t1, t2)) = parse_time_range(clean_val) {
+                let now_local = Local::now();
+                let mut target_date = now_local.date_naive();
+                if t1 <= now_local.time() {
+                    target_date += Duration::days(1);
+                }
+                let dt1 =
+                    DateType::Specific(crate::model::item::safe_local_to_utc(target_date, t1));
+
+                let mut target_date_end = target_date;
+                if t2 < t1 {
+                    target_date_end += Duration::days(1);
+                }
+                let dt2 =
+                    DateType::Specific(crate::model::item::safe_local_to_utc(target_date_end, t2));
+
+                task.dtstart = Some(dt1);
+                task.due = Some(dt2);
+            } else if let Some(t) = parse_time_string(clean_val) {
+                let now_local = Local::now();
+                let mut target_date = now_local.date_naive();
+                if t <= now_local.time() {
+                    target_date += Duration::days(1);
+                }
+                let dt = crate::model::item::safe_local_to_utc(target_date, t);
+                task.dtstart = Some(DateType::Specific(dt));
             } else {
                 summary_words.push(unescape(token));
             }
