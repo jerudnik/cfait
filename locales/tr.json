@@ -14,5 +14,7 @@
     "add_description_tooltip": "Açıklama ve Alt Görevler Ekle (Ctrl+E)",
     "add_task_to_target": "%{target} için görev ekle",
     "advanced_settings_button": "Daha fazla ayar",
-    "alarm_due_now": "Teslim tarihi geldi"
+    "alarm_due_now": "Teslim tarihi geldi",
+    "alias_updated": "Takma ad güncellendi.",
+    "alias_value_label": "Değerler"
 }
