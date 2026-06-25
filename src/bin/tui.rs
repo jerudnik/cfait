@@ -229,7 +229,10 @@ async fn main() -> Result<()> {
     );
     cfait::system::init_keyring(); // <-- ADD THIS LINE
 
-    if command.starts_with('-') || command == "help" {
+    if command.starts_with('-')
+        || command == "help"
+        || args.iter().any(|arg| arg == "--help" || arg == "-h")
+    {
         cfait::cli::print_help(&binary_name);
         return Ok(());
     }
