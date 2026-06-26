@@ -337,6 +337,7 @@
     "help_search_dates": "Filtrer par période",
     "help_search_filter_state": "Filtrer par état",
     "help_search_is_ready": "Mode travail - tâches réalisables",
+    "help_keys_search_status": "est:statut",
     "help_search_matches": "Correspondance titre ou description",
     "help_search_operators": "Opérateurs de comparaison",
     "help_shortcuts": "Raccourcis",
@@ -695,5 +696,12 @@
     "parser_months_nov": "nov,novembre",
     "parser_months_dec": "déc,dec,décembre,decembre",
     "parser_numbers_1_to_12": "un,deux,trois,quatre,cinq,six,sept,huit,neuf,dix,onze,douze",
-    "parser_date_format": "%d/%m/%Y"
+    "parser_date_format": "%d/%m/%Y",
+    "search_is_prefix": "est:",
+    "search_is_ready": "est:prêt",
+    "search_is_blocked": "est:bloqué",
+    "search_is_done": "est:terminé",
+    "search_is_active": "est:actif",
+    "search_is_started": "est:démarré",
+    "search_is_ongoing": "est:encours"
 }

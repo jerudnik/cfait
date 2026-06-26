@@ -364,6 +364,7 @@
     "help_search_dates": "Filter by timeframe",
     "help_search_filter_state": "Filter by state",
     "help_search_is_ready": "Work mode - actionable tasks only",
+    "help_keys_search_status": "is:status",
     "help_search_matches": "Matches summary or description",
     "help_search_operators": "Compare operators for filters",
     "help_shortcuts": "Shortcuts",
@@ -728,5 +729,12 @@
     "parser_months_nov": "nov,november",
     "parser_months_dec": "dec,december",
     "parser_numbers_1_to_12": "one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve",
-    "parser_date_format": "%Y-%m-%d"
+    "parser_date_format": "%Y-%m-%d",
+    "search_is_prefix": "is:",
+    "search_is_ready": "is:ready",
+    "search_is_blocked": "is:blocked",
+    "search_is_done": "is:done",
+    "search_is_active": "is:active",
+    "search_is_started": "is:started",
+    "search_is_ongoing": "is:ongoing"
 }

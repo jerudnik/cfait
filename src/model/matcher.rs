@@ -450,16 +450,26 @@ impl Task {
         }
 
         // --- Status Filters ---
-        if part_lower == "is:done" {
+        if part_lower == "is:done" || part_lower == rust_i18n::t!("search_is_done").to_lowercase() {
             return self.status.is_done();
         }
-        if part_lower == "is:started" || part_lower == "is:ongoing" {
+        if part_lower == "is:started"
+            || part_lower == "is:ongoing"
+            || part_lower == rust_i18n::t!("search_is_started").to_lowercase()
+            || part_lower == rust_i18n::t!("search_is_ongoing").to_lowercase()
+        {
             return self.status == TaskStatus::InProcess;
         }
-        if part_lower == "is:active" {
+        if part_lower == "is:active"
+            || part_lower == rust_i18n::t!("search_is_active").to_lowercase()
+        {
             return !self.status.is_done();
         }
-        if part_lower == "is:ready" || part_lower == "is:blocked" {
+        if part_lower == "is:ready"
+            || part_lower == "is:blocked"
+            || part_lower == rust_i18n::t!("search_is_ready").to_lowercase()
+            || part_lower == rust_i18n::t!("search_is_blocked").to_lowercase()
+        {
             // "ready/blocked" states are computed transiently in store.filter()
             // but for simple text matching here we mostly ignore them or treat as valid.
             // (Note: full filtering support for these requires Context from store)

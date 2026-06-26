@@ -1789,8 +1789,10 @@ impl TaskStore {
         };
 
         let search_lower = options.search_term.to_lowercase();
-        let is_ready_mode = search_lower.contains("is:ready");
-        let is_blocked_mode = search_lower.contains("is:blocked");
+        let is_ready_mode = search_lower.contains("is:ready")
+            || search_lower.contains(&rust_i18n::t!("search_is_ready").to_lowercase());
+        let is_blocked_mode = search_lower.contains("is:blocked")
+            || search_lower.contains(&rust_i18n::t!("search_is_blocked").to_lowercase());
         let now = Utc::now();
 
         // Helper: determine whether a task is effectively in the future by checking ancestors
@@ -1850,7 +1852,13 @@ impl TaskStore {
                     let has_status_filter = search_lower.contains("is:done")
                         || search_lower.contains("is:active")
                         || search_lower.contains("is:started")
-                        || search_lower.contains("is:ongoing");
+                        || search_lower.contains("is:ongoing")
+                        || search_lower.contains(&rust_i18n::t!("search_is_done").to_lowercase())
+                        || search_lower.contains(&rust_i18n::t!("search_is_active").to_lowercase())
+                        || search_lower
+                            .contains(&rust_i18n::t!("search_is_started").to_lowercase())
+                        || search_lower
+                            .contains(&rust_i18n::t!("search_is_ongoing").to_lowercase());
 
                     if !has_status_filter && t.status.is_done() && options.hide_completed_global {
                         return false;

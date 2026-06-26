@@ -845,6 +845,7 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 matched_kind = Some(SyntaxType::Operator);
             } else if word.starts_with('-') && word.len() > 1
                 || word_lower.starts_with("is:")
+                || word_lower.starts_with(&rust_i18n::t!("search_is_prefix").to_lowercase())
                 || ((word.starts_with('!')
                     || word.starts_with('~')
                     || word.starts_with('@')
