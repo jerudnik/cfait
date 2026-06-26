@@ -2,7 +2,9 @@
 // File: ./src/gui/view/syntax.rs
 // Implements syntax highlighting for the smart input editor.
 use crate::color_utils;
-use crate::model::parser::{SyntaxType, tokenize_smart_input};
+use crate::model::parser::{
+    SyntaxType, parse_smart_date, parse_weekday_code, tokenize_smart_input,
+};
 use iced::advanced::text::highlighter::{self, Highlighter};
 use iced::{Color, Font};
 use std::ops::Range;
@@ -217,10 +219,7 @@ impl Highlighter for SessionHighlighter {
                     color: Some(Color::from_rgb(0.6, 0.6, 0.6)),
                     font: None,
                 }
-            } else if lower == "today"
-                || lower == "yesterday"
-                || chrono::NaiveDate::parse_from_str(&lower, "%Y-%m-%d").is_ok()
-            {
+            } else if parse_smart_date(&lower).is_some() || parse_weekday_code(&lower).is_some() {
                 // Date matches
                 highlighter::Format {
                     color: Some(Color::from_rgb(0.2, 0.6, 1.0)),

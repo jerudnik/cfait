@@ -3014,8 +3014,17 @@ pub fn apply_smart_input(
             } else if let Some(idx) = val.find(':') {
                 (&val[..idx], &val[idx + 1..])
             } else {
-                if matches!(
-                    val,
+                let lower = val.to_lowercase();
+                if let Some(ExactToken::Unit(u)) = lex.exact.get(&lower) {
+                    match u {
+                        LexiconUnit::Days
+                        | LexiconUnit::Weeks
+                        | LexiconUnit::Months
+                        | LexiconUnit::Years => ("1", val),
+                        _ => ("", ""),
+                    }
+                } else if matches!(
+                    lower.as_str(),
                     "daily" | "weekly" | "monthly" | "yearly" | "d" | "w" | "mo" | "y"
                 ) {
                     ("1", val)
@@ -3036,23 +3045,34 @@ pub fn apply_smart_input(
                     period_str, None, false, lex,
                 )
                 .unwrap_or((1, period_str.to_string(), 0));
-                let interval_unit = match unit.to_lowercase().as_str() {
-                    "d" | "day" | "days" | "daily" => crate::config::IntervalUnit::Days,
-                    "w" | "week" | "weeks" | "weekly" => crate::config::IntervalUnit::Weeks,
-                    "m" | "mo" | "month" | "months" | "monthly" => {
-                        crate::config::IntervalUnit::Months
-                    }
-                    "q" | "quarter" | "quarterly" => {
-                        amount *= 3;
-                        crate::config::IntervalUnit::Months
-                    }
-                    "h" | "hy" | "halfyearly" | "semiannual" => {
-                        amount *= 6;
-                        crate::config::IntervalUnit::Months
-                    }
-                    "y" | "year" | "years" | "yearly" => crate::config::IntervalUnit::Years,
-                    _ => crate::config::IntervalUnit::Weeks,
-                };
+                let interval_unit =
+                    if let Some(ExactToken::Unit(u)) = lex.exact.get(&unit.to_lowercase()) {
+                        match u {
+                            LexiconUnit::Days => crate::config::IntervalUnit::Days,
+                            LexiconUnit::Weeks => crate::config::IntervalUnit::Weeks,
+                            LexiconUnit::Months => crate::config::IntervalUnit::Months,
+                            LexiconUnit::Years => crate::config::IntervalUnit::Years,
+                            _ => crate::config::IntervalUnit::Weeks,
+                        }
+                    } else {
+                        match unit.to_lowercase().as_str() {
+                            "d" | "day" | "days" | "daily" => crate::config::IntervalUnit::Days,
+                            "w" | "week" | "weeks" | "weekly" => crate::config::IntervalUnit::Weeks,
+                            "m" | "mo" | "month" | "months" | "monthly" => {
+                                crate::config::IntervalUnit::Months
+                            }
+                            "q" | "quarter" | "quarterly" => {
+                                amount *= 3;
+                                crate::config::IntervalUnit::Months
+                            }
+                            "h" | "hy" | "halfyearly" | "semiannual" => {
+                                amount *= 6;
+                                crate::config::IntervalUnit::Months
+                            }
+                            "y" | "year" | "years" | "yearly" => crate::config::IntervalUnit::Years,
+                            _ => crate::config::IntervalUnit::Weeks,
+                        }
+                    };
                 if target > 0 {
                     task.goal = Some(crate::config::Goal {
                         goal_type,
