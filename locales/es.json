@@ -469,7 +469,7 @@
     "parser_start": "^,iniciar:",
     "parser_start_due": "^@",
     "parser_today": "hoy",
-    "parser_tomorrow": "mañana;mañ",
+    "parser_tomorrow": "mañana,mañ",
     "parser_yesterday": "ayer",
     "password": "Contraseña",
     "pause": "Pausar",
