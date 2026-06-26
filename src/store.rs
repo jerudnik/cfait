@@ -1737,6 +1737,9 @@ impl TaskStore {
     /// Main filter pipeline that performs multi-stage filtering and returns
     /// prepared results (cloned tasks and aggregated category/location lists).
     pub fn filter(&self, options: FilterOptions) -> FilterResult {
+        let lex_guard = crate::model::parser::LEXICON.read().unwrap();
+        let lex = &*lex_guard;
+
         // Build set of completed UIDs for quick membership checks (used by blocking checks)
         let mut completed_uids: HashSet<String> = HashSet::new();
         for map in self.calendars.values() {
@@ -1790,26 +1793,19 @@ impl TaskStore {
 
         let search_lower = options.search_term.to_lowercase();
 
-        let is_done_loc = rust_i18n::t!("search_is_done").to_lowercase();
-        let is_active_loc = rust_i18n::t!("search_is_active").to_lowercase();
-        let is_started_loc = rust_i18n::t!("search_is_started").to_lowercase();
-        let is_ongoing_loc = rust_i18n::t!("search_is_ongoing").to_lowercase();
-        let is_ready_loc = rust_i18n::t!("search_is_ready").to_lowercase();
-        let is_blocked_loc = rust_i18n::t!("search_is_blocked").to_lowercase();
-
         let is_ready_mode =
-            search_lower.contains("is:ready") || search_lower.contains(&is_ready_loc);
+            search_lower.contains("is:ready") || search_lower.contains(&lex.search_is_ready);
         let is_blocked_mode =
-            search_lower.contains("is:blocked") || search_lower.contains(&is_blocked_loc);
+            search_lower.contains("is:blocked") || search_lower.contains(&lex.search_is_blocked);
 
         let has_status_filter = search_lower.contains("is:done")
             || search_lower.contains("is:active")
             || search_lower.contains("is:started")
             || search_lower.contains("is:ongoing")
-            || search_lower.contains(&is_done_loc)
-            || search_lower.contains(&is_active_loc)
-            || search_lower.contains(&is_started_loc)
-            || search_lower.contains(&is_ongoing_loc);
+            || search_lower.contains(&lex.search_is_done)
+            || search_lower.contains(&lex.search_is_active)
+            || search_lower.contains(&lex.search_is_started)
+            || search_lower.contains(&lex.search_is_ongoing);
 
         let now = Utc::now();
 
@@ -2010,10 +2006,9 @@ impl TaskStore {
                 let mut queue = Vec::new();
 
                 let query = crate::model::matcher::Query::new(options.search_term);
-                let lex_guard = crate::model::parser::LEXICON.read().unwrap();
 
                 for t in &visible_refs {
-                    if query.matches(t, &lex_guard) && matched_uids.insert(t.uid.clone()) {
+                    if query.matches(t, lex) && matched_uids.insert(t.uid.clone()) {
                         queue.push(t.uid.clone());
                     }
                 }

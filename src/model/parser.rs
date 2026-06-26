@@ -90,9 +90,43 @@ pub struct ParserLexicon {
     pub unit_w: String,
     pub unit_mo: String,
     pub unit_y: String,
+    pub search_prefix: String,
+    pub search_is_done: String,
+    pub search_is_active: String,
+    pub search_is_started: String,
+    pub search_is_ongoing: String,
+    pub search_is_ready: String,
+    pub search_is_blocked: String,
 }
 
 impl ParserLexicon {
+    pub fn extract_prefix<'a>(
+        &self,
+        word: &'a str,
+        word_lower: &'a str,
+    ) -> Option<(PrefixToken, &'a str, &'a str)> {
+        for (p, kind) in &self.prefixes {
+            if word_lower.starts_with(p.as_str()) {
+                let rem_lower = &word_lower[p.len()..];
+
+                let mut prefix_bytes = p.len();
+                let mut byte_idx = 0;
+                for c in word.chars() {
+                    if prefix_bytes == 0 {
+                        break;
+                    }
+                    let lc_len = c.to_lowercase().map(|lc| lc.len_utf8()).sum::<usize>();
+                    prefix_bytes = prefix_bytes.saturating_sub(lc_len);
+                    byte_idx += c.len_utf8();
+                }
+
+                let rem_original = &word[byte_idx..];
+                return Some((*kind, rem_lower, rem_original));
+            }
+        }
+        None
+    }
+
     pub fn match_prefix<'a>(&'a self, word: &'a str) -> Option<(&'a str, PrefixToken, &'a str)> {
         for (p, kind) in &self.prefixes {
             if word.starts_with(p.as_str()) {
@@ -311,6 +345,13 @@ impl ParserLexicon {
             unit_w: get_first("parser_unit_weeks", "w"),
             unit_mo: get_first("parser_unit_months", "mo"),
             unit_y: get_first("parser_unit_years", "y"),
+            search_prefix: rust_i18n::t!("search_is_prefix").to_lowercase(),
+            search_is_done: rust_i18n::t!("search_is_done").to_lowercase(),
+            search_is_active: rust_i18n::t!("search_is_active").to_lowercase(),
+            search_is_started: rust_i18n::t!("search_is_started").to_lowercase(),
+            search_is_ongoing: rust_i18n::t!("search_is_ongoing").to_lowercase(),
+            search_is_ready: rust_i18n::t!("search_is_ready").to_lowercase(),
+            search_is_blocked: rust_i18n::t!("search_is_blocked").to_lowercase(),
         }
     }
 }
@@ -466,14 +507,10 @@ pub fn extract_inline_aliases(input: &str) -> (String, HashMap<String, Vec<Strin
                     key = format!("@@{}", clean);
                     is_valid = true;
                 }
-            } else if let Some((p, PrefixToken::Loc, _)) = lex.match_prefix(&left.to_lowercase()) {
-                let char_count = p.chars().count();
-                let byte_idx = left
-                    .char_indices()
-                    .nth(char_count)
-                    .map(|(i, _)| i)
-                    .unwrap_or(left.len());
-                let clean = strip_quotes(&left[byte_idx..]);
+            } else if let Some((PrefixToken::Loc, _, rem_original)) =
+                lex.extract_prefix(left, &left.to_lowercase())
+            {
+                let clean = strip_quotes(rem_original);
                 if !clean.is_empty() {
                     key = format!("@@{}", clean);
                     is_valid = true;
@@ -482,7 +519,8 @@ pub fn extract_inline_aliases(input: &str) -> (String, HashMap<String, Vec<Strin
 
             let right_lower = right.to_lowercase();
             if is_valid
-                && lex.match_prefix(&right_lower).map(|(_, p, _)| p) != Some(PrefixToken::Goal)
+                && lex.extract_prefix(right, &right_lower).map(|(p, _, _)| p)
+                    != Some(PrefixToken::Goal)
             {
                 let tags = parse_alias_values(right);
 
@@ -527,14 +565,10 @@ pub fn extract_inline_goals(input: &str) -> (String, HashMap<String, crate::conf
                     key = format!("@@{}", clean);
                     is_valid = true;
                 }
-            } else if let Some((p, PrefixToken::Loc, _)) = lex.match_prefix(&left.to_lowercase()) {
-                let char_count = p.chars().count();
-                let byte_idx = left
-                    .char_indices()
-                    .nth(char_count)
-                    .map(|(i, _)| i)
-                    .unwrap_or(left.len());
-                let clean = strip_quotes(&left[byte_idx..]);
+            } else if let Some((PrefixToken::Loc, _, rem_original)) =
+                lex.extract_prefix(left, &left.to_lowercase())
+            {
+                let clean = strip_quotes(rem_original);
                 if !clean.is_empty() {
                     key = format!("@@{}", clean);
                     is_valid = true;
@@ -542,14 +576,11 @@ pub fn extract_inline_goals(input: &str) -> (String, HashMap<String, crate::conf
             }
 
             let right_lower = right.to_lowercase();
-            if is_valid && let Some((p, PrefixToken::Goal, _)) = lex.match_prefix(&right_lower) {
-                let char_count = p.chars().count();
-                let byte_idx = right
-                    .char_indices()
-                    .nth(char_count)
-                    .map(|(i, _)| i)
-                    .unwrap_or(right.len());
-                let goal_str = &right[byte_idx..];
+            if is_valid
+                && let Some((PrefixToken::Goal, _, rem_original)) =
+                    lex.extract_prefix(right, &right_lower)
+            {
+                let goal_str = rem_original;
                 let (target_str, period_str) = if let Some(idx) = goal_str.find('/') {
                     (&goal_str[..idx], &goal_str[idx + 1..])
                 } else if let Some(idx) = goal_str.find(':') {
@@ -816,21 +847,10 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
 
         let word_lower = word.to_lowercase();
 
-        let pref_match = lex.match_prefix(&word_lower);
-        let rem = pref_match.map(|(_, _, r)| r).unwrap_or(word_lower.as_str());
-        let pref = pref_match.map(|(_, p, _)| p);
-
-        let rem_original = if let Some((prefix_str, _, _)) = pref_match {
-            let char_count = prefix_str.chars().count();
-            let byte_idx = word
-                .char_indices()
-                .nth(char_count)
-                .map(|(i, _)| i)
-                .unwrap_or(word.len());
-            &word[byte_idx..]
-        } else {
-            word.as_str()
-        };
+        let extracted = lex.extract_prefix(word, &word_lower);
+        let rem = extracted.map(|(_, r, _)| r).unwrap_or(word_lower.as_str());
+        let rem_original = extracted.map(|(_, _, r)| r).unwrap_or(word.as_str());
+        let pref = extracted.map(|(p, _, _)| p);
 
         let exact = lex.exact.get(rem);
 
@@ -845,7 +865,7 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 matched_kind = Some(SyntaxType::Operator);
             } else if word.starts_with('-') && word.len() > 1
                 || word_lower.starts_with("is:")
-                || word_lower.starts_with(&rust_i18n::t!("search_is_prefix").to_lowercase())
+                || word_lower.starts_with(&lex.search_prefix)
                 || ((word.starts_with('!')
                     || word.starts_with('~')
                     || word.starts_with('@')
@@ -1171,7 +1191,23 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 || pref == Some(PrefixToken::Duration)
                 || pref == Some(PrefixToken::Spent)
             {
-                matched_kind = Some(SyntaxType::Duration);
+                let val = strip_quotes(if let Some(s) = word.strip_prefix('~') {
+                    s
+                } else {
+                    rem
+                });
+
+                if parse_duration_range_with_lex(&val, lex).is_some() {
+                    matched_kind = Some(SyntaxType::Duration);
+                } else {
+                    let next_word = words.get(i + 1).map(|w| w.2.as_str());
+                    if let Some((_, _, extra)) =
+                        parse_amount_and_unit_with_lex(&val, next_word, false, lex)
+                    {
+                        matched_kind = Some(SyntaxType::Duration);
+                        words_consumed = 1 + extra;
+                    }
+                }
             } else if pref == Some(PrefixToken::Done) {
                 matched_kind = Some(SyntaxType::DueDate);
             } else if word.starts_with('#') {
@@ -2311,7 +2347,6 @@ pub fn is_special_token_with_lex(word: &str, lex: &ParserLexicon) -> bool {
     let lower = word.to_lowercase();
     if word.starts_with('#')
         || word.starts_with('!')
-        || lower.starts_with("geo:")
         || lower == "+pin"
         || lower == "-pin"
         || lower == "+cal"
@@ -2319,7 +2354,7 @@ pub fn is_special_token_with_lex(word: &str, lex: &ParserLexicon) -> bool {
     {
         return true;
     }
-    if lex.match_prefix(&lower).is_some() {
+    if lex.extract_prefix(word, &lower).is_some() {
         return true;
     }
     let exact = lex.exact.get(&lower);
@@ -2391,23 +2426,10 @@ pub fn apply_smart_input(
         let mut consumed = 1;
         let token_lower = token.to_lowercase();
 
-        let pref_match = lex.match_prefix(&token_lower);
-        let rem = pref_match
-            .map(|(_, _, r)| r)
-            .unwrap_or(token_lower.as_str());
-        let pref = pref_match.map(|(_, p, _)| p);
-
-        let rem_original = if let Some((p, _, _)) = pref_match {
-            let char_count = p.chars().count();
-            let byte_idx = token
-                .char_indices()
-                .nth(char_count)
-                .map(|(i, _)| i)
-                .unwrap_or(token.len());
-            &token[byte_idx..]
-        } else {
-            token.as_str()
-        };
+        let extracted = lex.extract_prefix(token, &token_lower);
+        let rem = extracted.map(|(_, r, _)| r).unwrap_or(token_lower.as_str());
+        let rem_original = extracted.map(|(_, _, r)| r).unwrap_or(token.as_str());
+        let pref = extracted.map(|(p, _, _)| p);
         let exact = lex.exact.get(rem);
 
         let is_due_or_recur = pref == Some(PrefixToken::Due) || pref == Some(PrefixToken::Recur);
@@ -2757,7 +2779,21 @@ pub fn apply_smart_input(
             if let Some(mins) = parse_duration_with_lex(rem, lex) {
                 task.time_spent_seconds = (mins as u64) * 60;
             } else {
-                summary_words.push(unescape(token));
+                let next_word = stream.get(i + 1).map(|s| s.as_str());
+                if let Some((amt, unit, extra)) =
+                    parse_amount_and_unit_with_lex(rem, next_word, false, lex)
+                {
+                    let mins = match unit.as_str() {
+                        "d" | "day" | "days" => amt * 1440,
+                        "w" | "week" | "weeks" => amt * 10080,
+                        "h" | "hour" | "hours" => amt * 60,
+                        _ => amt,
+                    };
+                    task.time_spent_seconds = (mins as u64) * 60;
+                    consumed += extra;
+                } else {
+                    summary_words.push(unescape(token));
+                }
             }
         } else if token.starts_with("@@") {
             let is_triple = token.starts_with("@@@");
@@ -2860,7 +2896,22 @@ pub fn apply_smart_input(
                 task.estimated_duration = Some(min);
                 task.estimated_duration_max = max_opt;
             } else {
-                summary_words.push(unescape(token));
+                let next_word = stream.get(i + 1).map(|s| s.as_str());
+                if let Some((amt, unit, extra)) =
+                    parse_amount_and_unit_with_lex(&val, next_word, false, lex)
+                {
+                    let mins = match unit.as_str() {
+                        "d" | "day" | "days" => amt * 1440,
+                        "w" | "week" | "weeks" => amt * 10080,
+                        "h" | "hour" | "hours" => amt * 60,
+                        _ => amt,
+                    };
+                    task.estimated_duration = Some(mins);
+                    task.estimated_duration_max = None;
+                    consumed += extra;
+                } else {
+                    summary_words.push(unescape(token));
+                }
             }
         } else if pref == Some(PrefixToken::StartDue)
             || pref == Some(PrefixToken::Start)

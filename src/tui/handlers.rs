@@ -26,29 +26,8 @@ use rust_i18n::t;
 
 /// Generate a random example for session logging syntax
 fn random_session_example() -> String {
-    const WEEKDAYS: &[&str] = &[
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-        "yesterday",
-    ];
-    const DURATIONS: &[&str] = &["30m", "1h", "2h", "6h"];
-    const TIME_RANGES: &[&str] = &["14:00-15:30"];
-
-    let weekday = WEEKDAYS[fastrand::usize(..WEEKDAYS.len())];
-    let duration = DURATIONS[fastrand::usize(..DURATIONS.len())];
-    let time_range = TIME_RANGES[fastrand::usize(..TIME_RANGES.len())];
-
-    // Generate different formats with equal probability
-    match fastrand::usize(..3) {
-        0 => format!("{} {}", weekday, duration),
-        1 => duration.to_string(),
-        _ => time_range.to_string(),
-    }
+    const DURATIONS: &[&str] = &["30m", "1h", "2h", "6h", "14:00-15:30", "09:00-10:15"];
+    DURATIONS[fastrand::usize(..DURATIONS.len())].to_string()
 }
 
 fn get_available_actions(state: &AppState, task: &Task) -> Vec<crate::config::TaskAction> {

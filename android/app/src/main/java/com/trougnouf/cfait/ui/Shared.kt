@@ -528,17 +528,8 @@ fun formatDurationHuman(mins: Long): String {
 }
 
 fun randomSessionExample(): String {
-    val weekdays = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "yesterday")
-    val durations = listOf("30m", "1h", "2h", "6h")
-    val timeRanges = listOf("14:00-15:30")
-    val weekday = weekdays.random()
-    val duration = durations.random()
-    val timeRange = timeRanges.random()
-    return when ((Math.random() * 3).toInt()) {
-        0 -> "$weekday $duration"
-        1 -> duration
-        else -> timeRange
-    }
+    val examples = listOf("30m", "1h", "2h", "6h", "14:00-15:30", "09:00-10:15")
+    return examples.random()
 }
 
 fun formatPairedDuration(spentMins: Int, targetMins: Int): Pair<String, String> {
