@@ -2,9 +2,7 @@
 // File: ./src/gui/view/syntax.rs
 // Implements syntax highlighting for the smart input editor.
 use crate::color_utils;
-use crate::model::parser::{
-    SyntaxType, parse_smart_date, parse_weekday_code, tokenize_smart_input,
-};
+use crate::model::parser::{SyntaxType, tokenize_smart_input};
 use iced::advanced::text::highlighter::{self, Highlighter};
 use iced::{Color, Font};
 use std::ops::Range;
@@ -198,6 +196,9 @@ impl Highlighter for SessionHighlighter {
         let mut spans = Vec::new();
         let mut cursor = 0;
 
+        let lex_guard = crate::model::parser::LEXICON.read().unwrap();
+        let lex = &*lex_guard;
+
         for word in line.split_whitespace() {
             let start = line[cursor..].find(word).unwrap() + cursor;
             let end = start + word.len();
@@ -213,13 +214,15 @@ impl Highlighter for SessionHighlighter {
             }
 
             let lower = word.to_lowercase();
-            let format = if crate::model::parser::parse_duration(&lower).is_some() {
+            let format = if crate::model::parser::parse_duration_with_lex(&lower, lex).is_some() {
                 // Duration matches
                 highlighter::Format {
                     color: Some(Color::from_rgb(0.6, 0.6, 0.6)),
                     font: None,
                 }
-            } else if parse_smart_date(&lower).is_some() || parse_weekday_code(&lower).is_some() {
+            } else if crate::model::parser::parse_smart_date_with_lex(&lower, lex).is_some()
+                || crate::model::parser::parse_weekday_code_with_lex(&lower, lex).is_some()
+            {
                 // Date matches
                 highlighter::Format {
                     color: Some(Color::from_rgb(0.2, 0.6, 1.0)),
