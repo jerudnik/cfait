@@ -195,6 +195,7 @@ fun CfaitNavHost(
     var aliases by remember { mutableStateOf<Map<String, List<String>>>(emptyMap()) }
     var defaultCalHref by remember { mutableStateOf<String?>(null) }
     var hasUnsynced by remember { mutableStateOf(false) }
+    var lastSyncFailed by remember { mutableStateOf(false) }
     // Add state for default priority
     var defaultPriority by remember { mutableIntStateOf(5) }
     var autoScrollUid by remember { mutableStateOf<String?>(null) }
@@ -341,6 +342,19 @@ fun CfaitNavHost(
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == "com.trougnouf.cfait.REFRESH_UI") {
                     android.util.Log.d("CfaitMain", "Received REFRESH_UI broadcast")
+                    
+                    val syncError = intent.getStringExtra("sync_error")
+                    if (syncError != null) {
+                        lastSyncFailed = true
+                        val authErrorStr = context?.getString(R.string.error_auth_failed) ?: "Authentication failed"
+                        if (syncError.contains(authErrorStr) || syncError.contains("401") || syncError.contains("Unauthorized") || syncError.contains("403") || syncError.contains("Forbidden")) {
+                            Toast.makeText(context, authErrorStr, Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        // We do not set lastSyncFailed to false here because a manual sync might be running
+                        // and we don't want to clear its failure state incorrectly.
+                    }
+                    
                     refreshLists()
                 }
             }
@@ -362,6 +376,7 @@ fun CfaitNavHost(
             isLoading = true
             try {
                 api.sync()
+                lastSyncFailed = false
                 refreshLists()
                 val request = OneTimeWorkRequestBuilder<AlarmWorker>().build()
                 WorkManager.getInstance(context).enqueueUniqueWork(
@@ -372,6 +387,12 @@ fun CfaitNavHost(
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 android.util.Log.e("CfaitMain", "fastStart failed", e)
+                lastSyncFailed = true
+                val syncError = e.message ?: ""
+                val authErrorStr = context.getString(R.string.error_auth_failed)
+                if (syncError.contains(authErrorStr) || syncError.contains("401") || syncError.contains("Unauthorized") || syncError.contains("403") || syncError.contains("Forbidden")) {
+                    Toast.makeText(context, authErrorStr, Toast.LENGTH_LONG).show()
+                }
             }
             isLoading = false
         }

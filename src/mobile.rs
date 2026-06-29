@@ -2862,7 +2862,11 @@ impl CfaitMobile {
                 }
                 drop(store);
                 self.rebuild_alarm_index().await;
-                return Err(MobileError::from(e));
+                if let Some(w) = warning {
+                    return Err(MobileError::from(w));
+                } else {
+                    return Err(MobileError::from(e));
+                }
             }
         }
         drop(store);

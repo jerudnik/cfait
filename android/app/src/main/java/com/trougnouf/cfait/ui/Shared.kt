@@ -692,12 +692,15 @@ class SmartSyntaxTransformation(
 
 fun triggerBackgroundSync(context: Context, api: CfaitMobile) {
     CoroutineScope(Dispatchers.IO).launch {
+        var errorMsg: String? = null
         try {
             api.syncJournal()
         } catch (e: Exception) {
             // Ignore network failures silently, the red sync icon will remain
+            errorMsg = e.message
         } finally {
             val intent = android.content.Intent("com.trougnouf.cfait.REFRESH_UI")
+            intent.putExtra("sync_error", errorMsg)
             intent.setPackage(context.packageName)
             context.sendBroadcast(intent)
         }

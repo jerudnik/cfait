@@ -38,6 +38,10 @@ class AlarmWorker(
                 api.sync()
             } catch (e: Exception) {
                 Log.w("CfaitAlarmWorker", "Pre-alarm sync failed: ${e.message}")
+                val intent = Intent("com.trougnouf.cfait.REFRESH_UI")
+                intent.putExtra("sync_error", e.message)
+                intent.setPackage(context.packageName)
+                context.sendBroadcast(intent)
             }
 
             val config = api.getConfig()

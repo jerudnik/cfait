@@ -212,11 +212,20 @@ impl RustyClient {
                 }
 
                 if let WebDavError::BadStatusCode(status) = &e {
-                    if status.as_u16() == 413 {
+                    let code = status.as_u16();
+                    if code == 413 {
                         return Ok(StepResult::new(StepOutcome::Discard).with_warning(msg));
+                    } else if code == 401 || code == 403 {
+                        return Err(rust_i18n::t!("error_auth_failed").to_string());
                     }
                 } else if msg.contains("413") {
                     return Ok(StepResult::new(StepOutcome::Discard).with_warning(msg));
+                } else if msg.contains("401")
+                    || msg.contains("403")
+                    || msg.contains("Unauthorized")
+                    || msg.contains("Forbidden")
+                {
+                    return Err(rust_i18n::t!("error_auth_failed").to_string());
                 }
 
                 Err(msg)
@@ -349,13 +358,22 @@ impl RustyClient {
                         let detailed_msg = format!("{}\nTarget Path: {}", msg, path);
                         Ok(StepResult::new(StepOutcome::RecoveryNeeded(detailed_msg)))
                     } else if let WebDavError::BadStatusCode(status) = &e {
-                        if status.as_u16() == 413 {
+                        let code = status.as_u16();
+                        if code == 413 {
                             Ok(StepResult::new(StepOutcome::Discard).with_warning(msg))
+                        } else if code == 401 || code == 403 {
+                            Err(rust_i18n::t!("error_auth_failed").to_string())
                         } else {
                             Err(msg)
                         }
                     } else if msg.contains("413") {
                         Ok(StepResult::new(StepOutcome::Discard).with_warning(msg))
+                    } else if msg.contains("401")
+                        || msg.contains("403")
+                        || msg.contains("Unauthorized")
+                        || msg.contains("Forbidden")
+                    {
+                        Err(rust_i18n::t!("error_auth_failed").to_string())
                     } else {
                         Err(msg)
                     }
@@ -429,6 +447,19 @@ impl RustyClient {
 
                 if is_fatal {
                     Ok(StepResult::new(StepOutcome::Discard).with_warning(msg))
+                } else if let WebDavError::BadStatusCode(status) = &e {
+                    let code = status.as_u16();
+                    if code == 401 || code == 403 {
+                        Err(rust_i18n::t!("error_auth_failed").to_string())
+                    } else {
+                        Err(msg)
+                    }
+                } else if msg.contains("401")
+                    || msg.contains("403")
+                    || msg.contains("Unauthorized")
+                    || msg.contains("Forbidden")
+                {
+                    Err(rust_i18n::t!("error_auth_failed").to_string())
                 } else {
                     Err(msg)
                 }
@@ -563,14 +594,16 @@ impl RustyClient {
 
             let step_result = if let Some(err) = test_forced_err {
                 let err_msg = err.to_string();
-                if err_msg.contains("400")
-                    || err_msg.contains("403")
-                    || err_msg.contains("405")
-                    || err_msg.contains("415")
-                {
+                if err_msg.contains("400") || err_msg.contains("405") || err_msg.contains("415") {
                     Ok(StepResult::new(StepOutcome::RecoveryNeeded(err_msg)))
                 } else if err_msg.contains("413") {
                     Ok(StepResult::new(StepOutcome::Discard).with_warning(err_msg))
+                } else if err_msg.contains("401")
+                    || err_msg.contains("403")
+                    || err_msg.contains("Unauthorized")
+                    || err_msg.contains("Forbidden")
+                {
+                    Err(rust_i18n::t!("error_auth_failed").to_string())
                 } else {
                     Err(err_msg)
                 }

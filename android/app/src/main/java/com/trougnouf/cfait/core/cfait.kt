@@ -5078,6 +5078,7 @@ data class SessionState(
     var `expandedTags`: List<kotlin.String>,
     var `expandedLocations`: List<kotlin.String>,
     var `searchCollapsedTasks`: List<kotlin.String>,
+    var `focusedTaskUid`: kotlin.String?,
 ) {
     companion object
 }
@@ -5097,6 +5098,7 @@ public object FfiConverterTypeSessionState : FfiConverterRustBuffer<SessionState
             FfiConverterSequenceString.read(buf),
             FfiConverterSequenceString.read(buf),
             FfiConverterSequenceString.read(buf),
+            FfiConverterOptionalString.read(buf),
         )
 
     override fun allocationSize(value: SessionState) =
@@ -5109,7 +5111,8 @@ public object FfiConverterTypeSessionState : FfiConverterRustBuffer<SessionState
                 FfiConverterSequenceString.allocationSize(value.`expandedDoneGroups`) +
                 FfiConverterSequenceString.allocationSize(value.`expandedTags`) +
                 FfiConverterSequenceString.allocationSize(value.`expandedLocations`) +
-                FfiConverterSequenceString.allocationSize(value.`searchCollapsedTasks`)
+                FfiConverterSequenceString.allocationSize(value.`searchCollapsedTasks`) +
+                FfiConverterOptionalString.allocationSize(value.`focusedTaskUid`)
         )
 
     override fun write(
@@ -5125,6 +5128,7 @@ public object FfiConverterTypeSessionState : FfiConverterRustBuffer<SessionState
         FfiConverterSequenceString.write(value.`expandedTags`, buf)
         FfiConverterSequenceString.write(value.`expandedLocations`, buf)
         FfiConverterSequenceString.write(value.`searchCollapsedTasks`, buf)
+        FfiConverterOptionalString.write(value.`focusedTaskUid`, buf)
     }
 }
 
@@ -5306,6 +5310,12 @@ sealed class AppIntent {
 
     data class ToggleLocationCollapse(
         val `location`: kotlin.String,
+    ) : AppIntent() {
+        companion object
+    }
+
+    data class FocusTaskTree(
+        val `uid`: kotlin.String?,
     ) : AppIntent() {
         companion object
     }
@@ -5502,6 +5512,12 @@ public object FfiConverterTypeAppIntent : FfiConverterRustBuffer<AppIntent> {
             31 -> {
                 AppIntent.ToggleLocationCollapse(
                     FfiConverterString.read(buf),
+                )
+            }
+
+            32 -> {
+                AppIntent.FocusTaskTree(
+                    FfiConverterOptionalString.read(buf),
                 )
             }
 
@@ -5763,6 +5779,14 @@ public object FfiConverterTypeAppIntent : FfiConverterRustBuffer<AppIntent> {
                         FfiConverterString.allocationSize(value.`location`)
                 )
             }
+
+            is AppIntent.FocusTaskTree -> {
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                (
+                    4UL +
+                        FfiConverterOptionalString.allocationSize(value.`uid`)
+                )
+            }
         }
 
     override fun write(
@@ -5959,6 +5983,12 @@ public object FfiConverterTypeAppIntent : FfiConverterRustBuffer<AppIntent> {
                 FfiConverterString.write(value.`location`, buf)
                 Unit
             }
+
+            is AppIntent.FocusTaskTree -> {
+                buf.putInt(32)
+                FfiConverterOptionalString.write(value.`uid`, buf)
+                Unit
+            }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
 }
@@ -6108,6 +6138,7 @@ enum class MobileSyntaxType {
     FILTER,
     OPERATOR,
     GOAL,
+    WIKI_LINK,
     ;
 
     companion object

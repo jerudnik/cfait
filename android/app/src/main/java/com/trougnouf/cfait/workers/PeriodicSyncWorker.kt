@@ -47,6 +47,12 @@ class PeriodicSyncWorker(
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Log.e("CfaitPeriodicSync", "Sync failed", e)
+            
+            val intent = Intent("com.trougnouf.cfait.REFRESH_UI")
+            intent.putExtra("sync_error", e.message)
+            intent.setPackage(context.packageName)
+            context.sendBroadcast(intent)
+            
             Result.retry()
         }
     }

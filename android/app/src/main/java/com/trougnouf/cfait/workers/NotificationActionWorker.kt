@@ -118,7 +118,12 @@ class NotificationActionWorker(
                 }
             }
 
-            try { api.syncJournal() } catch (e: Exception) {}
+            var syncErrorMsg: String? = null
+            try { 
+                api.syncJournal() 
+            } catch (e: Exception) {
+                syncErrorMsg = e.message
+            }
 
             // Refresh UI and Scheduler
             AlarmScheduler.scheduleNextAlarm(context, api)
@@ -126,7 +131,9 @@ class NotificationActionWorker(
                 context,
                 api
             ) // <- Add cleanup pass to prune stale notifications
+            
             val intent = Intent(BROADCAST_REFRESH)
+            intent.putExtra("sync_error", syncErrorMsg)
             intent.setPackage(context.packageName)
             context.sendBroadcast(intent)
 
