@@ -1212,6 +1212,9 @@ impl TaskStore {
                 if !ext.dependencies.is_empty() {
                     existing.dependencies = ext.dependencies;
                 }
+
+                existing.percent_complete = ext.percent_complete;
+
                 existing.sequence += 1;
 
                 let clone = existing.clone();
@@ -1250,6 +1253,8 @@ impl TaskStore {
                 new_task.parent_uid = parent_uid;
                 new_task.dependencies = ext.dependencies;
                 new_task.calendar_href = root_calendar_href.clone();
+
+                new_task.percent_complete = ext.percent_complete;
 
                 self.add_task(new_task.clone());
                 actions.push(crate::journal::Action::Create(new_task));

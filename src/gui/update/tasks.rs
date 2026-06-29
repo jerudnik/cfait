@@ -716,6 +716,9 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                         sub.parent_uid = Some(ext.parent_uid.unwrap_or(uid.clone()));
                         sub.dependencies = ext.dependencies;
                         sub.calendar_href = target_href.clone();
+                        if let Some(pc) = ext.percent_complete {
+                            sub.percent_complete = Some(pc);
+                        }
 
                         app.store.add_task(sub.clone());
                         actions.push(crate::journal::Action::Create(sub));
@@ -1485,6 +1488,9 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
                 sub.parent_uid = Some(actual_parent);
                 sub.dependencies = ext.dependencies;
                 sub.calendar_href = target_href.clone();
+                if let Some(pc) = ext.percent_complete {
+                    sub.percent_complete = Some(pc);
+                }
 
                 app.store.add_task(sub.clone());
                 tasks_to_create.push(sub);
