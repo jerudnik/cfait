@@ -11,7 +11,27 @@ pub struct ExtractedTask {
     pub dependencies: Vec<String>,
     pub raw_text: String,
     pub description: String,
-    pub is_completed: bool,
+    pub status: crate::model::TaskStatus,
+}
+
+fn parse_checkbox(s: &str) -> Option<(crate::model::TaskStatus, &str)> {
+    if s.len() < 4 || !s.starts_with('[') {
+        return None;
+    }
+    let mut chars = s.chars();
+    chars.next(); // '['
+    let inner = chars.next()?;
+    if chars.next()? != ']' || chars.next()? != ' ' {
+        return None;
+    }
+    let rest = chars.as_str();
+    match inner {
+        ' ' => Some((crate::model::TaskStatus::NeedsAction, rest)),
+        'x' | 'X' | '*' => Some((crate::model::TaskStatus::Completed, rest)),
+        '/' | '>' => Some((crate::model::TaskStatus::InProcess, rest)),
+        '-' | '~' => Some((crate::model::TaskStatus::Cancelled, rest)),
+        _ => None,
+    }
 }
 
 fn extract_uid_tag(line: &str) -> (String, Option<String>) {
@@ -23,6 +43,70 @@ fn extract_uid_tag(line: &str) -> (String, Option<String>) {
         return (clean_line, Some(uid));
     }
     (line.trim_end().to_string(), None)
+}
+
+pub fn extract_list_prefix(line: &str) -> String {
+    let mut prefix = String::new();
+    let mut byte_offset = 0;
+    let chars = line.chars();
+
+    // Extract leading whitespace
+    for c in chars {
+        if c == ' ' || c == '\t' {
+            prefix.push(c);
+            byte_offset += c.len_utf8();
+        } else {
+            break;
+        }
+    }
+
+    let rest = &line[byte_offset..];
+    if rest.starts_with("- [ ] ")
+        || rest.starts_with("- [x] ")
+        || rest.starts_with("- [X] ")
+        || rest.starts_with("- [/] ")
+        || rest.starts_with("- [-] ")
+    {
+        prefix.push_str("- [ ] ");
+    } else if rest.starts_with("* [ ] ")
+        || rest.starts_with("* [x] ")
+        || rest.starts_with("* [X] ")
+        || rest.starts_with("* [/] ")
+        || rest.starts_with("* [-] ")
+    {
+        prefix.push_str("* [ ] ");
+    } else if rest.starts_with("- ") {
+        prefix.push_str("- ");
+    } else if rest.starts_with("* ") {
+        prefix.push_str("* ");
+    } else {
+        let mut digit_bytes = 0;
+        for c in rest.chars() {
+            if c.is_ascii_digit() {
+                digit_bytes += c.len_utf8();
+            } else {
+                break;
+            }
+        }
+        if digit_bytes > 0 {
+            let after = &rest[digit_bytes..];
+            if after.starts_with(". [ ] ")
+                || after.starts_with(". [x] ")
+                || after.starts_with(". [X] ")
+                || after.starts_with(". [/] ")
+                || after.starts_with(". [-] ")
+            {
+                let num_str = &rest[..digit_bytes];
+                let num: usize = num_str.parse().unwrap_or(1);
+                prefix.push_str(&format!("{}. [ ] ", num + 1));
+            } else if after.starts_with(". ") {
+                let num_str = &rest[..digit_bytes];
+                let num: usize = num_str.parse().unwrap_or(1);
+                prefix.push_str(&format!("{}. ", num + 1));
+            }
+        }
+    }
+    prefix
 }
 
 pub fn has_extractable_subtasks(input: &str) -> bool {
@@ -44,10 +128,7 @@ pub fn has_extractable_subtasks(input: &str) -> bool {
 
         if rest.starts_with("- ") || rest.starts_with("* ") || rest.starts_with("+ ") {
             let after_marker = &rest[2..];
-            if after_marker.starts_with("[ ] ")
-                || after_marker.starts_with("[x] ")
-                || after_marker.starts_with("[X] ")
-            {
+            if parse_checkbox(after_marker).is_some() {
                 return true;
             }
         } else {
@@ -61,10 +142,7 @@ pub fn has_extractable_subtasks(input: &str) -> bool {
             }
             if digit_bytes > 0 && rest[digit_bytes..].starts_with(". ") {
                 let after_marker = &rest[digit_bytes + 2..];
-                if after_marker.starts_with("[ ] ")
-                    || after_marker.starts_with("[x] ")
-                    || after_marker.starts_with("[X] ")
-                {
+                if parse_checkbox(after_marker).is_some() {
                     return true;
                 }
             }
@@ -116,36 +194,35 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
         // Check if it's a valid Markdown task list
         let mut is_task = false;
         let mut is_numbered = false;
-        let mut is_completed = false;
+        let mut parsed_status = crate::model::TaskStatus::NeedsAction;
         let mut raw_text = "";
         let mut header_depth = 0;
 
         if let Some(stripped) = rest.strip_prefix("# ") {
             is_task = true;
-            raw_text = stripped;
             header_depth = 1;
+            raw_text = stripped;
         } else if let Some(stripped) = rest.strip_prefix("## ") {
             is_task = true;
-            raw_text = stripped;
             header_depth = 2;
+            raw_text = stripped;
         } else if let Some(stripped) = rest.strip_prefix("### ") {
             is_task = true;
-            raw_text = stripped;
             header_depth = 3;
+            raw_text = stripped;
+        }
+
+        if is_task {
+            if let Some((status, r)) = parse_checkbox(raw_text) {
+                parsed_status = status;
+                raw_text = r;
+            }
         } else if rest.starts_with("- ") || rest.starts_with("* ") || rest.starts_with("+ ") {
             let after_marker = &rest[2..];
-            if let Some(stripped) = after_marker.strip_prefix("[ ] ") {
+            if let Some((status, r)) = parse_checkbox(after_marker) {
                 is_task = true;
-                is_completed = false;
-                raw_text = stripped;
-            } else if let Some(stripped) = after_marker.strip_prefix("[x] ") {
-                is_task = true;
-                is_completed = true;
-                raw_text = stripped;
-            } else if let Some(stripped) = after_marker.strip_prefix("[X] ") {
-                is_task = true;
-                is_completed = true;
-                raw_text = stripped;
+                parsed_status = status;
+                raw_text = r;
             }
         } else {
             // Check for numbered lists (e.g., "1. [ ] ")
@@ -159,21 +236,11 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
             }
             if digit_bytes > 0 && rest[digit_bytes..].starts_with(". ") {
                 let after_marker = &rest[digit_bytes + 2..];
-                if let Some(stripped) = after_marker.strip_prefix("[ ] ") {
+                if let Some((status, r)) = parse_checkbox(after_marker) {
                     is_task = true;
                     is_numbered = true;
-                    is_completed = false;
-                    raw_text = stripped;
-                } else if let Some(stripped) = after_marker.strip_prefix("[x] ") {
-                    is_task = true;
-                    is_numbered = true;
-                    is_completed = true;
-                    raw_text = stripped;
-                } else if let Some(stripped) = after_marker.strip_prefix("[X] ") {
-                    is_task = true;
-                    is_numbered = true;
-                    is_completed = true;
-                    raw_text = stripped;
+                    parsed_status = status;
+                    raw_text = r;
                 }
             }
         }
@@ -223,7 +290,7 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
                 dependencies,
                 raw_text: clean_text,
                 description: String::new(),
-                is_completed,
+                status: parsed_status,
             });
             active_task_idx = Some(extracted.len() - 1);
         } else {
@@ -266,4 +333,77 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
     }
 
     (cleaned_root_desc, extracted)
+}
+
+pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> String {
+    let mut out = String::new();
+    let root = if let Some(r) = store.get_task_ref(root_uid) {
+        r
+    } else {
+        return out;
+    };
+
+    let mut children_map: std::collections::HashMap<String, Vec<&crate::model::Task>> =
+        std::collections::HashMap::new();
+    for map in store.calendars.values() {
+        for t in map.values() {
+            if let Some(p) = &t.parent_uid {
+                children_map.entry(p.clone()).or_default().push(t);
+            }
+        }
+    }
+
+    for list in children_map.values_mut() {
+        list.sort_by(|a, b| {
+            a.compare_for_sort(b, 5, false, crate::config::SortPreset::UrgentStartedDue)
+        });
+    }
+
+    if !root.description.is_empty() {
+        out.push_str(&root.description);
+        out.push('\n');
+        out.push('\n');
+    }
+
+    fn serialize_node(
+        task: &crate::model::Task,
+        children_map: &std::collections::HashMap<String, Vec<&crate::model::Task>>,
+        depth: usize,
+        out: &mut String,
+    ) {
+        let status_box = match task.status {
+            crate::model::TaskStatus::NeedsAction => "[ ]",
+            crate::model::TaskStatus::InProcess => "[/]",
+            crate::model::TaskStatus::Completed => "[x]",
+            crate::model::TaskStatus::Cancelled => "[-]",
+        };
+        let smart_string = task.to_smart_string();
+        let uid_tag = format!("<!-- uid:{} -->", task.uid);
+        let indent = "    ".repeat(depth - 1);
+
+        out.push_str(&format!(
+            "{}- {} {} {}\n",
+            indent, status_box, smart_string, uid_tag
+        ));
+
+        if !task.description.is_empty() {
+            for line in task.description.lines() {
+                out.push_str(&format!("{}  {}\n", indent, line));
+            }
+        }
+
+        if let Some(children) = children_map.get(&task.uid) {
+            for child in children {
+                serialize_node(child, children_map, depth + 1, out);
+            }
+        }
+    }
+
+    if let Some(children) = children_map.get(root_uid) {
+        for child in children {
+            serialize_node(child, &children_map, 1, &mut out);
+        }
+    }
+
+    out.trim_end().to_string()
 }

@@ -101,6 +101,9 @@ pub fn tooltip_style(theme: &Theme) -> container::Style {
 }
 
 pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
+    let is_expanded =
+        app.editing_uid.is_some() || app.editing_tree_uid.is_some() || app.creating_with_desc;
+
     let base_content: Element<'_, Message> = match app.state {
         AppState::Loading => container(
             column![
@@ -131,7 +134,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
 
             let content_layout = if app.sidebar_is_hidden {
                 row![
-                    container(view_main_content(app, !show_logo))
+                    container(view_main_content(app, !show_logo, is_expanded))
                         .width(Length::Fill)
                         .center_x(Length::Fill)
                 ]
@@ -139,7 +142,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 row![
                     view_sidebar(app, show_logo),
                     iced::widget::rule::vertical(1),
-                    container(view_main_content(app, !show_logo))
+                    container(view_main_content(app, !show_logo, is_expanded))
                         .width(Length::Fill)
                         .center_x(Length::Fill)
                 ]
@@ -508,6 +511,11 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                     Message::EditTaskStart(idx),
                     false,
                 ),
+                TaskAction::EditTree => (
+                    icon::icon(icon::FAMILY_TREE).size(14).into(),
+                    Message::EditTaskTree(uid.clone()),
+                    false,
+                ),
                 TaskAction::Yank => (
                     icon::icon(icon::LINK).size(14).into(),
                     Message::YankTask(uid.clone()),
@@ -613,6 +621,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::IncreasePriority,
                 TaskAction::DecreasePriority,
                 TaskAction::Edit,
+                TaskAction::EditTree,
                 TaskAction::Yank,
                 TaskAction::CreateSubtask,
                 TaskAction::ExtractSubtasks,
@@ -1248,7 +1257,7 @@ fn view_sidebar(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         .into()
 }
 
-fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
+fn view_main_content(app: &GuiApp, show_logo: bool, is_expanded: bool) -> Element<'_, Message> {
     let active_cal = app
         .active_cal_href
         .as_ref()
@@ -1667,7 +1676,9 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
     };
 
     let export_ui: Element<'_, Message>;
-    if let Some(active_href) = &app.active_cal_href {
+    if is_expanded {
+        export_ui = Space::new().height(0).into();
+    } else if let Some(active_href) = &app.active_cal_href {
         if active_href.starts_with("local://") && active_href != crate::storage::LOCAL_TRASH_HREF {
             let targets: Vec<_> = app
                 .calendars
@@ -1713,7 +1724,8 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
     let input_area = view_input_area(app);
     let mut main_col = column![header_drag_area, export_ui, input_area];
 
-    if let Some(uid) = &app.yanked_uid
+    if !is_expanded
+        && let Some(uid) = &app.yanked_uid
         && let Some(summary) = app.store.get_summary(uid)
     {
         let yank_bar = container(
@@ -1770,7 +1782,8 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         main_col = main_col.push(yank_bar);
     }
 
-    if let Some(uid) = &app.creating_child_of
+    if !is_expanded
+        && let Some(uid) = &app.creating_child_of
         && let Some(summary) = app.store.get_summary(uid)
     {
         let child_label = rust_i18n::t!("new_child_of", name = summary.clone());
@@ -1828,7 +1841,7 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         main_col = main_col.push(child_bar);
     }
 
-    if search_text.starts_with('#') {
+    if !is_expanded && search_text.starts_with('#') {
         let tag = search_text.trim_start_matches('#').trim().to_string();
         if !tag.is_empty() {
             main_col = main_col.push(
@@ -1856,7 +1869,7 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         }
     }
 
-    if search_text.starts_with("@@") || search_text.starts_with("loc:") {
+    if !is_expanded && (search_text.starts_with("@@") || search_text.starts_with("loc:")) {
         let raw = if search_text.starts_with("@@") {
             search_text.trim_start_matches("@@")
         } else {
@@ -1890,7 +1903,7 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
         }
     }
 
-    if let Some(err) = &app.error_msg {
+    if !is_expanded && let Some(err) = &app.error_msg {
         let error_content = row![
             text(err)
                 .style(|theme: &Theme| text::Style {
@@ -1920,7 +1933,6 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
     }
 
     // We use a hasher to create a stable, `Copy`-able u64 key for the keyed_column
-
     use std::hash::{Hash, Hasher};
 
     let tasks_view =
@@ -1983,6 +1995,9 @@ fn view_main_content(app: &GuiApp, show_logo: bool) -> Element<'_, Message> {
 fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
     let is_dark_mode = app.theme().extended_palette().is_dark;
 
+    let is_expanded =
+        app.editing_uid.is_some() || app.editing_tree_uid.is_some() || app.creating_with_desc;
+
     let input_title = text_editor(&app.input_value)
         .id("main_input")
         .placeholder(&app.current_placeholder)
@@ -2007,19 +2022,26 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
     )
     .style(tooltip_style);
 
-    let title_row = row![container(input_title).width(Length::Fill), expand_tooltip]
-        .align_y(iced::Alignment::Center);
-
-    let is_expanded = app.editing_uid.is_some() || app.creating_with_desc;
+    let title_row = if is_expanded {
+        row![container(input_title).width(Length::Fill)].align_y(iced::Alignment::Center)
+    } else {
+        row![container(input_title).width(Length::Fill), expand_tooltip]
+            .align_y(iced::Alignment::Center)
+    };
 
     let inner_content: Element<'_, Message> = if is_expanded {
-        let max_desc_height = (app.current_window_size.height - 250.0).max(160.0);
+        let max_desc_height = (app.current_window_size.height - 220.0).max(160.0);
 
         let placeholder = if app.creating_with_desc {
             rust_i18n::t!("notes_create_subtasks_placeholder").into_owned()
         } else {
             app.notes_placeholder.clone()
         };
+
+        // Calculate an estimated dynamic height to grow to fit, then stop at max_desc_height
+        let text_content = app.description_value.text();
+        let line_count = text_content.lines().count().max(1);
+        let estimated_height = (line_count as f32 * 22.0 + 40.0).clamp(160.0, max_desc_height);
 
         let input_desc = text_editor(&app.description_value)
             .id("description_input")
@@ -2033,14 +2055,16 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
             .height(Length::Shrink)
             .min_height(160.0);
 
-        let scrollable_desc =
-            scrollable(input_desc)
-                .height(Length::Shrink)
-                .direction(Direction::Vertical(
-                    Scrollbar::new().width(10).scroller_width(10),
-                ));
+        let scrollable_desc = scrollable(input_desc)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .direction(Direction::Vertical(
+                Scrollbar::new().width(10).scroller_width(10),
+            ));
 
-        let desc_container = container(scrollable_desc).max_height(max_desc_height);
+        let desc_container = container(scrollable_desc)
+            .width(Length::Fill)
+            .height(Length::Fixed(estimated_height));
 
         let cancel_btn = tooltip(
             iced::widget::button(text(rust_i18n::t!("cancel")).size(16))
@@ -2063,9 +2087,11 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
         .delay(Duration::from_millis(700));
 
         let header_label = if app.creating_with_desc {
-            rust_i18n::t!("mode_create")
+            rust_i18n::t!("mode_create").into_owned()
+        } else if app.editing_tree_uid.is_some() {
+            "Editing Tree".to_string()
         } else {
-            rust_i18n::t!("editing")
+            rust_i18n::t!("editing").into_owned()
         };
 
         let top_bar = row![
@@ -2081,6 +2107,7 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
 
         column![top_bar, title_row, desc_container]
             .spacing(10)
+            .height(Length::Shrink)
             .into()
     } else {
         column![title_row].spacing(5).into()
@@ -2093,6 +2120,7 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
             left: 10.0,
             right: 10.0,
         })
+        .height(Length::Shrink)
         .into()
 }
 

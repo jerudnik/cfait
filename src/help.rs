@@ -481,13 +481,18 @@ pub fn get_shortcuts_help(is_gui: bool) -> Vec<HelpSection> {
                     example: "".to_string(),
                 },
                 HelpItem {
+                    keys: "Ctrl + n".to_string(),
+                    desc: rust_i18n::t!("help_keyboard_create_desc").to_string(),
+                    example: "".to_string(),
+                },
+                HelpItem {
                     keys: "e / E".to_string(),
                     desc: "Edit Title / Edit Description".to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {
                     keys: "Ctrl + e".to_string(),
-                    desc: rust_i18n::t!("help_keyboard_create_desc").to_string(),
+                    desc: "Edit tree (Markdown)".to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {

@@ -13,7 +13,7 @@
     "actions": "Acciones",
     "active_alarm": "Alarma activa",
     "add": "Añadir",
-    "add_description_tooltip": "Añadir descripción y subtareas (Ctrl+E)",
+    "add_description_tooltip": "Añadir descripción y subtareas (Ctrl+N)",
     "add_task_to_target": "Añadir tarea a %{target}",
     "advanced_settings_button": "Más opciones",
     "alarm_due_now": "Vence ahora",

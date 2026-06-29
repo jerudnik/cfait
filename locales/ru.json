@@ -8,7 +8,7 @@
     "actions": "Действия",
     "active_alarm": "Активное напоминание",
     "add": "Добавить",
-    "add_description_tooltip": "Добавить описание и подзадачи (Ctrl+E)",
+    "add_description_tooltip": "Добавить описание и подзадачи (Ctrl+N)",
     "add_task_to_target": "Добавить задачу в %{target}",
     "advanced_settings_button": "Расширенные настройки",
     "alarm_due_now": "Срок истекает сейчас",

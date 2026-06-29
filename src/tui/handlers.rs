@@ -108,6 +108,7 @@ fn update_action_menu_filter(state: &mut AppState) {
                 IncreasePriority => filter == "+" || filter == "up",
                 DecreasePriority => filter == "-" || filter == "down",
                 Edit => filter == "e",
+                EditTree => filter == "tree" || filter == "edit",
                 Yank => filter == "y" || filter == "copy",
                 ExtractSubtasks => filter == "extract" || filter == "parse",
                 TogglePin => filter == "p" || filter == "pin",
@@ -279,6 +280,54 @@ async fn execute_task_action(
             state.editing_uid = Some(uid);
             state.mode = InputMode::Editing;
         }
+        EditTree => {
+            let desc = crate::model::extractor::serialize_task_tree(&state.store, &uid);
+            match run_external_editor(&desc, state.ctx.as_ref()) {
+                Ok(Some(new_desc)) => {
+                    if new_desc != desc {
+                        let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
+                        let def_time = chrono::NaiveTime::parse_from_str(
+                            &config.default_reminder_time,
+                            "%H:%M",
+                        )
+                        .ok();
+                        let mut actions = state.store.sync_tree_from_markdown(
+                            &uid,
+                            &new_desc,
+                            &state.tag_aliases,
+                            def_time,
+                            config.trash_retention_days,
+                        );
+                        if let Some((t_mut, _)) = state.store.get_task_mut(&uid) {
+                            t_mut.sequence += 1;
+                            actions.push(crate::journal::Action::Update(t_mut.clone()));
+                        }
+                        state.refresh_filtered_view();
+                        let _ =
+                            action_tx.try_send(crate::tui::action::Action::PersistBatch(actions));
+                    }
+                    state.needs_redraw = true;
+                }
+                Ok(None) => {
+                    // Fallback to built-in editor
+                    state.input_buffer = desc;
+                    state.cursor_position = state.input_buffer.chars().count();
+                    state.edit_scroll_offset = 0;
+                    state.edit_scroll_x = 0;
+                    state.mode = InputMode::EditingTree(uid);
+                }
+                Err(e) => {
+                    state.message = e;
+                    // Fallback to built-in editor
+                    state.input_buffer = desc;
+                    state.cursor_position = state.input_buffer.chars().count();
+                    state.edit_scroll_offset = 0;
+                    state.edit_scroll_x = 0;
+                    state.mode = InputMode::EditingTree(uid);
+                    state.needs_redraw = true;
+                }
+            }
+        }
         Yank => {
             let summary = task.summary.clone();
             let text = if task.description.is_empty() {
@@ -327,10 +376,32 @@ async fn execute_task_action(
                                     .push_str(&format!("\n\n{}", ext.description));
                             }
                         }
-                        if ext.is_completed {
-                            sub.status = crate::model::TaskStatus::Completed;
-                            sub.set_completion_date(Some(chrono::Utc::now()));
+
+                        let smart_status = sub.status;
+                        sub.status = ext.status;
+                        match ext.status {
+                            crate::model::TaskStatus::Completed => {
+                                if sub.completion_date().is_none() {
+                                    sub.set_completion_date(Some(chrono::Utc::now()));
+                                }
+                            }
+                            crate::model::TaskStatus::Cancelled => {
+                                if sub.completion_date().is_none() {
+                                    sub.set_completion_date(Some(chrono::Utc::now()));
+                                }
+                            }
+                            crate::model::TaskStatus::InProcess => {
+                                if sub.last_started_at.is_none() {
+                                    sub.last_started_at = Some(chrono::Utc::now().timestamp());
+                                }
+                            }
+                            crate::model::TaskStatus::NeedsAction => {
+                                if smart_status == crate::model::TaskStatus::Completed {
+                                    sub.status = crate::model::TaskStatus::Completed;
+                                }
+                            }
                         }
+
                         sub.parent_uid = Some(ext.parent_uid.unwrap_or(uid.clone()));
                         sub.dependencies = ext.dependencies;
                         sub.calendar_href = target_href.clone();
@@ -491,6 +562,31 @@ fn run_external_editor(
 }
 
 fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
+    if let InputMode::EditingTree(ref uid) = state.mode {
+        let uid = uid.clone();
+        let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
+        let def_time = NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
+
+        let mut actions = state.store.sync_tree_from_markdown(
+            &uid,
+            &state.input_buffer,
+            &state.tag_aliases,
+            def_time,
+            config.trash_retention_days,
+        );
+
+        if let Some((t_mut, _)) = state.store.get_task_mut(&uid) {
+            t_mut.sequence += 1;
+            actions.push(crate::journal::Action::Update(t_mut.clone()));
+        }
+
+        state.refresh_filtered_view();
+        state.mode = InputMode::Normal;
+        state.reset_input();
+        let _ = action_tx.try_send(Action::PersistBatch(actions));
+        return;
+    }
+
     if state.creating_with_desc {
         let desc_text = state.input_buffer.clone();
         let (clean_desc, extracted) = crate::model::extractor::extract_markdown_tasks(&desc_text);
@@ -591,10 +687,32 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
                         .push_str(&format!("\n\n{}", ext.description));
                 }
             }
-            if ext.is_completed {
-                sub.status = crate::model::TaskStatus::Completed;
-                sub.set_completion_date(Some(chrono::Utc::now()));
+
+            let smart_status = sub.status;
+            sub.status = ext.status;
+            match ext.status {
+                crate::model::TaskStatus::Completed => {
+                    if sub.completion_date().is_none() {
+                        sub.set_completion_date(Some(chrono::Utc::now()));
+                    }
+                }
+                crate::model::TaskStatus::Cancelled => {
+                    if sub.completion_date().is_none() {
+                        sub.set_completion_date(Some(chrono::Utc::now()));
+                    }
+                }
+                crate::model::TaskStatus::InProcess => {
+                    if sub.last_started_at.is_none() {
+                        sub.last_started_at = Some(chrono::Utc::now().timestamp());
+                    }
+                }
+                crate::model::TaskStatus::NeedsAction => {
+                    if smart_status == crate::model::TaskStatus::Completed {
+                        sub.status = crate::model::TaskStatus::Completed;
+                    }
+                }
             }
+
             sub.parent_uid = Some(ext.parent_uid.unwrap_or(parent_uid.clone()));
             sub.dependencies = ext.dependencies;
             sub.calendar_href = target_href.clone();
@@ -627,18 +745,27 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
         // Standard Edit
         let target_uid: Option<String> = state.editing_uid.clone();
 
-        if let Some(uid) = target_uid
-            && let Some((t, _)) = state.store.get_task_mut(&uid)
-        {
-            t.description = state.input_buffer.clone();
-            t.sequence += 1;
-            let clone = t.clone();
+        if let Some(uid) = target_uid {
+            let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
+            let def_time = NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
+
+            let mut actions = state.store.sync_tree_from_markdown(
+                &uid,
+                &state.input_buffer,
+                &state.tag_aliases,
+                def_time,
+                config.trash_retention_days,
+            );
+
+            if let Some((t_mut, _)) = state.store.get_task_mut(&uid) {
+                t_mut.sequence += 1;
+                actions.push(crate::journal::Action::Update(t_mut.clone()));
+            }
+
             state.refresh_filtered_view();
             state.mode = InputMode::Normal;
             state.reset_input();
-            let _ = action_tx.try_send(Action::PersistBatch(vec![crate::journal::Action::Update(
-                clone,
-            )]));
+            let _ = action_tx.try_send(Action::PersistBatch(actions));
         }
         state.mode = InputMode::Normal;
         state.reset_input();
@@ -1154,10 +1281,28 @@ pub async fn handle_key_event(
             KeyCode::Right => state.move_cursor_right(),
             _ => {}
         },
-        InputMode::EditingDescription => match key.code {
+        InputMode::EditingDescription | InputMode::EditingTree(_) => match key.code {
             // Enter inserts a newline
             KeyCode::Enter => {
                 state.enter_char('\n');
+                let text_up_to_cursor = &state.input_buffer[..state.cursor_position];
+                let lines: Vec<&str> = text_up_to_cursor.split('\n').collect();
+                if lines.len() >= 2 {
+                    let prev_line = lines[lines.len() - 2];
+                    let prefix = crate::model::extractor::extract_list_prefix(prev_line);
+                    if !prefix.is_empty() {
+                        if prev_line.trim() == prefix.trim() {
+                            state.delete_char(); // remove \n
+                            for _ in 0..prefix.chars().count() {
+                                state.delete_char();
+                            }
+                        } else {
+                            for c in prefix.chars() {
+                                state.enter_char(c);
+                            }
+                        }
+                    }
+                }
             }
             // Save: Ctrl+S, Ctrl+D, F2
             KeyCode::Char('s') | KeyCode::Char('d')
@@ -1482,7 +1627,7 @@ pub async fn handle_key_event(
             _ => {}
         },
         InputMode::Normal => match key.code {
-            KeyCode::Char('e') | KeyCode::Char('E')
+            KeyCode::Char('n') | KeyCode::Char('N')
                 if key.modifiers.contains(KeyModifiers::CONTROL) =>
             {
                 state.mode = InputMode::Creating;
@@ -1490,6 +1635,57 @@ pub async fn handle_key_event(
                 state.reset_input();
                 state.new_task_title.clear();
                 state.message = rust_i18n::t!("task_title_prompt").to_string();
+            }
+            KeyCode::Char('e') | KeyCode::Char('E')
+                if key.modifiers.contains(KeyModifiers::CONTROL) =>
+            {
+                if let Some(t) = state.get_selected_task() {
+                    let uid = t.uid.clone();
+                    let desc = crate::model::extractor::serialize_task_tree(&state.store, &uid);
+                    match run_external_editor(&desc, state.ctx.as_ref()) {
+                        Ok(Some(new_desc)) => {
+                            if new_desc != desc {
+                                let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
+                                let def_time = chrono::NaiveTime::parse_from_str(
+                                    &config.default_reminder_time,
+                                    "%H:%M",
+                                )
+                                .ok();
+                                let mut actions = state.store.sync_tree_from_markdown(
+                                    &uid,
+                                    &new_desc,
+                                    &state.tag_aliases,
+                                    def_time,
+                                    config.trash_retention_days,
+                                );
+                                if let Some((t_mut, _)) = state.store.get_task_mut(&uid) {
+                                    t_mut.sequence += 1;
+                                    actions.push(crate::journal::Action::Update(t_mut.clone()));
+                                }
+                                state.refresh_filtered_view();
+                                let _ = action_tx
+                                    .try_send(crate::tui::action::Action::PersistBatch(actions));
+                            }
+                            state.needs_redraw = true;
+                        }
+                        Ok(None) => {
+                            state.input_buffer = desc;
+                            state.cursor_position = state.input_buffer.chars().count();
+                            state.edit_scroll_offset = 0;
+                            state.edit_scroll_x = 0;
+                            state.mode = InputMode::EditingTree(uid);
+                        }
+                        Err(e) => {
+                            state.message = e;
+                            state.input_buffer = desc;
+                            state.cursor_position = state.input_buffer.chars().count();
+                            state.edit_scroll_offset = 0;
+                            state.edit_scroll_x = 0;
+                            state.mode = InputMode::EditingTree(uid);
+                            state.needs_redraw = true;
+                        }
+                    }
+                }
             }
             KeyCode::Esc => {
                 let mut needs_refresh = false;

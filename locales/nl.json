@@ -9,7 +9,7 @@
     "actions": "Acties",
     "active_alarm": "Actieve herinnering",
     "add": "Toevoegen",
-    "add_description_tooltip": "Beschrijving & subtaken toevoegen (Ctrl+E)",
+    "add_description_tooltip": "Beschrijving & subtaken toevoegen (Ctrl+N)",
     "add_task_to_target": "Taak toevoegen aan %{target}",
     "advanced_settings_button": "Meer instellingen",
     "alarm_due_now": "Vervalt nu",

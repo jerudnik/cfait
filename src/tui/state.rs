@@ -44,6 +44,7 @@ pub enum InputMode {
     Searching,
     Editing,
     EditingDescription,
+    EditingTree(String),
     ViewingDetails,
     Moving,
     SelectingExportSource,

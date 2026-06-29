@@ -268,6 +268,7 @@ pub const LANGUAGE_MARKDOWN_OUTLINE: char = '\u{f0f5b}'; // nf-md-language_markd
 
 // Tree Hierarchy Icons
 pub const FAMILY_TREE: char = '\u{f160e}'; // nf-md-family_tree
+pub const EDIT_TREE: char = '\u{f1144}'; // nf-md-pencil_box_multiple
 pub const TREE_FA: char = '\u{f1bb}'; // nf-fa-tree
 pub const TREE_FAE: char = '\u{e21c}'; // nf-fae-tree
 pub const TREE_MD: char = '\u{f0531}'; // nf-md-tree

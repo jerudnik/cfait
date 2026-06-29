@@ -13,7 +13,7 @@
     "actions": "Actions",
     "active_alarm": "Active alarm",
     "add": "Add",
-    "add_description_tooltip": "Add Description & Subtasks (Ctrl+E)",
+    "add_description_tooltip": "Add Description & Subtasks (Ctrl+N)",
     "add_task_to_target": "Add task to %{target}",
     "advanced_settings_button": "More settings",
     "alarm_due_now": "Due now",

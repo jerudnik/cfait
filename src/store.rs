@@ -1132,6 +1132,146 @@ impl TaskStore {
         None
     }
 
+    /// Synchronizes a modified markdown tree back into the database.
+    pub fn sync_tree_from_markdown(
+        &mut self,
+        root_uid: &str,
+        markdown: &str,
+        aliases: &std::collections::HashMap<String, Vec<String>>,
+        default_reminder_time: Option<chrono::NaiveTime>,
+        trash_retention_days: u32,
+    ) -> Vec<crate::journal::Action> {
+        let mut actions = Vec::new();
+        let old_descendants = self.get_descendant_uids(root_uid);
+        let (clean_desc, extracted) = crate::model::extractor::extract_markdown_tasks(markdown);
+
+        let root_calendar_href = if let Some(root) = self.get_task_ref(root_uid) {
+            root.calendar_href.clone()
+        } else {
+            return actions;
+        };
+
+        if let Some((root_mut, _)) = self.get_task_mut(root_uid) {
+            root_mut.description = clean_desc;
+            root_mut.sequence += 1;
+            actions.push(crate::journal::Action::Update(root_mut.clone()));
+        }
+
+        let mut active_uids = std::collections::HashSet::new();
+
+        for ext in extracted {
+            let task_uid = ext.parsed_existing_uid.unwrap_or(ext.uid);
+            active_uids.insert(task_uid.clone());
+
+            let parent_uid = if task_uid == root_uid {
+                if let Some(t) = self.get_task_ref(&task_uid) {
+                    t.parent_uid.clone()
+                } else {
+                    None
+                }
+            } else {
+                Some(ext.parent_uid.unwrap_or(root_uid.to_string()))
+            };
+
+            if let Some((existing, _)) = self.get_task_mut(&task_uid) {
+                existing.apply_smart_input(&ext.raw_text, aliases, default_reminder_time);
+
+                existing.description = ext.description.clone();
+
+                let smart_status = existing.status;
+                existing.status = ext.status;
+                match ext.status {
+                    crate::model::TaskStatus::Completed => {
+                        if existing.completion_date().is_none() {
+                            existing.set_completion_date(Some(chrono::Utc::now()));
+                        }
+                    }
+                    crate::model::TaskStatus::Cancelled => {
+                        if existing.completion_date().is_none() {
+                            existing.set_completion_date(Some(chrono::Utc::now()));
+                        }
+                    }
+                    crate::model::TaskStatus::InProcess => {
+                        if existing.last_started_at.is_none() {
+                            existing.last_started_at = Some(chrono::Utc::now().timestamp());
+                        }
+                    }
+                    crate::model::TaskStatus::NeedsAction => {
+                        if smart_status == crate::model::TaskStatus::Completed {
+                            existing.status = crate::model::TaskStatus::Completed;
+                        } else {
+                            existing.percent_complete = None;
+                            existing
+                                .unmapped_properties
+                                .retain(|p| p.key != "COMPLETED");
+                        }
+                    }
+                }
+
+                existing.parent_uid = parent_uid;
+                if !ext.dependencies.is_empty() {
+                    existing.dependencies = ext.dependencies;
+                }
+                existing.sequence += 1;
+
+                let clone = existing.clone();
+                actions.push(crate::journal::Action::Update(clone));
+            } else {
+                let mut new_task =
+                    crate::model::Task::new(&ext.raw_text, aliases, default_reminder_time);
+                new_task.uid = task_uid.clone();
+                new_task.description = ext.description;
+
+                let smart_status = new_task.status;
+                new_task.status = ext.status;
+                match ext.status {
+                    crate::model::TaskStatus::Completed => {
+                        if new_task.completion_date().is_none() {
+                            new_task.set_completion_date(Some(chrono::Utc::now()));
+                        }
+                    }
+                    crate::model::TaskStatus::Cancelled => {
+                        if new_task.completion_date().is_none() {
+                            new_task.set_completion_date(Some(chrono::Utc::now()));
+                        }
+                    }
+                    crate::model::TaskStatus::InProcess => {
+                        if new_task.last_started_at.is_none() {
+                            new_task.last_started_at = Some(chrono::Utc::now().timestamp());
+                        }
+                    }
+                    crate::model::TaskStatus::NeedsAction => {
+                        if smart_status == crate::model::TaskStatus::Completed {
+                            new_task.status = crate::model::TaskStatus::Completed;
+                        }
+                    }
+                }
+
+                new_task.parent_uid = parent_uid;
+                new_task.dependencies = ext.dependencies;
+                new_task.calendar_href = root_calendar_href.clone();
+
+                self.add_task(new_task.clone());
+                actions.push(crate::journal::Action::Create(new_task));
+            }
+        }
+
+        // Soft-delete missing descendants
+        for old_uid in old_descendants {
+            if !active_uids.contains(&old_uid)
+                && let Some((deleted, trashed_opt)) =
+                    self.soft_delete_task(&old_uid, trash_retention_days)
+            {
+                actions.push(crate::journal::Action::Delete(deleted));
+                if let Some(trashed) = trashed_opt {
+                    actions.push(crate::journal::Action::Create(trashed));
+                }
+            }
+        }
+
+        actions
+    }
+
     /// Deep-duplicate a task and all its descendants.
     /// Returns the list of cloned tasks (with new UIDs and remapped relations) for persistence.
     /// Returns a list of all descendant UIDs for a given root.

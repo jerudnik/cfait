@@ -187,7 +187,9 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::StartMoveTask(_)
         | Message::CancelMoveTask
         | Message::TogglePin(_)
-        | Message::SetTreeCollapse(_, _) => tasks::handle(app, message),
+        | Message::SetTreeCollapse(_, _)
+        | Message::EditTaskTree(_)
+        | Message::KeyboardEditTree => tasks::handle(app, message),
 
         Message::FocusInput
         | Message::FocusSearch
@@ -415,6 +417,8 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
 
     if app.editing_uid.is_some() {
         app.current_placeholder = rust_i18n::t!("edit_task_title").to_string();
+    } else if app.editing_tree_uid.is_some() {
+        app.current_placeholder = "Editing Tree".to_string();
     } else if let Some(parent_uid) = &app.creating_child_of {
         let parent_name = app
             .store

@@ -194,7 +194,8 @@ fn handle_hotkey(
             if is_cmd && let keyboard::Key::Character(s) = key.as_ref() {
                 match s {
                     "s" => return Some(Message::SubmitTask),
-                    "e" => return Some(Message::StartCreateWithDescription),
+                    "n" => return Some(Message::StartCreateWithDescription),
+                    "e" => return Some(Message::KeyboardEditTree),
                     "," => return Some(Message::OpenSettings),
                     _ => {}
                 }
@@ -240,14 +241,22 @@ fn handle_hotkey(
 
         if is_cmd {
             if let keyboard::Key::Character(s) = key.as_ref() {
-                match s {
+                match s.to_lowercase().as_str() {
                     "+" | "=" => return Some(Message::ZoomIn),
                     "-" => return Some(Message::ZoomOut),
                     "0" => return Some(Message::ZoomReset),
                     "b" => return Some(Message::ToggleSidebar),
                     "d" => return Some(Message::KeyboardDuplicateTask),
                     "s" => return Some(Message::SubmitTask),
-                    "e" => return Some(Message::StartCreateWithDescription), // Fallback if not focused
+                    "n" => return Some(Message::StartCreateWithDescription),
+                    "e" => {
+                        if let Ok(focus) = ACTIVE_FOCUS.read()
+                            && *focus == Focus::AddTaskInput
+                        {
+                            return Some(Message::StartCreateWithDescription);
+                        }
+                        return Some(Message::KeyboardEditTree);
+                    }
                     "," => return Some(Message::OpenSettings),
                     "p" => return Some(Message::ToggleSortStandardByPriorityToggle),
                     _ => {}

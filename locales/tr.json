@@ -13,7 +13,7 @@
     "actions": "Eylemler",
     "active_alarm": "Aktif alarm",
     "add": "Ekle",
-    "add_description_tooltip": "Açıklama ve Alt Görevler Ekle (Ctrl+E)",
+    "add_description_tooltip": "Açıklama ve Alt Görevler Ekle (Ctrl+N)",
     "add_task_to_target": "%{target} içine görev ekle",
     "advanced_settings_button": "Daha fazla ayar",
     "alarm_due_now": "Vakit geldi!",

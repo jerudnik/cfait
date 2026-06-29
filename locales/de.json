@@ -13,7 +13,7 @@
     "actions": "Aktionen",
     "active_alarm": "Aktiver Alarm",
     "add": "Hinzufügen",
-    "add_description_tooltip": "Beschreibung & Teilaufgaben hinzufügen (Ctrl+E)",
+    "add_description_tooltip": "Beschreibung & Teilaufgaben hinzufügen (Ctrl+N)",
     "add_task_to_target": "Aufgabe zu %{target} hinzufügen",
     "advanced_settings_button": "Weitere Einstellungen",
     "alarm_due_now": "Jetzt fällig",

@@ -13,7 +13,7 @@
     "actions": "操作",
     "active_alarm": "活动闹钟",
     "add": "添加",
-    "add_description_tooltip": "添加描述和子任务（Ctrl+E）",
+    "add_description_tooltip": "添加描述和子任务（Ctrl+N）",
     "add_task_to_target": "将任务添加到 %{target}",
     "advanced_settings_button": "更多设置",
     "alarm_due_now": "现在到期",

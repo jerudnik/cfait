@@ -13,7 +13,7 @@
     "actions": "Actions",
     "active_alarm": "Alarme active",
     "add": "Ajouter",
-    "add_description_tooltip": "Ajouter Description & Sous-tâches (Ctrl+E)",
+    "add_description_tooltip": "Ajouter Description & Sous-tâches (Ctrl+N)",
     "add_task_to_target": "Ajouter une tâche à %{target}",
     "advanced_settings_button": "Plus de paramètres",
     "alarm_due_now": "Échéance maintenant",

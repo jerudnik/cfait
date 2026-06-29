@@ -31,34 +31,114 @@ fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
     use ratatui::text::Text;
     let mut lines = Vec::new();
 
-    let parse_wiki_links = |text: &str, base_style: Style| -> Vec<Span<'static>> {
+    let parse_inline_elements = |text: &str, base_style: Style| -> Vec<Span<'static>> {
         let mut spans = Vec::new();
         let mut current_idx = 0;
-        while let Some(start) = text[current_idx..].find("[[") {
-            let abs_start = current_idx + start;
-            if abs_start > current_idx {
-                spans.push(Span::styled(
-                    text[current_idx..abs_start].to_string(),
-                    base_style,
-                ));
-            }
-            if let Some(end) = text[abs_start..].find("]]") {
-                let abs_end = abs_start + end + 2;
-                let inner = &text[abs_start + 2..abs_end - 2];
-                let (_, display) = if let Some((t, d)) = inner.split_once('|') {
-                    (t, d)
-                } else {
-                    (inner, inner)
-                };
-                spans.push(Span::styled(
-                    format!("[[{}]]", display),
-                    Style::default().fg(Color::Cyan),
-                ));
-                current_idx = abs_end;
-            } else {
-                break;
+
+        while current_idx < text.len() {
+            let remaining = &text[current_idx..];
+
+            let u_idx = remaining.find("<!-- uid:");
+            let l_idx = remaining.find("[[");
+
+            match (u_idx, l_idx) {
+                (Some(u), Some(l)) => {
+                    if u < l {
+                        let abs_start = current_idx + u;
+                        if let Some(end) = text[abs_start..].find("-->") {
+                            let abs_end = abs_start + end + 3;
+                            if abs_start > current_idx {
+                                spans.push(Span::styled(
+                                    text[current_idx..abs_start].to_string(),
+                                    base_style,
+                                ));
+                            }
+                            spans.push(Span::styled(
+                                text[abs_start..abs_end].to_string(),
+                                Style::default()
+                                    .fg(Color::DarkGray)
+                                    .add_modifier(Modifier::ITALIC),
+                            ));
+                            current_idx = abs_end;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        let abs_start = current_idx + l;
+                        if let Some(end) = text[abs_start..].find("]]") {
+                            let abs_end = abs_start + end + 2;
+                            if abs_start > current_idx {
+                                spans.push(Span::styled(
+                                    text[current_idx..abs_start].to_string(),
+                                    base_style,
+                                ));
+                            }
+                            let inner = &text[abs_start + 2..abs_end - 2];
+                            let (_, display) = if let Some((t, d)) = inner.split_once('|') {
+                                (t, d)
+                            } else {
+                                (inner, inner)
+                            };
+                            spans.push(Span::styled(
+                                format!("[[{}]]", display),
+                                Style::default().fg(Color::Cyan),
+                            ));
+                            current_idx = abs_end;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                (Some(u), None) => {
+                    let abs_start = current_idx + u;
+                    if let Some(end) = text[abs_start..].find("-->") {
+                        let abs_end = abs_start + end + 3;
+                        if abs_start > current_idx {
+                            spans.push(Span::styled(
+                                text[current_idx..abs_start].to_string(),
+                                base_style,
+                            ));
+                        }
+                        spans.push(Span::styled(
+                            text[abs_start..abs_end].to_string(),
+                            Style::default()
+                                .fg(Color::DarkGray)
+                                .add_modifier(Modifier::ITALIC),
+                        ));
+                        current_idx = abs_end;
+                    } else {
+                        break;
+                    }
+                }
+                (None, Some(l)) => {
+                    let abs_start = current_idx + l;
+                    if let Some(end) = text[abs_start..].find("]]") {
+                        let abs_end = abs_start + end + 2;
+                        if abs_start > current_idx {
+                            spans.push(Span::styled(
+                                text[current_idx..abs_start].to_string(),
+                                base_style,
+                            ));
+                        }
+                        let inner = &text[abs_start + 2..abs_end - 2];
+                        let (_, display) = if let Some((t, d)) = inner.split_once('|') {
+                            (t, d)
+                        } else {
+                            (inner, inner)
+                        };
+                        spans.push(Span::styled(
+                            format!("[[{}]]", display),
+                            Style::default().fg(Color::Cyan),
+                        ));
+                        current_idx = abs_end;
+                    } else {
+                        break;
+                    }
+                }
+                (None, None) => break,
             }
         }
+
         if current_idx < text.len() {
             spans.push(Span::styled(text[current_idx..].to_string(), base_style));
         }
@@ -70,7 +150,7 @@ fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
         let mut spans = Vec::new();
 
         if trimmed.starts_with('#') {
-            spans.extend(parse_wiki_links(
+            spans.extend(parse_inline_elements(
                 line,
                 Style::default()
                     .fg(if is_dark_theme {
@@ -81,7 +161,7 @@ fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
                     .add_modifier(Modifier::BOLD),
             ));
         } else if trimmed.starts_with("- ") || trimmed.starts_with("* ") {
-            spans.extend(parse_wiki_links(
+            spans.extend(parse_inline_elements(
                 line,
                 Style::default().fg(if is_dark_theme {
                     Color::Yellow
@@ -90,14 +170,14 @@ fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
                 }),
             ));
         } else if trimmed.starts_with("> ") {
-            spans.extend(parse_wiki_links(
+            spans.extend(parse_inline_elements(
                 line,
                 Style::default()
                     .fg(Color::DarkGray)
                     .add_modifier(Modifier::ITALIC),
             ));
         } else if trimmed.starts_with("```") {
-            spans.extend(parse_wiki_links(
+            spans.extend(parse_inline_elements(
                 line,
                 Style::default().fg(if is_dark_theme {
                     Color::Green
@@ -106,7 +186,7 @@ fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
                 }),
             ));
         } else {
-            spans.extend(parse_wiki_links(line, Style::default()));
+            spans.extend(parse_inline_elements(line, Style::default()));
         }
 
         lines.push(Line::from(spans));
@@ -146,7 +226,9 @@ fn format_description_for_markdown(raw: &str) -> String {
 
 pub fn draw(f: &mut Frame, state: &mut AppState) {
     let is_dark_theme = state.theme.is_dark();
-    let footer_height = if state.mode == InputMode::EditingDescription {
+    let footer_height = if state.mode == InputMode::EditingDescription
+        || matches!(state.mode, InputMode::EditingTree(_))
+    {
         Constraint::Length(10)
     } else {
         Constraint::Length(3)
@@ -1324,7 +1406,10 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
     f.render_stateful_widget(task_list, main_chunks[0], &mut state.list_state);
 
     // Details rendering (markdown)
-    if state.mode != InputMode::EditingDescription {
+    if !matches!(
+        state.mode,
+        InputMode::EditingDescription | InputMode::EditingTree(_)
+    ) {
         let md_text = tui_markdown::from_str(&details_md);
         let details_block = Block::default()
             .borders(Borders::ALL)
@@ -1354,6 +1439,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         | InputMode::Editing
         | InputMode::Searching
         | InputMode::EditingDescription
+        | InputMode::EditingTree(_)
         | InputMode::AddingSession
         | InputMode::EditingSession(_, _) => {
             // Determine input title and color. If filters are the culprit, make search show red.
@@ -1380,6 +1466,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                     "📝 ",
                     Color::Blue,
                 ),
+                InputMode::EditingTree(_) => (" Editing Tree ".to_string(), "🌳 ", Color::Cyan),
                 InputMode::Creating => {
                     if state.creating_child_of.is_some() {
                         (
@@ -1429,7 +1516,9 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             let prefix_width = prefix.width();
             let input_area_width = inner_width.saturating_sub(prefix_width).saturating_sub(1);
 
-            let (visible_text, visible_cursor_x) = if state.mode == InputMode::EditingDescription {
+            let (visible_text, visible_cursor_x) = if state.mode == InputMode::EditingDescription
+                || matches!(state.mode, InputMode::EditingTree(_))
+            {
                 (String::new(), 0)
             } else {
                 let text_up_to_cursor: String = state
@@ -1461,7 +1550,9 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
 
             let mut input_spans = vec![prefix_span];
 
-            if state.mode == InputMode::EditingDescription {
+            if state.mode == InputMode::EditingDescription
+                || matches!(state.mode, InputMode::EditingTree(_))
+            {
                 input_spans.push(Span::raw(rust_i18n::t!("desc_editor_help").to_string()));
             } else {
                 let tokens =
@@ -1532,7 +1623,9 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 .wrap(Wrap { trim: false });
             f.render_widget(input, footer_area);
 
-            if state.mode == InputMode::EditingDescription {
+            if state.mode == InputMode::EditingDescription
+                || matches!(state.mode, InputMode::EditingTree(_))
+            {
                 let cursor_x = footer_area.x + 2;
                 let cursor_y = footer_area.y + 1;
                 f.set_cursor_position((cursor_x, cursor_y));
@@ -1773,13 +1866,21 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         f.render_stateful_widget(popup, area, &mut state.action_selection_state);
     }
 
-    // Editing description popup
-    if state.mode == InputMode::EditingDescription {
+    // Editing description or tree popup
+    if state.mode == InputMode::EditingDescription
+        || matches!(state.mode, InputMode::EditingTree(_))
+    {
         let area = centered_rect(80, 70, f.area());
         f.render_widget(Clear, area);
 
+        let title_str = if matches!(state.mode, InputMode::EditingTree(_)) {
+            " Editing Tree ".to_string()
+        } else {
+            format!(" {} ", rust_i18n::t!("edit_description_title"))
+        };
+
         let block = Block::default()
-            .title(format!(" {} ", rust_i18n::t!("edit_description_title")))
+            .title(title_str)
             .borders(Borders::ALL)
             .border_style(Style::default().fg(if is_dark_theme {
                 Color::Yellow

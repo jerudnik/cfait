@@ -322,6 +322,7 @@ pub enum TaskAction {
     ExtractSubtasks,
     TogglePin,
     Focus,
+    EditTree,
 }
 
 impl TaskAction {
@@ -337,6 +338,7 @@ impl TaskAction {
         TaskAction::IncreasePriority,
         TaskAction::DecreasePriority,
         TaskAction::Edit,
+        TaskAction::EditTree,
         TaskAction::Yank,
         TaskAction::CreateSubtask,
         TaskAction::ExtractSubtasks,
@@ -374,6 +376,7 @@ impl TaskAction {
             TaskAction::OpenUrl => rust_i18n::t!("open_url").to_string(),
             TaskAction::TogglePin => rust_i18n::t!("action_toggle_pin").to_string(),
             TaskAction::Focus => rust_i18n::t!("focus_hide_others").to_string(),
+            TaskAction::EditTree => "Edit tree".to_string(),
         }
     }
 }
@@ -423,6 +426,7 @@ fn default_pinned_actions() -> Vec<TaskAction> {
         TaskAction::DecreasePriority,
         TaskAction::Cancel,
         TaskAction::Edit,
+        TaskAction::EditTree,
         TaskAction::Yank,
         TaskAction::CreateSubtask,
         TaskAction::Focus,

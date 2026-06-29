@@ -1009,6 +1009,11 @@ pub fn view_task_row<'a>(
                             Message::OpenUrl(task.url.clone().unwrap()),
                             0,
                         ),
+                        TaskAction::EditTree => (
+                            icon::icon(icon::EDIT_TREE).size(14).into(),
+                            Message::EditTaskTree(task.uid.clone()),
+                            0,
+                        ),
                     };
 
                 let style_mode_mapped = if style_mode == 2 { 1 } else { style_mode };
@@ -1054,6 +1059,7 @@ pub fn view_task_row<'a>(
                         TaskAction::IncreasePriority => " (+)",
                         TaskAction::DecreasePriority => " (-)",
                         TaskAction::Edit => " (e)",
+                        TaskAction::EditTree => " (Ctrl+Shift+E)",
                         TaskAction::Yank => " (y)",
                         TaskAction::CreateSubtask => " (C)",
                         TaskAction::DuplicateTree => " (Ctrl+D)",

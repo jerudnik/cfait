@@ -92,7 +92,45 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
 
         Message::DescriptionChanged(action) => {
+            let is_enter = matches!(action, text_editor::Action::Edit(text_editor::Edit::Enter));
+
             app.description_value.perform(action);
+
+            if is_enter {
+                // Calculate line index based on newline count
+                let text = app.description_value.text();
+                let newline_count = text.matches('\n').count();
+                let line_idx = newline_count;
+
+                if line_idx > 0 {
+                    let lines: Vec<&str> = text.lines().collect();
+                    if line_idx - 1 < lines.len() {
+                        let prev_line = lines[line_idx - 1];
+                        let prefix = crate::model::extractor::extract_list_prefix(prev_line);
+                        if !prefix.is_empty() {
+                            if prev_line.trim() == prefix.trim() {
+                                // User hit enter on an empty item: remove the newline and prefix.
+                                app.description_value.perform(text_editor::Action::Edit(
+                                    text_editor::Edit::Backspace,
+                                ));
+                                for _ in 0..prefix.chars().count() {
+                                    app.description_value.perform(text_editor::Action::Edit(
+                                        text_editor::Edit::Backspace,
+                                    ));
+                                }
+                            } else {
+                                // Auto-indent the next item
+                                for c in prefix.chars() {
+                                    app.description_value.perform(text_editor::Action::Edit(
+                                        text_editor::Edit::Insert(c),
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Task::none()
         }
 
@@ -165,10 +203,45 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::none()
         }
 
+        Message::EditTaskTree(uid) => {
+            if let Some(idx) = app.find_task_index_by_uid(&uid) {
+                let data = app
+                    .get_task_at_index(idx)
+                    .map(|t| (t.uid.clone(), t.to_smart_string()));
+                if let Some((task_uid, task_summary)) = data {
+                    app.input_value = text_editor::Content::with_text(&task_summary);
+                    app.input_value
+                        .perform(text_editor::Action::Move(text_editor::Motion::DocumentEnd));
+
+                    let tree_md =
+                        crate::model::extractor::serialize_task_tree(&app.store, &task_uid);
+                    app.description_value = text_editor::Content::with_text(&tree_md);
+                    app.editing_tree_uid = Some(task_uid.clone());
+                    app.selected_uid = Some(task_uid);
+
+                    app.active_focus = Focus::AddTaskInput;
+                    if let Ok(mut focus) = ACTIVE_FOCUS.write() {
+                        *focus = Focus::AddTaskInput;
+                    }
+
+                    return iced::widget::operation::focus(iced::widget::Id::new("main_input"));
+                }
+            }
+            Task::none()
+        }
+
+        Message::KeyboardEditTree => {
+            if let Some(selected) = app.selected_uid.clone() {
+                return handle(app, Message::EditTaskTree(selected));
+            }
+            Task::none()
+        }
+
         Message::CancelEdit => {
             app.input_value = text_editor::Content::new();
             app.description_value = text_editor::Content::new();
             app.editing_uid = None;
+            app.editing_tree_uid = None;
             app.creating_child_of = None;
             app.child_lock_active = false;
             app.creating_with_desc = false;
@@ -603,10 +676,32 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                                     .push_str(&format!("\n\n{}", ext.description));
                             }
                         }
-                        if ext.is_completed {
-                            sub.status = crate::model::TaskStatus::Completed;
-                            sub.set_completion_date(Some(chrono::Utc::now()));
+
+                        let smart_status = sub.status;
+                        sub.status = ext.status;
+                        match ext.status {
+                            crate::model::TaskStatus::Completed => {
+                                if sub.completion_date().is_none() {
+                                    sub.set_completion_date(Some(chrono::Utc::now()));
+                                }
+                            }
+                            crate::model::TaskStatus::Cancelled => {
+                                if sub.completion_date().is_none() {
+                                    sub.set_completion_date(Some(chrono::Utc::now()));
+                                }
+                            }
+                            crate::model::TaskStatus::InProcess => {
+                                if sub.last_started_at.is_none() {
+                                    sub.last_started_at = Some(chrono::Utc::now().timestamp());
+                                }
+                            }
+                            crate::model::TaskStatus::NeedsAction => {
+                                if smart_status == crate::model::TaskStatus::Completed {
+                                    sub.status = crate::model::TaskStatus::Completed;
+                                }
+                            }
                         }
+
                         sub.parent_uid = Some(ext.parent_uid.unwrap_or(uid.clone()));
                         sub.dependencies = ext.dependencies;
                         sub.calendar_href = target_href.clone();
@@ -637,12 +732,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 *focus = Focus::MainList;
             }
             if app.editing_uid.is_some()
+                || app.editing_tree_uid.is_some()
                 || app.creating_child_of.is_some()
                 || app.creating_with_desc
             {
                 app.input_value = text_editor::Content::new();
                 app.description_value = text_editor::Content::new();
                 app.editing_uid = None;
+                app.editing_tree_uid = None;
                 app.creating_child_of = None;
                 app.creating_with_desc = false;
             }
@@ -668,12 +765,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 app.ics_import_task_count = None;
                 captured_action = true;
             } else if app.editing_uid.is_some()
+                || app.editing_tree_uid.is_some()
                 || app.creating_child_of.is_some()
                 || app.creating_with_desc
             {
                 app.input_value = text_editor::Content::new();
                 app.description_value = text_editor::Content::new();
                 app.editing_uid = None;
+                app.editing_tree_uid = None;
                 app.creating_child_of = None;
                 app.child_lock_active = false;
                 app.creating_with_desc = false;
@@ -707,7 +806,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 common::refresh_filtered_tasks(app);
             }
 
-            if captured_action || app.editing_uid.is_none() {
+            if captured_action || (app.editing_uid.is_none() && app.editing_tree_uid.is_none()) {
                 return common::scroll_to_selected_delayed(app, true);
             }
 
@@ -1122,6 +1221,7 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
         || (!trimmed.contains(' ')
             && (trimmed.contains(":=") || trimmed.to_lowercase().starts_with("loc:")))
             && app.editing_uid.is_none()
+            && app.editing_tree_uid.is_none()
     {
         app.input_value = text_editor::Content::new();
         refresh_filtered_tasks(app);
@@ -1140,6 +1240,7 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
     if clean_input.starts_with('#')
         && !clean_input.trim().contains(' ')
         && app.editing_uid.is_none()
+        && app.editing_tree_uid.is_none()
     {
         let tag = clean_input.trim().trim_start_matches('#').to_string();
         if !tag.is_empty() && !text_to_submit.contains(":=") {
@@ -1164,7 +1265,11 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
         }
     }
     let is_loc_jump = clean_input.starts_with("@@") || clean_input.starts_with("loc:");
-    if is_loc_jump && !clean_input.trim().contains(' ') && app.editing_uid.is_none() {
+    if is_loc_jump
+        && !clean_input.trim().contains(' ')
+        && app.editing_uid.is_none()
+        && app.editing_tree_uid.is_none()
+    {
         let loc = crate::model::parser::strip_quotes(
             clean_input
                 .trim_start_matches("@@")
@@ -1198,7 +1303,42 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
     let (cleaned_desc, extracted_subtasks) =
         crate::model::extractor::extract_markdown_tasks(&desc_text);
 
-    if let Some(edit_uid) = &app.editing_uid {
+    if let Some(tree_uid) = &app.editing_tree_uid {
+        let mut actions = app.store.sync_tree_from_markdown(
+            tree_uid,
+            &desc_text,
+            &app.tag_aliases,
+            config_time,
+            app.core_config.trash_retention_days,
+        );
+
+        if let Some((task, _)) = app.store.get_task_mut(tree_uid) {
+            task.apply_smart_input(&clean_input, &app.tag_aliases, config_time);
+            task.sequence += 1;
+            actions.push(crate::journal::Action::Update(task.clone()));
+            app.selected_uid = Some(task.uid.clone());
+        }
+
+        app.input_value = text_editor::Content::new();
+        app.description_value = text_editor::Content::new();
+        app.editing_tree_uid = None;
+
+        refresh_filtered_tasks(app);
+
+        actions.extend(
+            retroactive_sync_batch
+                .into_iter()
+                .map(crate::journal::Action::Update),
+        );
+
+        if !actions.is_empty()
+            && let Some(tx) = &app.bg_tx
+        {
+            let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
+        }
+
+        return Task::none();
+    } else if let Some(edit_uid) = &app.editing_uid {
         if let Some((task, _)) = app.store.get_task_mut(edit_uid) {
             task.description = desc_text;
             task.apply_smart_input(&clean_input, &app.tag_aliases, config_time);
@@ -1281,9 +1421,30 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
                             .push_str(&format!("\n\n{}", ext.description));
                     }
                 }
-                if ext.is_completed {
-                    sub.status = crate::model::TaskStatus::Completed;
-                    sub.set_completion_date(Some(chrono::Utc::now()));
+
+                let smart_status = sub.status;
+                sub.status = ext.status;
+                match ext.status {
+                    crate::model::TaskStatus::Completed => {
+                        if sub.completion_date().is_none() {
+                            sub.set_completion_date(Some(chrono::Utc::now()));
+                        }
+                    }
+                    crate::model::TaskStatus::Cancelled => {
+                        if sub.completion_date().is_none() {
+                            sub.set_completion_date(Some(chrono::Utc::now()));
+                        }
+                    }
+                    crate::model::TaskStatus::InProcess => {
+                        if sub.last_started_at.is_none() {
+                            sub.last_started_at = Some(chrono::Utc::now().timestamp());
+                        }
+                    }
+                    crate::model::TaskStatus::NeedsAction => {
+                        if smart_status == crate::model::TaskStatus::Completed {
+                            sub.status = crate::model::TaskStatus::Completed;
+                        }
+                    }
                 }
 
                 let actual_parent = ext.parent_uid.unwrap_or(parent_uid.clone());

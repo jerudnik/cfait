@@ -8,7 +8,7 @@
     "actions": "Akce",
     "active_alarm": "Aktivní upozornění",
     "add": "Přidat",
-    "add_description_tooltip": "Přidat popis a podúkoly (Ctrl+E)",
+    "add_description_tooltip": "Přidat popis a podúkoly (Ctrl+N)",
     "add_task_to_target": "Přidat úkol do %{target}",
     "advanced_settings_button": "Další nastavení",
     "alarm_due_now": "Termín nyní",

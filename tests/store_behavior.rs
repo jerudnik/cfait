@@ -585,11 +585,11 @@ fn test_extract_markdown_tasks_full() {
     assert_eq!(tasks.len(), 4);
 
     assert_eq!(tasks[0].raw_text, "Subtask 1");
-    assert!(!tasks[0].is_completed);
+    assert_eq!(tasks[0].status, cfait::model::TaskStatus::NeedsAction);
     assert_eq!(tasks[0].description, "Details for subtask 1");
 
     assert_eq!(tasks[1].raw_text, "Subtask 2");
-    assert!(tasks[1].is_completed);
+    assert_eq!(tasks[1].status, cfait::model::TaskStatus::Completed);
     assert_eq!(tasks[1].description, "");
 
     assert_eq!(tasks[2].raw_text, "Numbered 1");

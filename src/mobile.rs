@@ -2161,10 +2161,32 @@ impl CfaitMobile {
                         .push_str(&format!("\n\n{}", ext.description));
                 }
             }
-            if ext.is_completed {
-                sub.status = crate::model::TaskStatus::Completed;
-                sub.set_completion_date(Some(chrono::Utc::now()));
+
+            let smart_status = sub.status;
+            sub.status = ext.status;
+            match ext.status {
+                crate::model::TaskStatus::Completed => {
+                    if sub.completion_date().is_none() {
+                        sub.set_completion_date(Some(chrono::Utc::now()));
+                    }
+                }
+                crate::model::TaskStatus::Cancelled => {
+                    if sub.completion_date().is_none() {
+                        sub.set_completion_date(Some(chrono::Utc::now()));
+                    }
+                }
+                crate::model::TaskStatus::InProcess => {
+                    if sub.last_started_at.is_none() {
+                        sub.last_started_at = Some(chrono::Utc::now().timestamp());
+                    }
+                }
+                crate::model::TaskStatus::NeedsAction => {
+                    if smart_status == crate::model::TaskStatus::Completed {
+                        sub.status = crate::model::TaskStatus::Completed;
+                    }
+                }
             }
+
             sub.parent_uid = Some(ext.parent_uid.unwrap_or(parent_uid.clone()));
             sub.dependencies = ext.dependencies;
             sub.calendar_href = config
@@ -2333,10 +2355,32 @@ impl CfaitMobile {
                                 .push_str(&format!("\n\n{}", ext.description));
                         }
                     }
-                    if ext.is_completed {
-                        sub.status = crate::model::TaskStatus::Completed;
-                        sub.set_completion_date(Some(chrono::Utc::now()));
+
+                    let smart_status = sub.status;
+                    sub.status = ext.status;
+                    match ext.status {
+                        crate::model::TaskStatus::Completed => {
+                            if sub.completion_date().is_none() {
+                                sub.set_completion_date(Some(chrono::Utc::now()));
+                            }
+                        }
+                        crate::model::TaskStatus::Cancelled => {
+                            if sub.completion_date().is_none() {
+                                sub.set_completion_date(Some(chrono::Utc::now()));
+                            }
+                        }
+                        crate::model::TaskStatus::InProcess => {
+                            if sub.last_started_at.is_none() {
+                                sub.last_started_at = Some(chrono::Utc::now().timestamp());
+                            }
+                        }
+                        crate::model::TaskStatus::NeedsAction => {
+                            if smart_status == crate::model::TaskStatus::Completed {
+                                sub.status = crate::model::TaskStatus::Completed;
+                            }
+                        }
                     }
+
                     sub.parent_uid = Some(ext.parent_uid.unwrap_or(uid.clone()));
                     sub.dependencies = ext.dependencies;
                     sub.calendar_href = target_href.clone();
