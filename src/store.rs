@@ -2744,6 +2744,36 @@ impl TaskStore {
     pub fn apply_task_intent(&mut self, intent: &AppIntent, config: &Config) -> Vec<JournalAction> {
         let mut actions = Vec::new();
         match intent {
+            AppIntent::CompleteTree { uid } => {
+                let mut uids_to_complete = self.get_descendant_uids(uid);
+                uids_to_complete.push(uid.clone());
+
+                let target_status = if let Some(t) = self.get_task_ref(uid) {
+                    if t.status.is_done() {
+                        crate::model::TaskStatus::NeedsAction
+                    } else {
+                        crate::model::TaskStatus::Completed
+                    }
+                } else {
+                    crate::model::TaskStatus::Completed
+                };
+
+                for u in uids_to_complete {
+                    if let Some((primary, secondary, children)) =
+                        self.set_status(&u, target_status, false)
+                    {
+                        if let Some(sec) = secondary {
+                            actions.push(JournalAction::Create(primary));
+                            actions.push(JournalAction::Update(sec));
+                        } else {
+                            actions.push(JournalAction::Update(primary));
+                        }
+                        for c in children {
+                            actions.push(JournalAction::Update(c));
+                        }
+                    }
+                }
+            }
             AppIntent::ToggleTask { uid } => {
                 if let Some((primary, secondary, children)) = self.toggle_task(uid) {
                     if let Some(sec) = secondary {
@@ -2986,6 +3016,7 @@ mod tests {
             create_event: None,
             goal: None,
             // Transient fields
+            target_collection: None,
             is_blocked: false,
             is_implicitly_blocked: false,
             is_implicitly_future: false,

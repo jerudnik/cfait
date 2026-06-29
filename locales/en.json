@@ -5,6 +5,8 @@
     "about_title": "Cfait",
     "about_version": "Version %{version}",
     "action_complete_and_shift": "Complete & shift schedule",
+    "action_complete_tree": "Complete tree",
+    "parser_collection": "cal:,col:",
     "action_extract_subtasks": "Extract markdown subtasks",
     "action_open_locations": "Open locations (GPX)",
     "action_pin": "Pin task",

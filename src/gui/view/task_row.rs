@@ -969,6 +969,11 @@ pub fn view_task_row<'a>(
                             Message::DuplicateTask(task.uid.clone()),
                             0,
                         ),
+                        TaskAction::CompleteTree => (
+                            icon::icon(icon::LIST_CHECK).size(14).into(),
+                            Message::CompleteTree(task.uid.clone()),
+                            0,
+                        ),
                         TaskAction::Promote => (
                             icon::icon(icon::ELEVATOR_UP).size(14).into(),
                             Message::RemoveParent(task.uid.clone()),
@@ -1063,6 +1068,7 @@ pub fn view_task_row<'a>(
                         TaskAction::Yank => " (y)",
                         TaskAction::CreateSubtask => " (C)",
                         TaskAction::DuplicateTree => " (Ctrl+D)",
+                        TaskAction::CompleteTree => " (Shift+Space)",
                         TaskAction::Promote => " (<)",
                         TaskAction::Move => " (M)",
                         TaskAction::Cancel => " (x)",

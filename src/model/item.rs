@@ -335,6 +335,8 @@ pub struct Task {
 
     // Transient UI/runtime fields (not serialized)
     #[serde(skip)]
+    pub target_collection: Option<String>,
+    #[serde(skip)]
     pub is_blocked: bool,
     #[serde(skip)]
     pub is_implicitly_blocked: bool,
@@ -641,6 +643,7 @@ impl Task {
             raw_components: Vec::new(),
             create_event: None,
             goal: None,
+            target_collection: None,
             is_blocked: false,
             is_implicitly_blocked: false,
             is_implicitly_future: false,

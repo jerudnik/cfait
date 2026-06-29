@@ -143,6 +143,13 @@ impl Highlighter for SmartInputHighlighter {
                             ..Default::default()
                         }),
                     },
+                    SyntaxType::Collection => highlighter::Format {
+                        color: Some(Color::from_rgb(0.9, 0.4, 0.4)), // Soft red
+                        font: Some(Font {
+                            weight: iced::font::Weight::Bold,
+                            ..Default::default()
+                        }),
+                    },
                     SyntaxType::Calendar => highlighter::Format {
                         // Added handler
                         color: Some(Color::from_rgb(0.91, 0.11, 0.38)), // #E91E63 Pink
@@ -307,6 +314,8 @@ impl Highlighter for MarkdownHighlighter {
         let is_header = trimmed.starts_with('#');
         let _is_list =
             trimmed.starts_with("- [") || trimmed.starts_with("* [") || trimmed.starts_with("+ [");
+        let is_table = trimmed.starts_with('|') && trimmed[1..].contains('|');
+        let table_color = Some(Color::from_rgb(0.3, 0.7, 0.5)); // Greenish
 
         let mut cursor = 0;
 
@@ -318,6 +327,11 @@ impl Highlighter for MarkdownHighlighter {
                     weight: iced::font::Weight::Bold,
                     ..Default::default()
                 }),
+            }
+        } else if is_table {
+            highlighter::Format {
+                color: table_color,
+                font: Some(Font::MONOSPACE),
             }
         } else {
             highlighter::Format {

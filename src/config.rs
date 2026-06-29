@@ -323,6 +323,7 @@ pub enum TaskAction {
     TogglePin,
     Focus,
     EditTree,
+    CompleteTree,
 }
 
 impl TaskAction {
@@ -350,6 +351,7 @@ impl TaskAction {
         TaskAction::Delete,
         TaskAction::DeleteTree,
         TaskAction::Focus,
+        TaskAction::CompleteTree,
     ];
 
     pub fn label(&self) -> String {
@@ -377,6 +379,7 @@ impl TaskAction {
             TaskAction::TogglePin => rust_i18n::t!("action_toggle_pin").to_string(),
             TaskAction::Focus => rust_i18n::t!("focus_hide_others").to_string(),
             TaskAction::EditTree => "Edit tree".to_string(),
+            TaskAction::CompleteTree => rust_i18n::t!("action_complete_tree").to_string(),
         }
     }
 }

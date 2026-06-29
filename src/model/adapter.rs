@@ -1088,6 +1088,7 @@ impl IcsAdapter {
             raw_components,
             create_event,
             goal,
+            target_collection: None,
             is_blocked: false,
             is_implicitly_blocked: false,
             is_implicitly_future: false,

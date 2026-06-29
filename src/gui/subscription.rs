@@ -213,7 +213,7 @@ fn handle_hotkey(
                     keyboard::Key::Named(Named::Enter) => return Some(Message::EnterPressed),
                     keyboard::Key::Named(Named::Space) => {
                         if modifiers.shift() {
-                            return Some(Message::ToggleTaskShiftSelected);
+                            return Some(Message::ShiftSpaceSelected);
                         } else {
                             return Some(Message::ToggleSelected);
                         }
@@ -335,7 +335,7 @@ fn handle_hotkey(
             keyboard::Key::Named(Named::Enter) => Some(Message::EnterPressed),
             keyboard::Key::Named(Named::Space) => {
                 if modifiers.shift() {
-                    Some(Message::ToggleTaskShiftSelected)
+                    Some(Message::ShiftSpaceSelected)
                 } else {
                     Some(Message::ToggleSelected)
                 }

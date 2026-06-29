@@ -30,3 +30,15 @@ pub use recurrence::RecurrenceEngine;
 
 // Re-export session model for UI state management
 pub use session::{AppIntent, SessionState};
+
+pub fn resolve_collection(target: &str, calendars: &[CalendarListEntry], default: &str) -> String {
+    let lower = target.to_lowercase();
+    if let Some(c) = calendars
+        .iter()
+        .find(|c| c.name.to_lowercase().contains(&lower) || c.href.to_lowercase().contains(&lower))
+    {
+        c.href.clone()
+    } else {
+        default.to_string()
+    }
+}

@@ -193,4 +193,5 @@ pub enum AppIntent {
     ToggleTagCollapse { tag: String },
     ToggleLocationCollapse { location: String },
     FocusTaskTree { uid: Option<String> },
+    CompleteTree { uid: String },
 }

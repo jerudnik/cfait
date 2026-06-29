@@ -168,6 +168,14 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                     .unwrap_or_else(|| crate::storage::LOCAL_CALENDAR_HREF.to_string());
                 new_task.calendar_href = target_href.clone();
 
+                if let Some(target) = new_task.target_collection.take() {
+                    new_task.calendar_href = crate::model::resolve_collection(
+                        &target,
+                        &app.calendars,
+                        &new_task.calendar_href,
+                    );
+                }
+
                 let uid = new_task.uid.clone();
                 app.store.add_task(new_task.clone());
                 crate::gui::update::common::refresh_filtered_tasks(app);

@@ -55,6 +55,7 @@ pub fn is_action_available(
         }
         crate::config::TaskAction::OpenUrl => task.url.is_some(),
         crate::config::TaskAction::DeleteTree => task.has_subtasks,
+        crate::config::TaskAction::CompleteTree => task.has_subtasks,
         crate::config::TaskAction::OpenCoordinates => task.geo.is_some(),
         crate::config::TaskAction::OpenLocations => app.store.count_tree_locations(&task.uid) > 1,
         crate::config::TaskAction::ToggleDetails => {
@@ -406,7 +407,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             }
 
             let shortcut = match *action {
-                TaskAction::CompleteAndShift => " (Shift+Space)",
+                TaskAction::CompleteAndShift => " (Shift+S)",
                 TaskAction::ToggleDetails => " (L)",
                 TaskAction::ToggleTimer => " (s)",
                 TaskAction::StopTimer => " (S)",
@@ -418,6 +419,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::Yank => " (y)",
                 TaskAction::CreateSubtask => " (C)",
                 TaskAction::DuplicateTree => " (Ctrl+D)",
+                TaskAction::CompleteTree => " (Shift+Space)",
                 TaskAction::Promote => " (<)",
                 TaskAction::Move => " (M)",
                 TaskAction::Cancel => " (x)",
@@ -538,6 +540,11 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                     Message::DuplicateTask(uid.clone()),
                     false,
                 ),
+                TaskAction::CompleteTree => (
+                    icon::icon(icon::LIST_CHECK).size(14).into(),
+                    Message::CompleteTree(uid.clone()),
+                    false,
+                ),
                 TaskAction::Promote => (
                     icon::icon(icon::ELEVATOR_UP).size(14).into(),
                     Message::RemoveParent(uid.clone()),
@@ -626,6 +633,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::CreateSubtask,
                 TaskAction::ExtractSubtasks,
                 TaskAction::DuplicateTree,
+                TaskAction::CompleteTree,
                 TaskAction::Promote,
                 TaskAction::Move,
                 TaskAction::Cancel,

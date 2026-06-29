@@ -253,13 +253,24 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::ToggleTaskShiftSelected => {
-            if let Some(uid) = app.selected_uid.clone() {
-                dispatch_and_select_next_row(
-                    app,
-                    AppIntent::ToggleTaskShift { uid: uid.clone() },
-                    uid,
-                );
+        Message::CompleteTree(uid) => {
+            dispatch_and_select_next_row(app, AppIntent::CompleteTree { uid: uid.clone() }, uid);
+            Task::none()
+        }
+
+        Message::ShiftSpaceSelected => {
+            if let Some(uid) = app.selected_uid.clone()
+                && let Some(idx) = app.find_task_index_by_uid(&uid)
+                && let Some(t) = app.get_task_at_index(idx)
+            {
+                let intent = if t.rrule.is_some() {
+                    AppIntent::ToggleTaskShift { uid: uid.clone() }
+                } else if t.has_subtasks {
+                    AppIntent::CompleteTree { uid: uid.clone() }
+                } else {
+                    AppIntent::ToggleTask { uid: uid.clone() }
+                };
+                dispatch_and_select_next_row(app, intent, uid);
             }
             Task::none()
         }
@@ -1312,9 +1323,15 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
             app.core_config.trash_retention_days,
         );
 
-        if let Some((task, _)) = app.store.get_task_mut(tree_uid) {
+        if let Some(task_ref) = app.store.get_task_ref(tree_uid) {
+            let mut task = task_ref.clone();
             task.apply_smart_input(&clean_input, &app.tag_aliases, config_time);
+            if let Some(target) = task.target_collection.take() {
+                task.calendar_href =
+                    crate::model::resolve_collection(&target, &app.calendars, &task.calendar_href);
+            }
             task.sequence += 1;
+            app.store.update_or_add_task(task.clone());
             actions.push(crate::journal::Action::Update(task.clone()));
             app.selected_uid = Some(task.uid.clone());
         }
@@ -1339,11 +1356,19 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
 
         return Task::none();
     } else if let Some(edit_uid) = &app.editing_uid {
-        if let Some((task, _)) = app.store.get_task_mut(edit_uid) {
+        if let Some(task_ref) = app.store.get_task_ref(edit_uid) {
+            let mut task = task_ref.clone();
             task.description = desc_text;
             task.apply_smart_input(&clean_input, &app.tag_aliases, config_time);
+
+            if let Some(target) = task.target_collection.take() {
+                task.calendar_href =
+                    crate::model::resolve_collection(&target, &app.calendars, &task.calendar_href);
+            }
+
             task.sequence += 1;
             let task_copy = task.clone();
+            app.store.update_or_add_task(task);
 
             app.input_value = text_editor::Content::new();
             app.description_value = text_editor::Content::new();
@@ -1401,6 +1426,15 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
 
         if !target_href.is_empty() {
             new_task.calendar_href = target_href.clone();
+
+            if let Some(target) = new_task.target_collection.take() {
+                new_task.calendar_href = crate::model::resolve_collection(
+                    &target,
+                    &app.calendars,
+                    &new_task.calendar_href,
+                );
+            }
+
             let parent_uid = new_task.uid.clone();
 
             app.store.add_task(new_task.clone());

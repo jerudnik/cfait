@@ -136,6 +136,7 @@ pub const FOCUS_STRONG: char = '\u{f0eff}'; // nf-md-image_filter_center_focus_s
 pub const FOCUS_OUTLINE: char = '\u{f0f00}'; // nf-md-image_filter_center_focus_strong_outline
 pub const FOCUS_TELESCOPE: char = '\u{f0b4e}'; // nf-md-telescope
 pub const FOCUS_ICONS: &[char] = &[FOCUS_FIELD, FOCUS_STRONG, FOCUS_OUTLINE, FOCUS_TELESCOPE];
+pub const LIST_CHECK: char = '\u{f0ae}';
 
 // Location Tab Variations
 pub const EARTH_ASIA: char = '\u{ee47}';

@@ -114,6 +114,7 @@ fn update_action_menu_filter(state: &mut AppState) {
                 TogglePin => filter == "p" || filter == "pin",
                 CreateSubtask => filter == "c" || filter == "sub",
                 DuplicateTree => filter == "d" || filter == "dup",
+                CompleteTree => filter == "tree" || filter == "complete",
                 Promote => filter == "<" || filter == "outdent",
                 Move => filter == "m",
                 Cancel => filter == "x",
@@ -468,6 +469,9 @@ async fn execute_task_action(
         }
         Focus => {
             intent = Some(AppIntent::FocusTaskTree { uid: Some(uid) });
+        }
+        CompleteTree => {
+            intent = Some(AppIntent::CompleteTree { uid });
         }
     }
 
@@ -1168,6 +1172,14 @@ pub async fn handle_key_event(
                     task.calendar_href = href.clone();
                     task.parent_uid = state.creating_child_of.clone();
 
+                    if let Some(target) = task.target_collection.take() {
+                        task.calendar_href = crate::model::resolve_collection(
+                            &target,
+                            &state.calendars,
+                            &task.calendar_href,
+                        );
+                    }
+
                     let new_uid = task.uid.clone();
                     state.store.add_task(task.clone());
                     state.refresh_filtered_view();
@@ -1251,14 +1263,23 @@ pub async fn handle_key_event(
                 let target_uid: Option<String> = state.editing_uid.clone();
 
                 if let Some(uid) = target_uid
-                    && let Some((t, _)) = state.store.get_task_mut(&uid)
+                    && let Some(t_ref) = state.store.get_task_ref(&uid)
                 {
+                    let mut t = t_ref.clone();
                     let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
                     let def_time =
                         NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
                     t.apply_smart_input(&clean_input, &state.tag_aliases, def_time);
+                    if let Some(target) = t.target_collection.take() {
+                        t.calendar_href = crate::model::resolve_collection(
+                            &target,
+                            &state.calendars,
+                            &t.calendar_href,
+                        );
+                    }
                     t.sequence += 1;
                     let clone = t.clone();
+                    state.store.update_or_add_task(t);
                     state.refresh_filtered_view();
                     update_alarms(state);
                     state.mode = InputMode::Normal;
@@ -1818,7 +1839,13 @@ pub async fn handle_key_event(
                         let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
 
                         let intent = if is_shift {
-                            AppIntent::ToggleTaskShift { uid: uid.clone() }
+                            if view_task.rrule.is_some() {
+                                AppIntent::ToggleTaskShift { uid: uid.clone() }
+                            } else if view_task.has_subtasks {
+                                AppIntent::CompleteTree { uid: uid.clone() }
+                            } else {
+                                AppIntent::ToggleTask { uid: uid.clone() }
+                            }
                         } else {
                             AppIntent::ToggleTask { uid: uid.clone() }
                         };

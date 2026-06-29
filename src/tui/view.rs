@@ -1607,6 +1607,9 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         SyntaxType::Goal => Style::default()
                             .fg(Color::Cyan)
                             .add_modifier(Modifier::BOLD),
+                        SyntaxType::Collection => {
+                            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+                        }
                         SyntaxType::Calendar => Style::default().fg(Color::Magenta), // Added for +cal/-cal
                         SyntaxType::Pin => Style::default().fg(Color::LightRed), // Added for +pin/-pin
                         SyntaxType::Filter => Style::default().fg(Color::Cyan), // Added for search operators / filters

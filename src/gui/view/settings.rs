@@ -510,6 +510,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                             crate::config::TaskAction::TogglePin => icon::THUMB_TACK,
                             crate::config::TaskAction::CreateSubtask => icon::CREATE_CHILD,
                             crate::config::TaskAction::DuplicateTree => icon::CLONE,
+                            crate::config::TaskAction::CompleteTree => icon::LIST_CHECK,
                             crate::config::TaskAction::Promote => icon::ELEVATOR_UP,
                             crate::config::TaskAction::Move => icon::MOVE,
                             crate::config::TaskAction::OpenCoordinates => icon::MAP_LOCATION_DOT,

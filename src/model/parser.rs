@@ -78,6 +78,7 @@ pub enum PrefixToken {
     Recur,
     Url,
     Geo,
+    Collection,
 }
 
 pub struct ParserLexicon {
@@ -97,6 +98,7 @@ pub struct ParserLexicon {
     pub search_is_ongoing: String,
     pub search_is_ready: String,
     pub search_is_blocked: String,
+    pub parser_collection: String,
 }
 
 impl ParserLexicon {
@@ -303,6 +305,7 @@ impl ParserLexicon {
         add_prefix("parser_goal", "goal:", PrefixToken::Goal);
         add_prefix("parser_recur", "rec:", PrefixToken::Recur);
         add_prefix("parser_url", "url:", PrefixToken::Url);
+        add_prefix("parser_collection", "cal:,col:", PrefixToken::Collection);
 
         // Merge logic: Localized translations unconditionally overwrite English canonicals.
         // This ensures e.g., French "mar" (Mardi) overwrites English "mar" (March).
@@ -352,6 +355,7 @@ impl ParserLexicon {
             search_is_ongoing: rust_i18n::t!("search_is_ongoing").to_lowercase(),
             search_is_ready: rust_i18n::t!("search_is_ready").to_lowercase(),
             search_is_blocked: rust_i18n::t!("search_is_blocked").to_lowercase(),
+            parser_collection: rust_i18n::t!("parser_collection").to_lowercase(),
         }
     }
 }
@@ -380,11 +384,12 @@ pub enum SyntaxType {
     Geo,
     Description,
     Reminder,
-    Calendar, // +cal, -cal
-    Pin,      // +pin, -pin
-    Filter,   // is:done, < / > operators, duration filters, etc.
-    Operator, // Boolean / operator tokens: |, -, (, ), AND/OR/NOT
-    Goal,     // goal:
+    Calendar,   // +cal, -cal
+    Pin,        // +pin, -pin
+    Filter,     // is:done, < / > operators, duration filters, etc.
+    Operator,   // Boolean / operator tokens: |, -, (, ), AND/OR/NOT
+    Goal,       // goal:
+    Collection, // cal:, col:
 }
 
 #[derive(Debug)]
@@ -1191,6 +1196,8 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 matched_kind = Some(SyntaxType::Description);
             } else if pref == Some(PrefixToken::Goal) {
                 matched_kind = Some(SyntaxType::Goal);
+            } else if pref == Some(PrefixToken::Collection) {
+                matched_kind = Some(SyntaxType::Collection);
             } else if word.starts_with('!') && word.len() > 1 && word[1..].parse::<u8>().is_ok() {
                 matched_kind = Some(SyntaxType::Priority);
             } else if word.starts_with('~')
@@ -3081,6 +3088,12 @@ pub fn apply_smart_input(
                     summary_words.push(unescape(token));
                 }
             }
+        } else if pref == Some(PrefixToken::Collection) {
+            let val = strip_quotes(rem_original);
+            if !val.is_empty() {
+                task.target_collection = Some(val);
+            }
+            consumed = 1;
         } else if pref == Some(PrefixToken::Goal) {
             let val = rem;
             let (target_str, period_str) = if let Some(idx) = val.find('/') {
