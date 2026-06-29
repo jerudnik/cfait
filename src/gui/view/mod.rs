@@ -605,7 +605,6 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::OpenUrl,         // Add this at the top
                 TaskAction::OpenCoordinates, // Single coordinates first
                 TaskAction::OpenLocations,   // GPX export second
-                TaskAction::Focus,
                 TaskAction::ToggleDetails,
                 TaskAction::CompleteAndShift,
                 TaskAction::ToggleTimer,
@@ -623,6 +622,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::Cancel,
                 TaskAction::Delete,
                 TaskAction::DeleteTree,
+                TaskAction::Focus,
             ]
         } else {
             // For non-full menu, put OpenLocations at top of unpinned actions
