@@ -291,17 +291,13 @@ async fn execute_task_action(
                             "%H:%M",
                         )
                         .ok();
-                        let mut actions = state.store.sync_tree_from_markdown(
+                        let actions = state.store.sync_tree_from_markdown(
                             &uid,
                             &new_desc,
                             &state.tag_aliases,
                             def_time,
                             config.trash_retention_days,
                         );
-                        if let Some((t_mut, _)) = state.store.get_task_mut(&uid) {
-                            t_mut.sequence += 1;
-                            actions.push(crate::journal::Action::Update(t_mut.clone()));
-                        }
                         state.refresh_filtered_view();
                         let _ =
                             action_tx.try_send(crate::tui::action::Action::PersistBatch(actions));
@@ -567,18 +563,13 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
         let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
         let def_time = NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
 
-        let mut actions = state.store.sync_tree_from_markdown(
+        let actions = state.store.sync_tree_from_markdown(
             &uid,
             &state.input_buffer,
             &state.tag_aliases,
             def_time,
             config.trash_retention_days,
         );
-
-        if let Some((t_mut, _)) = state.store.get_task_mut(&uid) {
-            t_mut.sequence += 1;
-            actions.push(crate::journal::Action::Update(t_mut.clone()));
-        }
 
         state.refresh_filtered_view();
         state.mode = InputMode::Normal;
@@ -742,33 +733,23 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
         state.reset_input();
         state.creating_child_of = None;
     } else {
-        // Standard Edit
+        // Standard Edit (Description only)
         let target_uid: Option<String> = state.editing_uid.clone();
 
-        if let Some(uid) = target_uid {
-            let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-            let def_time = NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
-
-            let mut actions = state.store.sync_tree_from_markdown(
-                &uid,
-                &state.input_buffer,
-                &state.tag_aliases,
-                def_time,
-                config.trash_retention_days,
-            );
-
-            if let Some((t_mut, _)) = state.store.get_task_mut(&uid) {
-                t_mut.sequence += 1;
-                actions.push(crate::journal::Action::Update(t_mut.clone()));
-            }
-
+        if let Some(uid) = target_uid
+            && let Some((t_mut, _)) = state.store.get_task_mut(&uid)
+        {
+            t_mut.description = state.input_buffer.clone();
+            t_mut.sequence += 1;
+            let clone = t_mut.clone();
             state.refresh_filtered_view();
-            state.mode = InputMode::Normal;
-            state.reset_input();
-            let _ = action_tx.try_send(Action::PersistBatch(actions));
+            let _ = action_tx.try_send(Action::PersistBatch(vec![crate::journal::Action::Update(
+                clone,
+            )]));
         }
         state.mode = InputMode::Normal;
         state.reset_input();
+        state.editing_uid = None;
     }
 }
 
@@ -1047,13 +1028,30 @@ pub async fn handle_key_event(
             KeyCode::Char('e') | KeyCode::Char('E')
                 if key.modifiers.contains(KeyModifiers::CONTROL) =>
             {
+                state.creating_with_desc = true;
                 state.new_task_title = state.input_buffer.clone();
                 state.input_buffer.clear();
                 state.cursor_position = 0;
-                state.mode = InputMode::EditingDescription;
-                state.creating_with_desc = true;
-                state.message = rust_i18n::t!("edit_description_instructions").to_string();
-                return None;
+
+                match run_external_editor("", state.ctx.as_ref()) {
+                    Ok(Some(new_desc)) => {
+                        state.input_buffer = new_desc;
+                        save_description(state, action_tx);
+                        state.needs_redraw = true;
+                        return None;
+                    }
+                    Ok(None) => {
+                        state.mode = InputMode::EditingDescription;
+                        state.message = rust_i18n::t!("edit_description_instructions").to_string();
+                        return None;
+                    }
+                    Err(e) => {
+                        state.message = e;
+                        state.mode = InputMode::EditingDescription;
+                        state.needs_redraw = true;
+                        return None;
+                    }
+                }
             }
             KeyCode::Enter if !state.input_buffer.is_empty() => {
                 if state.creating_with_desc {
@@ -1651,17 +1649,13 @@ pub async fn handle_key_event(
                                     "%H:%M",
                                 )
                                 .ok();
-                                let mut actions = state.store.sync_tree_from_markdown(
+                                let actions = state.store.sync_tree_from_markdown(
                                     &uid,
                                     &new_desc,
                                     &state.tag_aliases,
                                     def_time,
                                     config.trash_retention_days,
                                 );
-                                if let Some((t_mut, _)) = state.store.get_task_mut(&uid) {
-                                    t_mut.sequence += 1;
-                                    actions.push(crate::journal::Action::Update(t_mut.clone()));
-                                }
                                 state.refresh_filtered_view();
                                 let _ = action_tx
                                     .try_send(crate::tui::action::Action::PersistBatch(actions));

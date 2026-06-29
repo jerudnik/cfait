@@ -227,7 +227,7 @@ Tasks tagged with `#permanent` act as endless trackers. When checked off (Comple
     *   `S`: Stop/Reset timer.
     *   `x`: Cancel task.
     *   `+` / `-`: Increase/Decrease priority.
-    *   `e`: Edit title. `E`: Edit description (Markdown). `Ctrl+E`: Create new task with description.
+    *   `e`: Edit title. `E`: Edit description (Markdown). `Ctrl+E`: Edit tree (Markdown). `Ctrl+N`: Create new task with description.
     *   `Delete`: Move to trash. `Ctrl+Delete`: Delete entire tree.
     *   `t`: Log time session manually.
 *   **Tree/Relationships:** 

@@ -1059,7 +1059,7 @@ pub fn view_task_row<'a>(
                         TaskAction::IncreasePriority => " (+)",
                         TaskAction::DecreasePriority => " (-)",
                         TaskAction::Edit => " (e)",
-                        TaskAction::EditTree => " (Ctrl+Shift+E)",
+                        TaskAction::EditTree => " (Ctrl+E)",
                         TaskAction::Yank => " (y)",
                         TaskAction::CreateSubtask => " (C)",
                         TaskAction::DuplicateTree => " (Ctrl+D)",
