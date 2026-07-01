@@ -27,130 +27,100 @@ use ratatui::{
 };
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
-    use ratatui::text::Text;
-    let mut lines = Vec::new();
+fn parse_inline_elements(text: &str, base_style: Style) -> Vec<Span<'static>> {
+    let mut spans = Vec::new();
+    let mut current_idx = 0;
 
-    let parse_inline_elements = |text: &str, base_style: Style| -> Vec<Span<'static>> {
-        let mut spans = Vec::new();
-        let mut current_idx = 0;
+    while current_idx < text.len() {
+        let remaining = &text[current_idx..];
 
-        while current_idx < text.len() {
-            let remaining = &text[current_idx..];
+        let markers = [
+            ("<!-- uid:", "-->", 9, 3),
+            ("[[", "]]", 2, 2),
+            ("**", "**", 2, 2),
+            ("__", "__", 2, 2),
+            ("~~", "~~", 2, 2),
+            ("*", "*", 1, 1),
+            ("_", "_", 1, 1),
+            ("`", "`", 1, 1),
+        ];
 
-            let u_idx = remaining.find("<!-- uid:");
-            let l_idx = remaining.find("[[");
-
-            match (u_idx, l_idx) {
-                (Some(u), Some(l)) => {
-                    if u < l {
-                        let abs_start = current_idx + u;
-                        if let Some(end) = text[abs_start..].find("-->") {
-                            let abs_end = abs_start + end + 3;
-                            if abs_start > current_idx {
-                                spans.push(Span::styled(
-                                    text[current_idx..abs_start].to_string(),
-                                    base_style,
-                                ));
-                            }
-                            spans.push(Span::styled(
-                                text[abs_start..abs_end].to_string(),
-                                Style::default()
-                                    .fg(Color::DarkGray)
-                                    .add_modifier(Modifier::ITALIC),
-                            ));
-                            current_idx = abs_end;
-                        } else {
-                            break;
-                        }
-                    } else {
-                        let abs_start = current_idx + l;
-                        if let Some(end) = text[abs_start..].find("]]") {
-                            let abs_end = abs_start + end + 2;
-                            if abs_start > current_idx {
-                                spans.push(Span::styled(
-                                    text[current_idx..abs_start].to_string(),
-                                    base_style,
-                                ));
-                            }
-                            let inner = &text[abs_start + 2..abs_end - 2];
-                            let (_, display) = if let Some((t, d)) = inner.split_once('|') {
-                                (t, d)
-                            } else {
-                                (inner, inner)
-                            };
-                            spans.push(Span::styled(
-                                format!("[[{}]]", display),
-                                Style::default().fg(Color::Cyan),
-                            ));
-                            current_idx = abs_end;
-                        } else {
-                            break;
-                        }
-                    }
+        let mut best_match: Option<(usize, usize, &str, usize, usize)> = None;
+        for &(start_marker, end_marker, start_len, end_len) in &markers {
+            if let Some(start_pos) = remaining.find(start_marker)
+                && let Some(end_pos) = remaining[start_pos + start_len..].find(end_marker)
+            {
+                let abs_start = current_idx + start_pos;
+                let abs_end = abs_start + start_len + end_pos + end_len;
+                if best_match.is_none() || abs_start < best_match.unwrap().0 {
+                    best_match = Some((abs_start, abs_end, start_marker, start_len, end_len));
                 }
-                (Some(u), None) => {
-                    let abs_start = current_idx + u;
-                    if let Some(end) = text[abs_start..].find("-->") {
-                        let abs_end = abs_start + end + 3;
-                        if abs_start > current_idx {
-                            spans.push(Span::styled(
-                                text[current_idx..abs_start].to_string(),
-                                base_style,
-                            ));
-                        }
-                        spans.push(Span::styled(
-                            text[abs_start..abs_end].to_string(),
-                            Style::default()
-                                .fg(Color::DarkGray)
-                                .add_modifier(Modifier::ITALIC),
-                        ));
-                        current_idx = abs_end;
-                    } else {
-                        break;
-                    }
-                }
-                (None, Some(l)) => {
-                    let abs_start = current_idx + l;
-                    if let Some(end) = text[abs_start..].find("]]") {
-                        let abs_end = abs_start + end + 2;
-                        if abs_start > current_idx {
-                            spans.push(Span::styled(
-                                text[current_idx..abs_start].to_string(),
-                                base_style,
-                            ));
-                        }
-                        let inner = &text[abs_start + 2..abs_end - 2];
-                        let (_, display) = if let Some((t, d)) = inner.split_once('|') {
-                            (t, d)
-                        } else {
-                            (inner, inner)
-                        };
-                        spans.push(Span::styled(
-                            format!("[[{}]]", display),
-                            Style::default().fg(Color::Cyan),
-                        ));
-                        current_idx = abs_end;
-                    } else {
-                        break;
-                    }
-                }
-                (None, None) => break,
             }
         }
 
-        if current_idx < text.len() {
-            spans.push(Span::styled(text[current_idx..].to_string(), base_style));
+        if let Some((abs_start, abs_end, start_marker, start_len, end_len)) = best_match {
+            if abs_start > current_idx {
+                spans.push(Span::styled(
+                    text[current_idx..abs_start].to_string(),
+                    base_style,
+                ));
+            }
+
+            let chunk = &text[abs_start..abs_end];
+            let inner = &text[abs_start + start_len..abs_end - end_len];
+
+            let span = match start_marker {
+                "<!-- uid:" => Span::styled(
+                    chunk.to_string(),
+                    Style::default()
+                        .fg(Color::DarkGray)
+                        .add_modifier(Modifier::ITALIC),
+                ),
+                "[[]" => {
+                    let (_, display) = if let Some((t, d)) = inner.split_once('|') {
+                        (t, d)
+                    } else {
+                        (inner, inner)
+                    };
+                    Span::styled(format!("[[{}]]", display), Style::default().fg(Color::Cyan))
+                }
+                "**" | "__" => {
+                    Span::styled(chunk.to_string(), base_style.add_modifier(Modifier::BOLD))
+                }
+                "*" | "_" => {
+                    Span::styled(chunk.to_string(), base_style.add_modifier(Modifier::ITALIC))
+                }
+                "`" => Span::styled(chunk.to_string(), Style::default().fg(Color::Yellow)),
+                "~~" => Span::styled(
+                    chunk.to_string(),
+                    base_style.add_modifier(Modifier::CROSSED_OUT),
+                ),
+                _ => Span::styled(chunk.to_string(), base_style),
+            };
+
+            spans.push(span);
+            current_idx = abs_end;
+        } else {
+            break;
         }
-        spans
-    };
+    }
+
+    if current_idx < text.len() {
+        spans.push(Span::styled(text[current_idx..].to_string(), base_style));
+    }
+    spans
+}
+
+fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
+    use ratatui::text::Text;
+    let mut lines = Vec::new();
 
     for line in input.split_inclusive('\n') {
         let trimmed = line.trim_start();
         let mut spans = Vec::new();
 
         if trimmed.starts_with('#') {
-            spans.extend(parse_inline_elements(
+            spans.extend(crate::tui::view::parse_inline_elements(
                 line,
                 Style::default()
                     .fg(if is_dark_theme {
@@ -161,7 +131,7 @@ fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
                     .add_modifier(Modifier::BOLD),
             ));
         } else if trimmed.starts_with("- ") || trimmed.starts_with("* ") {
-            spans.extend(parse_inline_elements(
+            spans.extend(crate::tui::view::parse_inline_elements(
                 line,
                 Style::default().fg(if is_dark_theme {
                     Color::Yellow
@@ -170,14 +140,14 @@ fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
                 }),
             ));
         } else if trimmed.starts_with("> ") {
-            spans.extend(parse_inline_elements(
+            spans.extend(crate::tui::view::parse_inline_elements(
                 line,
                 Style::default()
                     .fg(Color::DarkGray)
                     .add_modifier(Modifier::ITALIC),
             ));
         } else if trimmed.starts_with("```") {
-            spans.extend(parse_inline_elements(
+            spans.extend(crate::tui::view::parse_inline_elements(
                 line,
                 Style::default().fg(if is_dark_theme {
                     Color::Green
@@ -186,7 +156,10 @@ fn highlight_markdown_raw(input: &str, is_dark_theme: bool) -> Text<'static> {
                 }),
             ));
         } else {
-            spans.extend(parse_inline_elements(line, Style::default()));
+            spans.extend(crate::tui::view::parse_inline_elements(
+                line,
+                Style::default(),
+            ));
         }
 
         lines.push(Line::from(spans));
@@ -959,46 +932,8 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         selected_task_was_truncated = true;
                     }
 
-                    let mut title_spans = Vec::new();
-                    let mut current_idx = 0;
-                    while let Some(start) = display_title[current_idx..].find("[[") {
-                        let abs_start = current_idx + start;
-                        if abs_start > current_idx {
-                            title_spans.push(Span::styled(
-                                display_title[current_idx..abs_start].to_string(),
-                                base_style,
-                            ));
-                        }
-                        if let Some(end) = display_title[abs_start..].find("]]") {
-                            let abs_end = abs_start + end + 2;
-                            let inner = &display_title[abs_start + 2..abs_end - 2];
-                            let (_, display_text) =
-                                if let Some((_, display_name)) = inner.split_once('|') {
-                                    (inner, display_name)
-                                } else {
-                                    (inner, inner)
-                                };
-
-                            let mut link_style = Style::default().fg(Color::Cyan);
-                            if (t.status.is_done() && state.strikethrough_completed) || is_trash {
-                                link_style = link_style.add_modifier(Modifier::CROSSED_OUT);
-                            }
-                            title_spans
-                                .push(Span::styled(format!("[[{}]]", display_text), link_style));
-                            current_idx = abs_end;
-                        } else {
-                            break;
-                        }
-                    }
-                    if current_idx < display_title.len() {
-                        title_spans.push(Span::styled(
-                            display_title[current_idx..].to_string(),
-                            base_style,
-                        ));
-                    }
-                    if title_spans.is_empty() {
-                        title_spans.push(Span::styled(display_title, base_style));
-                    }
+                    let title_spans =
+                        crate::tui::view::parse_inline_elements(&display_title, base_style);
 
                     let mut spans = vec![
                         prefix_indent,
@@ -1038,13 +973,13 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                                 "      ".to_string()
                             };
 
-                            lines.push(Line::from(vec![
-                                Span::raw(indent),
-                                Span::styled(
-                                    desc_line.to_string(),
-                                    Style::default().fg(Color::DarkGray),
-                                ),
-                            ]));
+                            let desc_spans = crate::tui::view::parse_inline_elements(
+                                desc_line,
+                                Style::default().fg(Color::DarkGray),
+                            );
+                            let mut line_spans = vec![Span::raw(indent)];
+                            line_spans.extend(desc_spans);
+                            lines.push(Line::from(line_spans));
                             line_count += 1;
                             if line_count >= 3 {
                                 break;

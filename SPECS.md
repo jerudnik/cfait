@@ -93,6 +93,11 @@ If a task's description contains Markdown lists or Headers, Cfait extracts them 
 *   **Cross-Tree Dependencies:** Dependencies that break standard linear sequence are appended to the task string as wiki-links (e.g. `dep:[[Install foundation]]`). The backend resolves these via fuzzy-matching against task summaries.
 *   **Round-Trip UIDs:** Extracted tasks append a metadata tag (e.g., `<!-- uid:abc-123 -->`) to their summary. When the tree is re-edited and saved, this tag allows Cfait to diff the text and update existing database entities rather than creating duplicates.
 
+### 2.4. Inline Markdown Formatting
+Cfait natively supports rendering basic inline Markdown across task summaries, descriptions, and the raw text editors.
+*   **Supported Syntax:** `**bold**`, `__bold__`, `*italic*`, `_italic_`, `~~strikethrough~~`, and `` `code` ``.
+*   **Visual Preservation:** The raw marker symbols (e.g., `**`) are kept visually intact in the UI to seamlessly support text-based editing, while the enclosed text is dynamically styled (bolded, italicized, colored, etc.) by the rendering engine (GUI and TUI).
+
 ---
 
 ## 3. Searching, Filtering, and Sorting

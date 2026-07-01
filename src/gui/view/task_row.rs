@@ -18,6 +18,111 @@ use super::tooltip_style;
 use iced::widget::{
     Space, button, column, container, responsive, rich_text, row, span, text, text_editor, tooltip,
 };
+
+pub fn parse_inline_markdown(
+    text_str: &str,
+    base_color: Color,
+    is_strikethrough: bool,
+) -> Vec<iced::widget::text::Span<'static, String>> {
+    let mut spans = Vec::new();
+    let mut current_idx = 0;
+
+    while current_idx < text_str.len() {
+        let remaining = &text_str[current_idx..];
+
+        let markers = [
+            ("[[", "]]", 2, 2),
+            ("**", "**", 2, 2),
+            ("__", "__", 2, 2),
+            ("~~", "~~", 2, 2),
+            ("*", "*", 1, 1),
+            ("_", "_", 1, 1),
+            ("`", "`", 1, 1),
+        ];
+
+        let mut best_match: Option<(usize, usize, &str, usize, usize)> = None;
+        for &(start_marker, end_marker, start_len, end_len) in &markers {
+            if let Some(start_pos) = remaining.find(start_marker)
+                && let Some(end_pos) = remaining[start_pos + start_len..].find(end_marker)
+            {
+                let abs_start = current_idx + start_pos;
+                let abs_end = abs_start + start_len + end_pos + end_len;
+                if best_match.is_none() || abs_start < best_match.unwrap().0 {
+                    best_match = Some((abs_start, abs_end, start_marker, start_len, end_len));
+                }
+            }
+        }
+
+        if let Some((abs_start, abs_end, start_marker, start_len, end_len)) = best_match {
+            if abs_start > current_idx {
+                let text = text_str[current_idx..abs_start].to_string();
+                let mut sp = span(text).color(base_color);
+                if is_strikethrough {
+                    sp = sp.strikethrough(true);
+                }
+                spans.push(sp);
+            }
+
+            let chunk = text_str[abs_start..abs_end].to_string();
+            let inner = &text_str[abs_start + start_len..abs_end - end_len];
+
+            let mut sp = match start_marker {
+                "[[]" => {
+                    let (target, display) = if let Some((t, d)) = inner.split_once('|') {
+                        (t.to_string(), d.to_string())
+                    } else {
+                        (inner.to_string(), inner.to_string())
+                    };
+                    span(format!("[[{}]]", display))
+                        .color(Color::from_rgb(0.2, 0.7, 1.0))
+                        .link(target)
+                }
+                "**" | "__" => span(chunk.clone()).color(base_color).font(iced::Font {
+                    weight: iced::font::Weight::Bold,
+                    ..Default::default()
+                }),
+                "*" | "_" => span(chunk.clone()).color(base_color).font(iced::Font {
+                    style: iced::font::Style::Italic,
+                    ..Default::default()
+                }),
+                "`" => span(chunk.clone())
+                    .color(Color::from_rgb(0.8, 0.6, 0.4))
+                    .font(iced::Font::MONOSPACE),
+                "~~" => span(chunk.clone()).color(base_color).strikethrough(true),
+                _ => span(chunk).color(base_color),
+            };
+
+            if is_strikethrough && start_marker != "~~" {
+                sp = sp.strikethrough(true);
+            }
+            spans.push(sp);
+
+            current_idx = abs_end;
+        } else {
+            break;
+        }
+    }
+
+    if current_idx < text_str.len() {
+        let text = text_str[current_idx..].to_string();
+        let mut sp = span(text).color(base_color);
+        if is_strikethrough {
+            sp = sp.strikethrough(true);
+        }
+        spans.push(sp);
+    }
+
+    if spans.is_empty() {
+        let text = text_str.to_string();
+        let mut sp = span(text).color(base_color);
+        if is_strikethrough {
+            sp = sp.strikethrough(true);
+        }
+        spans.push(sp);
+    }
+
+    spans
+}
 use iced::{Color, Element, Length, Theme};
 
 // Helper inside the file to provide generic action styles
@@ -579,60 +684,8 @@ pub fn view_task_row<'a>(
                 let is_strikethrough = (app.strikethrough_completed && task.status.is_done())
                     || task.calendar_href == "local://trash";
 
-                let mut summary_spans = vec![];
-                let mut current_idx = 0;
-                let summary = &task.summary;
-
-                while let Some(start) = summary[current_idx..].find("[[") {
-                    let abs_start = current_idx + start;
-                    if abs_start > current_idx {
-                        let mut sp = span(&summary[current_idx..abs_start]).color(title_color);
-                        if is_strikethrough {
-                            sp = sp.strikethrough(true);
-                        }
-                        summary_spans.push(sp);
-                    }
-
-                    if let Some(end) = summary[abs_start..].find("]]") {
-                        let abs_end = abs_start + end + 2;
-                        let inner = &summary[abs_start + 2..abs_end - 2];
-
-                        let (target, display) = if let Some((t, d)) = inner.split_once('|') {
-                            (t.to_string(), d.to_string())
-                        } else {
-                            (inner.to_string(), inner.to_string())
-                        };
-
-                        let mut sp = span(format!("[[{}]]", display))
-                            .color(Color::from_rgb(0.2, 0.7, 1.0))
-                            .link(target);
-
-                        if is_strikethrough {
-                            sp = sp.strikethrough(true);
-                        }
-                        summary_spans.push(sp);
-
-                        current_idx = abs_end;
-                    } else {
-                        break;
-                    }
-                }
-
-                if current_idx < summary.len() {
-                    let mut sp = span(&summary[current_idx..]).color(title_color);
-                    if is_strikethrough {
-                        sp = sp.strikethrough(true);
-                    }
-                    summary_spans.push(sp);
-                }
-
-                if summary_spans.is_empty() {
-                    let mut sp = span(summary.to_string()).color(title_color);
-                    if is_strikethrough {
-                        sp = sp.strikethrough(true);
-                    }
-                    summary_spans.push(sp);
-                }
+                let summary_spans =
+                    parse_inline_markdown(&task.summary, title_color, is_strikethrough);
 
                 let summary_text: Element<'a, Message> = rich_text(summary_spans)
                     .size(20)
@@ -1250,9 +1303,19 @@ pub fn view_task_row<'a>(
             if has_content_to_show && is_expanded {
                 if !task.description.is_empty() {
                     details_col = details_col.push(
-                        text(&task.description)
-                            .size(14)
-                            .color(Color::from_rgb(0.7, 0.7, 0.7)),
+                        rich_text(parse_inline_markdown(
+                            &task.description,
+                            Color::from_rgb(0.7, 0.7, 0.7),
+                            false,
+                        ))
+                        .size(14)
+                        .on_link_click(|target: String| {
+                            if target.starts_with("http://") || target.starts_with("https://") {
+                                Message::OpenUrl(target)
+                            } else {
+                                Message::OpenWikiLink(target)
+                            }
+                        }),
                     );
                 }
 
@@ -1782,9 +1845,19 @@ pub fn view_task_row<'a>(
                         let inline_txt = desc_lines.join("\n");
                         let inline_desc = row![
                             Space::new().width(Length::Fixed(indent_size as f32 + 34.0)),
-                            text(inline_txt)
-                                .size(14)
-                                .color(Color::from_rgb(0.6, 0.6, 0.6))
+                            rich_text(parse_inline_markdown(
+                                &inline_txt,
+                                Color::from_rgb(0.6, 0.6, 0.6),
+                                false,
+                            ))
+                            .size(14)
+                            .on_link_click(|target: String| {
+                                if target.starts_with("http://") || target.starts_with("https://") {
+                                    Message::OpenUrl(target)
+                                } else {
+                                    Message::OpenWikiLink(target)
+                                }
+                            })
                         ];
                         base_col = base_col.push(inline_desc).spacing(2);
                     }

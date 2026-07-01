@@ -554,21 +554,16 @@ impl Highlighter for MarkdownHighlighter {
             return spans.into_iter();
         }
 
-        // Scan for inline elements (Links and UIDs)
+        // Scan for inline elements (Links, UIDs, and Formatting)
         while cursor < line.len() {
             let remaining = &line[cursor..];
 
-            if let Some(uid_start) = remaining.find("<!-- uid:")
-                && let Some(uid_end_offset) = remaining[uid_start..].find("-->")
-            {
-                let abs_start = cursor + uid_start;
-                let abs_end = abs_start + uid_end_offset + 3;
-
-                if abs_start > cursor {
-                    spans.push((cursor..abs_start, base_format));
-                }
-                spans.push((
-                    abs_start..abs_end,
+            let markers = [
+                (
+                    "<!-- uid:",
+                    "-->",
+                    9,
+                    3,
                     highlighter::Format {
                         color: dim_color,
                         font: Some(Font {
@@ -576,22 +571,12 @@ impl Highlighter for MarkdownHighlighter {
                             ..Default::default()
                         }),
                     },
-                ));
-                cursor = abs_end;
-                continue;
-            }
-
-            if let Some(link_start) = remaining.find("[[")
-                && let Some(link_end_offset) = remaining[link_start..].find("]]")
-            {
-                let abs_start = cursor + link_start;
-                let abs_end = abs_start + link_end_offset + 2;
-
-                if abs_start > cursor {
-                    spans.push((cursor..abs_start, base_format));
-                }
-                spans.push((
-                    abs_start..abs_end,
+                ),
+                (
+                    "[[",
+                    "]]",
+                    2,
+                    2,
                     highlighter::Format {
                         color: link_color,
                         font: Some(Font {
@@ -599,14 +584,112 @@ impl Highlighter for MarkdownHighlighter {
                             ..Default::default()
                         }),
                     },
-                ));
-                cursor = abs_end;
-                continue;
+                ),
+                (
+                    "**",
+                    "**",
+                    2,
+                    2,
+                    highlighter::Format {
+                        color: None, // Inherit base color
+                        font: Some(Font {
+                            weight: iced::font::Weight::Bold,
+                            ..Default::default()
+                        }),
+                    },
+                ),
+                (
+                    "__",
+                    "__",
+                    2,
+                    2,
+                    highlighter::Format {
+                        color: None,
+                        font: Some(Font {
+                            weight: iced::font::Weight::Bold,
+                            ..Default::default()
+                        }),
+                    },
+                ),
+                (
+                    "~~",
+                    "~~",
+                    2,
+                    2,
+                    highlighter::Format {
+                        color: None,
+                        font: None,
+                    },
+                ),
+                (
+                    "*",
+                    "*",
+                    1,
+                    1,
+                    highlighter::Format {
+                        color: None,
+                        font: Some(Font {
+                            style: iced::font::Style::Italic,
+                            ..Default::default()
+                        }),
+                    },
+                ),
+                (
+                    "_",
+                    "_",
+                    1,
+                    1,
+                    highlighter::Format {
+                        color: None,
+                        font: Some(Font {
+                            style: iced::font::Style::Italic,
+                            ..Default::default()
+                        }),
+                    },
+                ),
+                (
+                    "`",
+                    "`",
+                    1,
+                    1,
+                    highlighter::Format {
+                        color: Some(Color::from_rgb(0.8, 0.6, 0.4)),
+                        font: Some(Font::MONOSPACE),
+                    },
+                ),
+            ];
+
+            let mut best_match: Option<(usize, usize, highlighter::Format<Font>)> = None;
+            for &(start_marker, end_marker, start_len, end_len, format) in &markers {
+                if let Some(start_pos) = remaining.find(start_marker)
+                    && let Some(end_pos) = remaining[start_pos + start_len..].find(end_marker)
+                {
+                    let abs_start = cursor + start_pos;
+                    let abs_end = abs_start + start_len + end_pos + end_len;
+                    if best_match.is_none() || abs_start < best_match.unwrap().0 {
+                        best_match = Some((abs_start, abs_end, format));
+                    }
+                }
             }
 
-            // No more inline elements, push the rest
-            spans.push((cursor..line.len(), base_format));
-            break;
+            if let Some((abs_start, abs_end, mut format)) = best_match {
+                if abs_start > cursor {
+                    spans.push((cursor..abs_start, base_format));
+                }
+
+                if format.color.is_none() {
+                    format.color = base_format.color;
+                }
+                if format.font.is_none() {
+                    format.font = base_format.font;
+                }
+
+                spans.push((abs_start..abs_end, format));
+                cursor = abs_end;
+            } else {
+                spans.push((cursor..line.len(), base_format));
+                break;
+            }
         }
 
         spans.into_iter()
