@@ -657,78 +657,31 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
 
         Message::ExtractSubtasks(uid) => {
-            if let Some((parent, _)) = app.store.get_task_mut(&uid) {
-                let desc_text = parent.description.clone();
-                let (clean_desc, extracted) =
-                    crate::model::extractor::extract_markdown_tasks(&desc_text);
+            let desc_text = if let Some(t) = app.store.get_task_ref(&uid) {
+                t.description.clone()
+            } else {
+                return Task::none();
+            };
 
-                if !extracted.is_empty() {
-                    parent.description = clean_desc;
-                    parent.sequence += 1;
-                    let parent_copy = parent.clone();
-                    let target_href = parent_copy.calendar_href.clone();
+            let config = &app.core_config;
+            let def_time =
+                chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
 
-                    let config = &app.core_config;
-                    let def_time =
-                        chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M")
-                            .ok();
-
-                    let mut actions = vec![crate::journal::Action::Update(parent_copy)];
-
-                    for ext in extracted {
-                        let mut sub =
-                            crate::model::Task::new(&ext.raw_text, &app.tag_aliases, def_time);
-                        sub.uid = ext.uid;
-                        if !ext.description.is_empty() {
-                            if sub.description.is_empty() {
-                                sub.description = ext.description;
-                            } else {
-                                sub.description
-                                    .push_str(&format!("\n\n{}", ext.description));
-                            }
-                        }
-
-                        let smart_status = sub.status;
-                        sub.status = ext.status;
-                        match ext.status {
-                            crate::model::TaskStatus::Completed => {
-                                if sub.completion_date().is_none() {
-                                    sub.set_completion_date(Some(chrono::Utc::now()));
-                                }
-                            }
-                            crate::model::TaskStatus::Cancelled => {
-                                if sub.completion_date().is_none() {
-                                    sub.set_completion_date(Some(chrono::Utc::now()));
-                                }
-                            }
-                            crate::model::TaskStatus::InProcess => {
-                                if sub.last_started_at.is_none() {
-                                    sub.last_started_at = Some(chrono::Utc::now().timestamp());
-                                }
-                            }
-                            crate::model::TaskStatus::NeedsAction => {
-                                if smart_status == crate::model::TaskStatus::Completed {
-                                    sub.status = crate::model::TaskStatus::Completed;
-                                }
-                            }
-                        }
-
-                        sub.parent_uid = Some(ext.parent_uid.unwrap_or(uid.clone()));
-                        sub.dependencies = ext.dependencies;
-                        sub.calendar_href = target_href.clone();
-                        if let Some(pc) = ext.percent_complete {
-                            sub.percent_complete = Some(pc);
-                        }
-
-                        app.store.add_task(sub.clone());
-                        actions.push(crate::journal::Action::Create(sub));
-                    }
-
+            match app.store.sync_tree_from_markdown(
+                &uid,
+                &desc_text,
+                &app.tag_aliases,
+                def_time,
+                app.core_config.trash_retention_days,
+            ) {
+                Ok(actions) => {
                     common::refresh_filtered_tasks(app);
-
                     if let Some(tx) = &app.bg_tx {
                         let _ = tx.try_send(crate::gui::async_ops::WorkerCommand::Batch(actions));
                     }
+                }
+                Err(e) => {
+                    app.error_msg = Some(e);
                 }
             }
             Task::none()
@@ -1318,17 +1271,27 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
         crate::model::extractor::extract_markdown_tasks(&desc_text);
 
     if let Some(tree_uid) = &app.editing_tree_uid {
-        let mut actions = app.store.sync_tree_from_markdown(
+        let mut actions = match app.store.sync_tree_from_markdown(
             tree_uid,
             &desc_text,
             &app.tag_aliases,
             config_time,
             app.core_config.trash_retention_days,
-        );
+        ) {
+            Ok(acts) => acts,
+            Err(e) => {
+                app.error_msg = Some(e);
+                return Task::none();
+            }
+        };
 
         if let Some(task_ref) = app.store.get_task_ref(tree_uid) {
             let mut task = task_ref.clone();
             task.apply_smart_input(&clean_input, &app.tag_aliases, config_time);
+            if let Err(e) = app.store.resolve_dependencies(&mut task) {
+                app.error_msg = Some(e);
+                return Task::none();
+            }
             if let Some(target) = task.target_collection.take() {
                 task.calendar_href =
                     crate::model::resolve_collection(&target, &app.calendars, &task.calendar_href);
@@ -1364,6 +1327,11 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
             task.description = desc_text;
             task.apply_smart_input(&clean_input, &app.tag_aliases, config_time);
 
+            if let Err(e) = app.store.resolve_dependencies(&mut task) {
+                app.error_msg = Some(e);
+                return Task::none();
+            }
+
             if let Some(target) = task.target_collection.take() {
                 task.calendar_href =
                     crate::model::resolve_collection(&target, &app.calendars, &task.calendar_href);
@@ -1396,6 +1364,11 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
         }
     } else if !clean_input.is_empty() {
         let mut new_task = TodoTask::new(&clean_input, &app.tag_aliases, config_time);
+
+        if let Err(e) = app.store.resolve_dependencies(&mut new_task) {
+            app.error_msg = Some(e);
+            return Task::none();
+        }
 
         if new_task.summary.trim().is_empty() && cleaned_desc.is_empty() {
             app.input_value = text_editor::Content::new();
@@ -1440,11 +1413,6 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
 
             let parent_uid = new_task.uid.clone();
 
-            app.store.add_task(new_task.clone());
-            app.task_ids
-                .entry(new_task.uid.clone())
-                .or_insert_with(iced::widget::Id::unique);
-
             let mut tasks_to_create = vec![new_task];
 
             for ext in extracted_subtasks {
@@ -1486,14 +1454,31 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
 
                 let actual_parent = ext.parent_uid.unwrap_or(parent_uid.clone());
                 sub.parent_uid = Some(actual_parent);
-                sub.dependencies = ext.dependencies;
+                sub.dependencies.extend(ext.dependencies);
+                sub.dependencies.sort();
+                sub.dependencies.dedup();
                 sub.calendar_href = target_href.clone();
                 if let Some(pc) = ext.percent_complete {
                     sub.percent_complete = Some(pc);
                 }
 
-                app.store.add_task(sub.clone());
                 tasks_to_create.push(sub);
+            }
+
+            // Resolve dependencies atomically before mutating store
+            for t in &mut tasks_to_create {
+                if let Err(e) = app.store.resolve_dependencies(t) {
+                    app.error_msg = Some(e);
+                    return Task::none();
+                }
+            }
+
+            app.task_ids
+                .entry(parent_uid.clone())
+                .or_insert_with(iced::widget::Id::unique);
+
+            for t in &tasks_to_create {
+                app.store.add_task(t.clone());
             }
 
             app.selected_uid = Some(parent_uid.clone());

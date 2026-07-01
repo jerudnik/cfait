@@ -114,6 +114,7 @@ pub enum MobileSyntaxType {
     Goal,
     Collection,
     WikiLink,
+    Dependency,
 }
 
 impl From<SyntaxType> for MobileSyntaxType {
@@ -138,6 +139,7 @@ impl From<SyntaxType> for MobileSyntaxType {
             SyntaxType::Goal => MobileSyntaxType::Goal,
             SyntaxType::Collection => MobileSyntaxType::Collection,
             SyntaxType::WikiLink => MobileSyntaxType::WikiLink,
+            SyntaxType::Dependency => MobileSyntaxType::Dependency,
         }
     }
 }

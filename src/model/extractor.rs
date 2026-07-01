@@ -412,6 +412,7 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
         children_map: &std::collections::HashMap<String, Vec<&crate::model::Task>>,
         depth: usize,
         out: &mut String,
+        prefix: &str,
     ) {
         let status_box = match task.status {
             crate::model::TaskStatus::NeedsAction => {
@@ -426,12 +427,33 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
             crate::model::TaskStatus::Cancelled => "[-]",
         };
         let smart_string = task.to_smart_string();
+
         let uid_tag = format!("<!-- uid:{} -->", task.uid);
         let indent = "    ".repeat(depth - 1);
 
+        // Output human-readable dependencies
+        let mut dep_str = String::new();
+        for dep_uid in &task.dependencies {
+            let dep_name = children_map
+                .values()
+                .flat_map(|v| v.iter())
+                .find(|t| &t.uid == dep_uid)
+                .map(|t| t.summary.clone())
+                .unwrap_or_else(|| {
+                    // If it's outside the current tree scope, just use the short UID
+                    if dep_uid.len() >= 8 {
+                        dep_uid[..8].to_string()
+                    } else {
+                        dep_uid.to_string()
+                    }
+                });
+
+            dep_str.push_str(&format!(" dep:[[{}]]", dep_name));
+        }
+
         out.push_str(&format!(
-            "{}- {} {} {}\n",
-            indent, status_box, smart_string, uid_tag
+            "{}{} {} {}{} {}\n",
+            indent, prefix, status_box, smart_string, dep_str, uid_tag
         ));
 
         if !task.description.is_empty() {
@@ -441,15 +463,99 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
         }
 
         if let Some(children) = children_map.get(&task.uid) {
-            for child in children {
-                serialize_node(child, children_map, depth + 1, out);
+            let mut prefixes = Vec::new();
+            let mut current_number = 1;
+            let mut uses_number_prev = false;
+
+            for i in 0..children.len() {
+                let child = children[i];
+                let mut uses_number = false;
+                if i > 0 {
+                    let prev_child = children[i - 1];
+                    if child.dependencies.contains(&prev_child.uid) {
+                        current_number += 1;
+                        uses_number = true;
+                    } else if prev_child.dependencies == child.dependencies && uses_number_prev {
+                        uses_number = true;
+                    } else {
+                        current_number = 1;
+                        let has_successor = children
+                            .iter()
+                            .skip(i + 1)
+                            .any(|c| c.dependencies.contains(&child.uid));
+                        if has_successor {
+                            uses_number = true;
+                        }
+                    }
+                } else {
+                    let has_successor = children
+                        .iter()
+                        .skip(1)
+                        .any(|c| c.dependencies.contains(&child.uid));
+                    if has_successor {
+                        uses_number = true;
+                    }
+                }
+
+                uses_number_prev = uses_number;
+                if uses_number {
+                    prefixes.push(format!("{}.", current_number));
+                } else {
+                    prefixes.push("-".to_string());
+                }
+            }
+
+            for (child, prefix) in children.iter().zip(prefixes.iter()) {
+                serialize_node(child, children_map, depth + 1, out, prefix);
             }
         }
     }
 
     if let Some(children) = children_map.get(root_uid) {
-        for child in children {
-            serialize_node(child, &children_map, 1, &mut out);
+        let mut prefixes = Vec::new();
+        let mut current_number = 1;
+        let mut uses_number_prev = false;
+
+        for i in 0..children.len() {
+            let child = children[i];
+            let mut uses_number = false;
+            if i > 0 {
+                let prev_child = children[i - 1];
+                if child.dependencies.contains(&prev_child.uid) {
+                    current_number += 1;
+                    uses_number = true;
+                } else if prev_child.dependencies == child.dependencies && uses_number_prev {
+                    uses_number = true;
+                } else {
+                    current_number = 1;
+                    let has_successor = children
+                        .iter()
+                        .skip(i + 1)
+                        .any(|c| c.dependencies.contains(&child.uid));
+                    if has_successor {
+                        uses_number = true;
+                    }
+                }
+            } else {
+                let has_successor = children
+                    .iter()
+                    .skip(1)
+                    .any(|c| c.dependencies.contains(&child.uid));
+                if has_successor {
+                    uses_number = true;
+                }
+            }
+
+            uses_number_prev = uses_number;
+            if uses_number {
+                prefixes.push(format!("{}.", current_number));
+            } else {
+                prefixes.push("-".to_string());
+            }
+        }
+
+        for (child, prefix) in children.iter().zip(prefixes.iter()) {
+            serialize_node(child, &children_map, 1, &mut out, prefix);
         }
     }
 

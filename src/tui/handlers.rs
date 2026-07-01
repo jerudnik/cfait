@@ -292,16 +292,22 @@ async fn execute_task_action(
                             "%H:%M",
                         )
                         .ok();
-                        let actions = state.store.sync_tree_from_markdown(
+                        match state.store.sync_tree_from_markdown(
                             &uid,
                             &new_desc,
                             &state.tag_aliases,
                             def_time,
                             config.trash_retention_days,
-                        );
-                        state.refresh_filtered_view();
-                        let _ =
-                            action_tx.try_send(crate::tui::action::Action::PersistBatch(actions));
+                        ) {
+                            Ok(actions) => {
+                                state.refresh_filtered_view();
+                                let _ = action_tx
+                                    .try_send(crate::tui::action::Action::PersistBatch(actions));
+                            }
+                            Err(e) => {
+                                state.message = e;
+                            }
+                        }
                     }
                     state.needs_redraw = true;
                 }
@@ -400,7 +406,9 @@ async fn execute_task_action(
                         }
 
                         sub.parent_uid = Some(ext.parent_uid.unwrap_or(uid.clone()));
-                        sub.dependencies = ext.dependencies;
+                        sub.dependencies.extend(ext.dependencies);
+                        sub.dependencies.sort();
+                        sub.dependencies.dedup();
                         sub.calendar_href = target_href.clone();
                         if let Some(pc) = ext.percent_complete {
                             sub.percent_complete = Some(pc);
@@ -570,18 +578,23 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
         let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
         let def_time = NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
 
-        let actions = state.store.sync_tree_from_markdown(
+        match state.store.sync_tree_from_markdown(
             &uid,
             &state.input_buffer,
             &state.tag_aliases,
             def_time,
             config.trash_retention_days,
-        );
-
-        state.refresh_filtered_view();
-        state.mode = InputMode::Normal;
-        state.reset_input();
-        let _ = action_tx.try_send(Action::PersistBatch(actions));
+        ) {
+            Ok(actions) => {
+                state.refresh_filtered_view();
+                state.mode = InputMode::Normal;
+                state.reset_input();
+                let _ = action_tx.try_send(Action::PersistBatch(actions));
+            }
+            Err(e) => {
+                state.message = e;
+            }
+        }
         return;
     }
 
@@ -712,7 +725,9 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
             }
 
             sub.parent_uid = Some(ext.parent_uid.unwrap_or(parent_uid.clone()));
-            sub.dependencies = ext.dependencies;
+            sub.dependencies.extend(ext.dependencies);
+            sub.dependencies.sort();
+            sub.dependencies.dedup();
             sub.calendar_href = target_href.clone();
             if let Some(pc) = ext.percent_complete {
                 sub.percent_complete = Some(pc);
@@ -1676,16 +1691,23 @@ pub async fn handle_key_event(
                                     "%H:%M",
                                 )
                                 .ok();
-                                let actions = state.store.sync_tree_from_markdown(
+                                match state.store.sync_tree_from_markdown(
                                     &uid,
                                     &new_desc,
                                     &state.tag_aliases,
                                     def_time,
                                     config.trash_retention_days,
-                                );
-                                state.refresh_filtered_view();
-                                let _ = action_tx
-                                    .try_send(crate::tui::action::Action::PersistBatch(actions));
+                                ) {
+                                    Ok(actions) => {
+                                        state.refresh_filtered_view();
+                                        let _ = action_tx.try_send(
+                                            crate::tui::action::Action::PersistBatch(actions),
+                                        );
+                                    }
+                                    Err(e) => {
+                                        state.message = e;
+                                    }
+                                }
                             }
                             state.needs_redraw = true;
                         }

@@ -664,6 +664,8 @@ impl TaskStore {
 
     /// Add a single task into the store. If it already exists, it will be overwritten
     /// in the calendar map and indices are rebuilt to reflect the new relationships.
+    /// Add a single task into the store. If it already exists, it will be overwritten
+    /// in the calendar map and indices are rebuilt to reflect the new relationships.
     pub fn add_task(&mut self, task: Task) {
         let href = task.calendar_href.clone();
         self.index.insert(task.uid.clone(), href.clone());
@@ -678,6 +680,82 @@ impl TaskStore {
         }
 
         self.add_task_to_indices(&task);
+    }
+
+    pub fn resolve_dependency_ref(&self, reference: &str) -> Result<String, String> {
+        let clean_ref = reference
+            .trim_start_matches("[[")
+            .trim_end_matches("]]")
+            .trim();
+        let lower_ref = clean_ref.to_lowercase();
+
+        let mut exact_uid_match = None;
+        let mut exact_uid_count = 0;
+
+        let mut exact_sum_match = None;
+        let mut exact_sum_count = 0;
+
+        let mut partial_matches = Vec::new();
+
+        for map in self.calendars.values() {
+            for (uid, task) in map {
+                if uid.starts_with(clean_ref) {
+                    exact_uid_match = Some(uid.clone());
+                    exact_uid_count += 1;
+                }
+                if task.summary.to_lowercase() == lower_ref {
+                    exact_sum_match = Some(uid.clone());
+                    exact_sum_count += 1;
+                }
+                if task.summary.to_lowercase().contains(&lower_ref) {
+                    partial_matches.push((uid.clone(), task.summary.clone()));
+                }
+            }
+        }
+
+        if exact_uid_count == 1 {
+            return Ok(exact_uid_match.unwrap());
+        }
+        if exact_sum_count == 1 {
+            return Ok(exact_sum_match.unwrap());
+        }
+        if partial_matches.len() == 1 {
+            return Ok(partial_matches[0].0.clone());
+        }
+
+        if partial_matches.len() > 1 {
+            let summaries: Vec<String> = partial_matches
+                .into_iter()
+                .take(3)
+                .map(|(_, s)| format!("'{}'", s))
+                .collect();
+            let mut matches_str = summaries.join(", ");
+            if exact_uid_count + exact_sum_count > 3 {
+                matches_str.push_str(", ...");
+            }
+            return Err(format!(
+                "Ambiguous dependency '{}'. Matches: {}",
+                clean_ref, matches_str
+            ));
+        }
+
+        Err(format!("No task found matching dependency '{}'", clean_ref))
+    }
+
+    pub fn resolve_dependencies(&self, task: &mut Task) -> Result<(), String> {
+        let mut resolved = Vec::new();
+        for dep in &task.dependencies {
+            if dep.len() == 36 && uuid::Uuid::parse_str(dep).is_ok() {
+                resolved.push(dep.clone());
+                continue;
+            }
+            let uid = self.resolve_dependency_ref(dep)?;
+            resolved.push(uid);
+        }
+        resolved.sort();
+        resolved.dedup();
+        task.dependencies = resolved;
+        Ok(())
     }
 
     /// Update an existing task or insert it if missing. This method attempts to handle
@@ -1140,7 +1218,7 @@ impl TaskStore {
         aliases: &std::collections::HashMap<String, Vec<String>>,
         default_reminder_time: Option<chrono::NaiveTime>,
         trash_retention_days: u32,
-    ) -> Vec<crate::journal::Action> {
+    ) -> Result<Vec<crate::journal::Action>, String> {
         let mut actions = Vec::new();
         let old_descendants = self.get_descendant_uids(root_uid);
         let (clean_desc, extracted) = crate::model::extractor::extract_markdown_tasks(markdown);
@@ -1148,16 +1226,16 @@ impl TaskStore {
         let root_calendar_href = if let Some(root) = self.get_task_ref(root_uid) {
             root.calendar_href.clone()
         } else {
-            return actions;
+            return Ok(actions);
         };
 
-        if let Some((root_mut, _)) = self.get_task_mut(root_uid) {
-            root_mut.description = clean_desc;
-            root_mut.sequence += 1;
-            actions.push(crate::journal::Action::Update(root_mut.clone()));
-        }
+        let mut root_clone = self.get_task_ref(root_uid).unwrap().clone();
+        root_clone.description = clean_desc;
+        root_clone.sequence += 1;
 
         let mut active_uids = std::collections::HashSet::new();
+        let mut tasks_to_update = Vec::new();
+        let mut tasks_to_create = Vec::new();
 
         for ext in extracted {
             let task_uid = ext.parsed_existing_uid.unwrap_or(ext.uid);
@@ -1173,52 +1251,50 @@ impl TaskStore {
                 Some(ext.parent_uid.unwrap_or(root_uid.to_string()))
             };
 
-            if let Some((existing, _)) = self.get_task_mut(&task_uid) {
-                existing.apply_smart_input(&ext.raw_text, aliases, default_reminder_time);
+            if let Some(existing) = self.get_task_ref(&task_uid) {
+                let mut clone = existing.clone();
+                clone.apply_smart_input(&ext.raw_text, aliases, default_reminder_time);
 
-                existing.description = ext.description.clone();
+                clone.description = ext.description.clone();
 
-                let smart_status = existing.status;
-                existing.status = ext.status;
+                let smart_status = clone.status;
+                clone.status = ext.status;
                 match ext.status {
                     crate::model::TaskStatus::Completed => {
-                        if existing.completion_date().is_none() {
-                            existing.set_completion_date(Some(chrono::Utc::now()));
+                        if clone.completion_date().is_none() {
+                            clone.set_completion_date(Some(chrono::Utc::now()));
                         }
                     }
                     crate::model::TaskStatus::Cancelled => {
-                        if existing.completion_date().is_none() {
-                            existing.set_completion_date(Some(chrono::Utc::now()));
+                        if clone.completion_date().is_none() {
+                            clone.set_completion_date(Some(chrono::Utc::now()));
                         }
                     }
                     crate::model::TaskStatus::InProcess => {
-                        if existing.last_started_at.is_none() {
-                            existing.last_started_at = Some(chrono::Utc::now().timestamp());
+                        if clone.last_started_at.is_none() {
+                            clone.last_started_at = Some(chrono::Utc::now().timestamp());
                         }
                     }
                     crate::model::TaskStatus::NeedsAction => {
                         if smart_status == crate::model::TaskStatus::Completed {
-                            existing.status = crate::model::TaskStatus::Completed;
+                            clone.status = crate::model::TaskStatus::Completed;
                         } else {
-                            existing.percent_complete = None;
-                            existing
-                                .unmapped_properties
-                                .retain(|p| p.key != "COMPLETED");
+                            clone.percent_complete = None;
+                            clone.unmapped_properties.retain(|p| p.key != "COMPLETED");
                         }
                     }
                 }
 
-                existing.parent_uid = parent_uid;
+                clone.parent_uid = parent_uid;
                 if !ext.dependencies.is_empty() {
-                    existing.dependencies = ext.dependencies;
+                    clone.dependencies.extend(ext.dependencies);
                 }
 
-                existing.percent_complete = ext.percent_complete;
+                clone.percent_complete = ext.percent_complete;
 
-                existing.sequence += 1;
+                clone.sequence += 1;
 
-                let clone = existing.clone();
-                actions.push(crate::journal::Action::Update(clone));
+                tasks_to_update.push(clone);
             } else {
                 let mut new_task =
                     crate::model::Task::new(&ext.raw_text, aliases, default_reminder_time);
@@ -1256,9 +1332,30 @@ impl TaskStore {
 
                 new_task.percent_complete = ext.percent_complete;
 
-                self.add_task(new_task.clone());
-                actions.push(crate::journal::Action::Create(new_task));
+                tasks_to_create.push(new_task);
             }
+        }
+
+        // --- Validate dependencies atomically before mutating the store ---
+        self.resolve_dependencies(&mut root_clone)?;
+        for t in &mut tasks_to_update {
+            self.resolve_dependencies(t)?;
+        }
+        for t in &mut tasks_to_create {
+            self.resolve_dependencies(t)?;
+        }
+
+        // --- All safe, apply to store ---
+        actions.push(crate::journal::Action::Update(root_clone.clone()));
+        self.update_or_add_task(root_clone);
+
+        for t in tasks_to_update {
+            actions.push(crate::journal::Action::Update(t.clone()));
+            self.update_or_add_task(t);
+        }
+        for t in tasks_to_create {
+            actions.push(crate::journal::Action::Create(t.clone()));
+            self.add_task(t);
         }
 
         // Soft-delete missing descendants
@@ -1274,7 +1371,7 @@ impl TaskStore {
             }
         }
 
-        actions
+        Ok(actions)
     }
 
     /// Deep-duplicate a task and all its descendants.

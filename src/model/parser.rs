@@ -79,6 +79,7 @@ pub enum PrefixToken {
     Url,
     Geo,
     Collection,
+    Dependency,
 }
 
 pub struct ParserLexicon {
@@ -306,6 +307,7 @@ impl ParserLexicon {
         add_prefix("parser_recur", "rec:", PrefixToken::Recur);
         add_prefix("parser_url", "url:", PrefixToken::Url);
         add_prefix("parser_collection", "cal:,col:", PrefixToken::Collection);
+        add_prefix("parser_dep", "dep:,depends:", PrefixToken::Dependency);
 
         // Merge logic: Localized translations unconditionally overwrite English canonicals.
         // This ensures e.g., French "mar" (Mardi) overwrites English "mar" (March).
@@ -390,6 +392,7 @@ pub enum SyntaxType {
     Operator,   // Boolean / operator tokens: |, -, (, ), AND/OR/NOT
     Goal,       // goal:
     Collection, // cal:, col:
+    Dependency, // dep:, depends:
 }
 
 #[derive(Debug)]
@@ -1198,6 +1201,8 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 matched_kind = Some(SyntaxType::Goal);
             } else if pref == Some(PrefixToken::Collection) {
                 matched_kind = Some(SyntaxType::Collection);
+            } else if pref == Some(PrefixToken::Dependency) {
+                matched_kind = Some(SyntaxType::Dependency);
             } else if word.starts_with('!') && word.len() > 1 && word[1..].parse::<u8>().is_ok() {
                 matched_kind = Some(SyntaxType::Priority);
             } else if word.starts_with('~')
@@ -3092,6 +3097,12 @@ pub fn apply_smart_input(
             let val = strip_quotes(rem_original);
             if !val.is_empty() {
                 task.target_collection = Some(val);
+            }
+            consumed = 1;
+        } else if pref == Some(PrefixToken::Dependency) {
+            let val = strip_quotes(rem_original);
+            if !val.is_empty() {
+                task.dependencies.push(val);
             }
             consumed = 1;
         } else if pref == Some(PrefixToken::Goal) {

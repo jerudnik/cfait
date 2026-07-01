@@ -1614,6 +1614,9 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         SyntaxType::Pin => Style::default().fg(Color::LightRed), // Added for +pin/-pin
                         SyntaxType::Filter => Style::default().fg(Color::Cyan), // Added for search operators / filters
                         SyntaxType::WikiLink => Style::default().fg(Color::Cyan),
+                        SyntaxType::Dependency => Style::default()
+                            .fg(Color::Rgb(229, 152, 52))
+                            .add_modifier(Modifier::BOLD), // Orange for dep:
                     };
                     input_spans.push(Span::styled(text, style));
                 }
