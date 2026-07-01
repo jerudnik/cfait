@@ -165,10 +165,16 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
     let mut cleaned_root_desc = String::new();
     let mut extracted: Vec<ExtractedTask> = Vec::new();
 
+    struct NumberedState {
+        current_number: usize,
+        current_uids: Vec<String>,
+        previous_uids: Vec<String>,
+    }
+
     // Stack stores (indent_level, task_uid)
     let mut indent_stack: Vec<(usize, String)> = Vec::new();
-    // Map stores indent_level -> uid of last numbered task
-    let mut last_numbered_at_indent: HashMap<usize, String> = HashMap::new();
+    // Map stores indent_level -> NumberedState
+    let mut numbered_state_at_indent: HashMap<usize, NumberedState> = HashMap::new();
 
     let mut active_task_idx: Option<usize> = None;
 
@@ -202,6 +208,7 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
         // Check if it's a valid Markdown task list
         let mut is_task = false;
         let mut is_numbered = false;
+        let mut parsed_num = 0;
         let mut parsed_status = crate::model::TaskStatus::NeedsAction;
         let mut parsed_pc = None;
         let mut raw_text = "";
@@ -250,6 +257,7 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
                 if let Some((status, pc, r)) = parse_checkbox(after_marker) {
                     is_task = true;
                     is_numbered = true;
+                    parsed_num = rest[..digit_bytes].parse::<usize>().unwrap_or(1);
                     parsed_status = status;
                     parsed_pc = pc;
                     raw_text = r;
@@ -280,16 +288,37 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
             }
             let parent_uid = indent_stack.last().map(|(_, id)| id.clone());
 
-            // Determine dependencies using the last numbered task at THIS indentation level
+            // Determine dependencies using the numbered state at THIS indentation level
             let mut dependencies = Vec::new();
             if is_numbered {
-                if let Some(dep_uid) = last_numbered_at_indent.get(&effective_indent) {
-                    dependencies.push(dep_uid.clone());
+                let state =
+                    numbered_state_at_indent
+                        .entry(effective_indent)
+                        .or_insert(NumberedState {
+                            current_number: 0,
+                            current_uids: Vec::new(),
+                            previous_uids: Vec::new(),
+                        });
+
+                if state.current_number == parsed_num {
+                    // Parallel task: depends on the same previous tasks
+                    dependencies = state.previous_uids.clone();
+                    state.current_uids.push(uid.clone());
+                } else if parsed_num > state.current_number {
+                    // Advancing to next step: depends on all parallel tasks of the previous step
+                    dependencies = state.current_uids.clone();
+                    state.previous_uids = state.current_uids.clone();
+                    state.current_number = parsed_num;
+                    state.current_uids = vec![uid.clone()];
+                } else {
+                    // Number went backwards (e.g., reset list). Treat as a new chain.
+                    state.previous_uids = Vec::new();
+                    state.current_number = parsed_num;
+                    state.current_uids = vec![uid.clone()];
                 }
-                last_numbered_at_indent.insert(effective_indent, uid.clone());
             } else {
                 // Breaking the numbered chain
-                last_numbered_at_indent.remove(&effective_indent);
+                numbered_state_at_indent.remove(&effective_indent);
             }
 
             // Push ourselves to the stack to become a potential parent for the next lines
@@ -312,7 +341,7 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
                 // Indent 0 or headers break the list completely. Back to root parent notes.
                 active_task_idx = None;
                 indent_stack.clear();
-                last_numbered_at_indent.clear();
+                numbered_state_at_indent.clear();
 
                 if !cleaned_root_desc.is_empty() && !cleaned_root_desc.ends_with('\n') {
                     cleaned_root_desc.push('\n');
