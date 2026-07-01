@@ -62,6 +62,7 @@ Evaluated instantly during text input. Supported across all clients.
 | `#` | Tag/Category (Supports brace expansion). | `#work`, `#project{sub1,sub2}` |
 | `@@` or `loc:`| Location. | `@@office` |
 | `url:` / `[[ ]]`| Attach URL or Wiki-link. | `url:https://example.com`, `[[Master plan]]`, `[[Master plan|Alias]]` |
+| `dep:` or `depends:`| Set dependency (blocks the task). Supports short UIDs or fuzzy matching by summary. | `dep:"Install foundation"`, `dep:abc1234` |
 | `geo:` | Geo-coordinates. | `geo:50.1,4.2`, `geo:here` (Mobile: Fetches GPS) |
 | `desc:` | Append text to the description. | `desc:"Buy milk"` or `desc:{...}` |
 | `rem:` | Reminder / Alarm. | `rem:10m`, `rem:in 1h`, `rem:8pm`, `rem:next friday` |
@@ -88,7 +89,8 @@ Users can define reusable shortcuts that expand into multiple tags, locations, o
 If a task's description contains Markdown lists or Headers, Cfait extracts them into distinct child tasks via the "Extract Subtasks" action or `Ctrl+E`.
 *   **Hierarchy:** Tasks nest based on indentation level (for lists) or header depth (`#`, `##`, `###`).
 *   **Parallel Tasks:** Unnumbered lists (`- [ ]`) and Headers create independent sibling tasks.
-*   **Sequential Dependencies:** Numbered lists (`1. [ ]`, `2. [ ]`) create `DEPENDS-ON` blocking relationships.
+*   **Sequential Dependencies:** Numbered lists (`1. [ ]`, `2. [ ]`) create `DEPENDS-ON` blocking relationships. If multiple tasks share the same number at the same indentation level (e.g., two `3. [ ]` tasks), they are extracted as parallel steps that both depend on the previous step (`2. [ ]`). The next step (`4. [ ]`) will automatically depend on *both* parallel tasks.
+*   **Cross-Tree Dependencies:** Dependencies that break standard linear sequence are appended to the task string as wiki-links (e.g. `dep:[[Install foundation]]`). The backend resolves these via fuzzy-matching against task summaries.
 *   **Round-Trip UIDs:** Extracted tasks append a metadata tag (e.g., `<!-- uid:abc-123 -->`) to their summary. When the tree is re-edited and saved, this tag allows Cfait to diff the text and update existing database entities rather than creating duplicates.
 
 ---
