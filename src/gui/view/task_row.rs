@@ -24,6 +24,15 @@ pub fn parse_inline_markdown(
     base_color: Color,
     is_strikethrough: bool,
 ) -> Vec<iced::widget::text::Span<'static, String>> {
+    // FAST PATH: Skip expensive parsing if no markdown trigger characters are present.
+    if !text_str.contains(['[', '*', '_', '~', '`']) && !text_str.contains("http") {
+        let mut sp = span(text_str.to_string()).color(base_color);
+        if is_strikethrough {
+            sp = sp.strikethrough(true);
+        }
+        return vec![sp];
+    }
+
     let mut spans = Vec::new();
     let mut current_idx = 0;
 

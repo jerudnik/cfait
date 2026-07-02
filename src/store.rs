@@ -687,6 +687,12 @@ impl TaskStore {
             .trim_start_matches("[[")
             .trim_end_matches("]]")
             .trim();
+
+        // FAST PATH: Exact UID match (O(1))
+        if self.index.contains_key(clean_ref) {
+            return Ok(clean_ref.to_string());
+        }
+
         let lower_ref = clean_ref.to_lowercase();
 
         let mut exact_uid_match = None;

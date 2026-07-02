@@ -28,6 +28,12 @@ use ratatui::{
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 fn parse_inline_elements(text: &str, base_style: Style) -> Vec<Span<'static>> {
+    // FAST PATH: Skip expensive parsing if no markdown trigger characters are present.
+    if !text.contains(['[', '*', '_', '~', '`']) && !text.contains("http") && !text.contains("<!--")
+    {
+        return vec![Span::styled(text.to_string(), base_style)];
+    }
+
     let mut spans = Vec::new();
     let mut current_idx = 0;
 
