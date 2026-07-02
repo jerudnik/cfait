@@ -95,7 +95,7 @@ If a task's description contains Markdown lists or Headers, Cfait extracts them 
 
 ### 2.4. Inline Markdown Formatting
 Cfait natively supports rendering basic inline Markdown across task summaries, descriptions, and the raw text editors.
-*   **Supported Syntax:** `**bold**`, `__bold__`, `*italic*`, `_italic_`, `~~strikethrough~~`, and `` `code` ``.
+*   **Supported Syntax:** `**bold**`, `__bold__`, `*italic*`, `_italic_`, `~~strikethrough~~`, `` `code` ``, standard Markdown links `[label](url)`, and bare `http(s)://` URLs.
 *   **Visual Preservation:** The raw marker symbols (e.g., `**`) are kept visually intact in the UI to seamlessly support text-based editing, while the enclosed text is dynamically styled (bolded, italicized, colored, etc.) by the rendering engine (GUI and TUI).
 
 ---

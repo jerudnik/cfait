@@ -46,15 +46,52 @@ fn parse_inline_elements(text: &str, base_style: Style) -> Vec<Span<'static>> {
         ];
 
         let mut best_match: Option<(usize, usize, &str, usize, usize)> = None;
+        let mut update_best = |start, end, marker, slen, elen| {
+            if best_match.is_none() || start < best_match.unwrap().0 {
+                best_match = Some((start, end, marker, slen, elen));
+            }
+        };
+
         for &(start_marker, end_marker, start_len, end_len) in &markers {
             if let Some(start_pos) = remaining.find(start_marker)
                 && let Some(end_pos) = remaining[start_pos + start_len..].find(end_marker)
             {
                 let abs_start = current_idx + start_pos;
                 let abs_end = abs_start + start_len + end_pos + end_len;
-                if best_match.is_none() || abs_start < best_match.unwrap().0 {
-                    best_match = Some((abs_start, abs_end, start_marker, start_len, end_len));
+                update_best(abs_start, abs_end, start_marker, start_len, end_len);
+            }
+        }
+
+        let mut search_idx = 0;
+        while let Some(start_pos) = remaining[search_idx..].find('[') {
+            if remaining[search_idx + start_pos..].starts_with("[[") {
+                search_idx += start_pos + 2;
+                continue;
+            }
+            if let Some(mid_pos) = remaining[search_idx + start_pos..].find("](") {
+                let mid_abs = search_idx + start_pos + mid_pos;
+                if let Some(end_pos) = remaining[mid_abs..].find(')') {
+                    let abs_start = current_idx + search_idx + start_pos;
+                    let abs_end = current_idx + mid_abs + end_pos + 1;
+                    update_best(abs_start, abs_end, "[]()", 0, 0);
+                    break;
                 }
+            }
+            search_idx += start_pos + 1;
+        }
+
+        for scheme in &["https://", "http://"] {
+            if let Some(start_pos) = remaining.find(scheme) {
+                let abs_start = current_idx + start_pos;
+                let mut end_offset = 0;
+                for c in text[abs_start..].chars() {
+                    if c.is_whitespace() || c == ')' || c == ']' {
+                        break;
+                    }
+                    end_offset += c.len_utf8();
+                }
+                let abs_end = abs_start + end_offset;
+                update_best(abs_start, abs_end, "http", 0, 0);
             }
         }
 
@@ -67,7 +104,6 @@ fn parse_inline_elements(text: &str, base_style: Style) -> Vec<Span<'static>> {
             }
 
             let chunk = &text[abs_start..abs_end];
-            let inner = &text[abs_start + start_len..abs_end - end_len];
 
             let span = match start_marker {
                 "<!-- uid:" => Span::styled(
@@ -76,7 +112,14 @@ fn parse_inline_elements(text: &str, base_style: Style) -> Vec<Span<'static>> {
                         .fg(Color::DarkGray)
                         .add_modifier(Modifier::ITALIC),
                 ),
+                "[]()" => {
+                    let mid = chunk.find("](").unwrap();
+                    let display = &chunk[1..mid];
+                    Span::styled(display.to_string(), Style::default().fg(Color::Cyan))
+                }
+                "http" => Span::styled(chunk.to_string(), Style::default().fg(Color::Cyan)),
                 "[[]" => {
+                    let inner = &text[abs_start + start_len..abs_end - end_len];
                     let (_, display) = if let Some((t, d)) = inner.split_once('|') {
                         (t, d)
                     } else {

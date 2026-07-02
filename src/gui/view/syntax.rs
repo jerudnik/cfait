@@ -660,15 +660,74 @@ impl Highlighter for MarkdownHighlighter {
             ];
 
             let mut best_match: Option<(usize, usize, highlighter::Format<Font>)> = None;
+            let mut update_best = |start, end, format| {
+                if best_match.is_none() || start < best_match.unwrap().0 {
+                    best_match = Some((start, end, format));
+                }
+            };
+
             for &(start_marker, end_marker, start_len, end_len, format) in &markers {
                 if let Some(start_pos) = remaining.find(start_marker)
                     && let Some(end_pos) = remaining[start_pos + start_len..].find(end_marker)
                 {
                     let abs_start = cursor + start_pos;
                     let abs_end = abs_start + start_len + end_pos + end_len;
-                    if best_match.is_none() || abs_start < best_match.unwrap().0 {
-                        best_match = Some((abs_start, abs_end, format));
+                    update_best(abs_start, abs_end, format);
+                }
+            }
+
+            // Standard Markdown links: [label](url)
+            let mut search_idx = 0;
+            while let Some(start_pos) = remaining[search_idx..].find('[') {
+                if remaining[search_idx + start_pos..].starts_with("[[") {
+                    search_idx += start_pos + 2;
+                    continue;
+                }
+                if let Some(mid_pos) = remaining[search_idx + start_pos..].find("](") {
+                    let mid_abs = search_idx + start_pos + mid_pos;
+                    if let Some(end_pos) = remaining[mid_abs..].find(')') {
+                        let abs_start = cursor + search_idx + start_pos;
+                        let abs_end = cursor + mid_abs + end_pos + 1;
+                        update_best(
+                            abs_start,
+                            abs_end,
+                            highlighter::Format {
+                                color: link_color,
+                                font: Some(Font {
+                                    weight: iced::font::Weight::Bold,
+                                    ..Default::default()
+                                }),
+                            },
+                        );
+                        break;
                     }
+                }
+                search_idx += start_pos + 1;
+            }
+
+            // Bare URLs (http:// or https://)
+            for scheme in &["https://", "http://"] {
+                if let Some(start_pos) = remaining.find(scheme) {
+                    let abs_start = cursor + start_pos;
+                    let mut end_offset = 0;
+                    for c in line[abs_start..].chars() {
+                        if c.is_whitespace() || c == ')' || c == ']' {
+                            break;
+                        }
+                        end_offset += c.len_utf8();
+                    }
+                    let abs_end = abs_start + end_offset;
+                    update_best(
+                        abs_start,
+                        abs_end,
+                        highlighter::Format {
+                            color: link_color,
+                            font: Some(Font {
+                                weight: iced::font::Weight::Bold,
+                                ..Default::default()
+                            }),
+                        },
+                    );
                 }
             }
 
