@@ -57,7 +57,7 @@ pub fn is_action_available(
         crate::config::TaskAction::DeleteTree => task.has_subtasks,
         crate::config::TaskAction::CompleteTree => task.has_subtasks,
         crate::config::TaskAction::OpenCoordinates => task.geo.is_some(),
-        crate::config::TaskAction::OpenLocations => app.store.count_tree_locations(&task.uid) > 1,
+        crate::config::TaskAction::OpenLocations => task.tree_location_count > 1,
         crate::config::TaskAction::ToggleDetails => {
             has_info
                 || has_time

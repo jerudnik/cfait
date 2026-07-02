@@ -501,8 +501,10 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
 
         Message::KeyboardOpenLocations => {
-            if let Some(uid) = app.selected_uid.clone() {
-                let count = app.store.count_tree_locations(&uid);
+            if let Some(uid) = app.selected_uid.clone()
+                && let Some(task) = app.store.get_task_ref(&uid)
+            {
+                let count = task.tree_location_count;
                 if count > 1 {
                     return crate::gui::update::view::handle(app, Message::OpenLocations(uid));
                 } else if count == 1 {

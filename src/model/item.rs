@@ -366,6 +366,8 @@ pub struct Task {
     pub is_future_start: bool,
     #[serde(skip)]
     pub is_overdue: bool,
+    #[serde(skip)]
+    pub tree_location_count: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -659,6 +661,7 @@ impl Task {
             has_related_tasks: false,
             is_future_start: false,
             is_overdue: false,
+            tree_location_count: 0,
         };
         task.apply_smart_input(input, aliases, default_reminder_time);
         task

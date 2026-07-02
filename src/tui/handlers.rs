@@ -63,7 +63,7 @@ fn get_available_actions(state: &AppState, task: &Task) -> Vec<crate::config::Ta
             TaskAction::OpenUrl => task.url.is_some(),
             TaskAction::DeleteTree => task.has_subtasks,
             TaskAction::OpenCoordinates => task.geo.is_some(),
-            TaskAction::OpenLocations => state.store.count_tree_locations(&task.uid) > 1,
+            TaskAction::OpenLocations => task.tree_location_count > 1,
             TaskAction::ToggleDetails => has_info,
             TaskAction::CompleteAndShift => {
                 task.rrule.is_some() && !is_done_or_cancelled && !task.is_relative_recurrence()
@@ -2165,7 +2165,7 @@ pub async fn handle_key_event(
             KeyCode::Char('g') => {
                 if let Some(task) = state.get_selected_task() {
                     let uid = task.uid.clone();
-                    let count = state.store.count_tree_locations(&uid);
+                    let count = task.tree_location_count;
 
                     if count > 1 {
                         let waypoints = state.store.get_tree_waypoints(&uid);

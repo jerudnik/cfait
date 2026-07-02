@@ -2017,10 +2017,34 @@ impl TaskStore {
 
         // Build set of completed UIDs for quick membership checks (used by blocking checks)
         let mut completed_uids: HashSet<String> = HashSet::new();
+        // Also pre-calculate tree location counts to avoid O(N*Depth) lookups later
+        let mut tree_loc_counts: HashMap<String, usize> = HashMap::new();
+
         for map in self.calendars.values() {
             for t in map.values() {
                 if t.status.is_done() {
                     completed_uids.insert(t.uid.clone());
+                }
+
+                if t.geo.is_some() {
+                    let mut curr = t.uid.clone();
+                    let mut visited = HashSet::new();
+                    loop {
+                        *tree_loc_counts.entry(curr.clone()).or_insert(0) += 1;
+                        visited.insert(curr.clone());
+
+                        if let Some(parent) = self
+                            .get_task_ref(&curr)
+                            .and_then(|task| task.parent_uid.clone())
+                        {
+                            if visited.contains(&parent) {
+                                break;
+                            }
+                            curr = parent;
+                        } else {
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -2144,6 +2168,18 @@ impl TaskStore {
             .flat_map(|(_, map)| map.values())
             .collect();
 
+        // Pre-calculate effective ancestry states to avoid redundant O(depth) tree walks
+        let mut eff_blocked_map = HashMap::new();
+        let mut eff_future_map = HashMap::new();
+
+        for t in &all_allowed_refs {
+            eff_blocked_map.insert(
+                t.uid.clone(),
+                check_is_effectively_blocked(t, &completed_uids),
+            );
+            eff_future_map.insert(t.uid.clone(), check_is_effectively_future(t));
+        }
+
         // 3) Define the filtering pipeline as a reusable closure.
         // This allows us to calculate the final tasks, and recalculate aggregates ignoring specific filters for OR modes.
         let run_pipeline = |ignore_categories: bool, ignore_locations: bool| -> Vec<&Task> {
@@ -2175,16 +2211,16 @@ impl TaskStore {
                         // InProcess (ongoing) tasks should be considered actionable/ready
                         // even if they would otherwise be treated as blocked or start in the future.
                         if t.status != TaskStatus::InProcess {
-                            if check_is_effectively_future(t) {
+                            if *eff_future_map.get(&t.uid).unwrap_or(&false) {
                                 return false;
                             }
-                            if check_is_effectively_blocked(t, &completed_uids) {
+                            if *eff_blocked_map.get(&t.uid).unwrap_or(&false) {
                                 return false;
                             }
                         }
                     }
 
-                    if is_blocked_mode && !check_is_effectively_blocked(t, &completed_uids) {
+                    if is_blocked_mode && !eff_blocked_map.get(&t.uid).unwrap_or(&false) {
                         return false;
                     }
 
@@ -2571,7 +2607,7 @@ impl TaskStore {
                 // Compute blocked flags: explicit vs implicit
                 t.is_blocked = check_is_blocked_explicit(&t, &completed_uids);
                 t.is_implicitly_blocked =
-                    !t.is_blocked && check_is_effectively_blocked(&t, &completed_uids);
+                    !t.is_blocked && *eff_blocked_map.get(&t.uid).unwrap_or(&false);
                 // Penalize blocked tasks by lowering their effective priority so they sort after non-blocked
                 // tasks within the same rank. Numeric priority: lower is better, so increase the numeric
                 // value for blocked tasks (worse priority). Clamp to 9.
@@ -2683,12 +2719,15 @@ impl TaskStore {
                 .as_ref()
                 .map(|start| start.to_start_comparison_time() > now)
                 .unwrap_or(false);
-            t.is_implicitly_future = !t.is_future_start && check_is_effectively_future(t);
+            t.is_implicitly_future =
+                !t.is_future_start && *eff_future_map.get(&t.uid).unwrap_or(&false);
             t.is_overdue = t
                 .effective_due
                 .as_ref()
                 .map(|d| !t.status.is_done() && d.to_comparison_time() < now)
                 .unwrap_or(false);
+
+            t.tree_location_count = *tree_loc_counts.get(&t.uid).unwrap_or(&0);
 
             let (p_tags, p_loc) = if let Some(p_uid) = &t.parent_uid {
                 if let Some(p) = self.get_task_ref(p_uid) {
@@ -3131,6 +3170,7 @@ mod tests {
             has_related_tasks: false,
             is_future_start: false,
             is_overdue: false,
+            tree_location_count: 0,
         }
     }
 
