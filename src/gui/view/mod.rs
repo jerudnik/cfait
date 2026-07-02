@@ -407,7 +407,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             }
 
             let shortcut = match *action {
-                TaskAction::CompleteAndShift => " (Shift+S)",
+                TaskAction::CompleteAndShift => " (Shift+Space)",
                 TaskAction::ToggleDetails => " (L)",
                 TaskAction::ToggleTimer => " (s)",
                 TaskAction::StopTimer => " (S)",
@@ -416,6 +416,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::DecreasePriority => " (-)",
                 TaskAction::Focus => " (f)",
                 TaskAction::Edit => " (e)",
+                TaskAction::EditTree => " (Ctrl+E)",
                 TaskAction::Yank => " (y)",
                 TaskAction::CreateSubtask => " (C)",
                 TaskAction::DuplicateTree => " (Ctrl+D)",
@@ -425,7 +426,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 TaskAction::Cancel => " (x)",
                 TaskAction::Delete => " (Del)",
                 TaskAction::DeleteTree => " (Ctrl+Del)",
-                TaskAction::OpenCoordinates => " (g)",
+                TaskAction::OpenCoordinates | TaskAction::OpenLocations => " (g)",
                 TaskAction::OpenUrl => " (o)",
                 _ => "",
             };
