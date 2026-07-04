@@ -2380,23 +2380,19 @@ impl TaskStore {
                 }
 
                 let mut matched_uids = HashSet::new();
-                let mut queue = Vec::new();
+                let mut expand_queue = Vec::new();
 
                 let query = crate::model::matcher::Query::new(options.search_term);
 
                 for t in &visible_refs {
-                    // If in focus mode, we ALWAYS force the focused root to match the search
+                    // Always include the focused root so the tree has an anchor
                     if Some(t.uid.as_str()) == options.focused_task_uid {
                         matched_uids.insert(t.uid.clone());
-                        if query.matches(t, lex) {
-                            queue.push(t.uid.clone());
-                        }
-                        continue;
                     }
+
                     if query.matches(t, lex) {
-                        if matched_uids.insert(t.uid.clone()) {
-                            queue.push(t.uid.clone());
-                        }
+                        matched_uids.insert(t.uid.clone());
+                        expand_queue.push(t.uid.clone());
 
                         // Add all ancestors to preserve tree structure
                         let mut curr = t.uid.clone();
@@ -2409,15 +2405,20 @@ impl TaskStore {
                     }
                 }
 
+                let mut expanded = HashSet::new();
                 let mut idx = 0;
-                while idx < queue.len() {
-                    let curr = queue[idx].clone();
+                while idx < expand_queue.len() {
+                    let curr = expand_queue[idx].clone();
                     idx += 1;
+
+                    if !expanded.insert(curr.clone()) {
+                        continue;
+                    }
+
                     if let Some(children) = children_map.get(&curr) {
                         for child in children {
-                            if matched_uids.insert(child.clone()) {
-                                queue.push(child.clone());
-                            }
+                            matched_uids.insert(child.clone());
+                            expand_queue.push(child.clone());
                         }
                     }
                 }
