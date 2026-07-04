@@ -1275,6 +1275,7 @@ impl TaskStore {
             };
 
             if let Some(existing) = self.get_task_ref(&task_uid) {
+                let old_href = existing.calendar_href.clone();
                 let mut clone = existing.clone();
                 clone.apply_smart_input(&ext.raw_text, aliases, default_reminder_time);
 
@@ -1321,10 +1322,13 @@ impl TaskStore {
                     inherited_href.clone()
                 };
                 clone.calendar_href = final_href.clone();
-                resolved_hrefs.insert(task_uid.clone(), final_href);
+                resolved_hrefs.insert(task_uid.clone(), final_href.clone());
 
                 clone.sequence += 1;
 
+                if old_href != final_href {
+                    actions.push(crate::journal::Action::Move(existing.clone(), final_href));
+                }
                 tasks_to_update.push(clone);
             } else {
                 let mut new_task =

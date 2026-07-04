@@ -435,10 +435,34 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
         }
     }
 
+    // Topologically sort children so that blocked tasks inherently follow their dependencies.
+    // This perfectly preserves sequence ordering (1., 2., 3.) when re-extracting markdown.
     for list in children_map.values_mut() {
         list.sort_by(|a, b| {
             a.compare_for_sort(b, 5, false, crate::config::SortPreset::UrgentStartedDue)
         });
+        let mut result = Vec::new();
+        let mut remaining = list.clone();
+
+        while !remaining.is_empty() {
+            let mut progressed = false;
+            for i in 0..remaining.len() {
+                let can_emit = remaining[i]
+                    .dependencies
+                    .iter()
+                    .all(|dep| !remaining.iter().any(|t| &t.uid == dep));
+
+                if can_emit {
+                    result.push(remaining.remove(i));
+                    progressed = true;
+                    break;
+                }
+            }
+            if !progressed {
+                result.push(remaining.remove(0));
+            }
+        }
+        *list = result;
     }
 
     if !root.description.is_empty() {
@@ -478,24 +502,15 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
         let uid_tag = format!("<!-- uid:{} -->", task.uid);
         let indent = "    ".repeat(depth - 1);
 
-        // Output human-readable dependencies
+        // Output short UID dependencies to guarantee they are never ambiguous upon re-parsing
         let mut dep_str = String::new();
         for dep_uid in &task.dependencies {
-            let dep_name = children_map
-                .values()
-                .flat_map(|v| v.iter())
-                .find(|t| &t.uid == dep_uid)
-                .map(|t| t.summary.clone())
-                .unwrap_or_else(|| {
-                    // If it's outside the current tree scope, just use the short UID
-                    if dep_uid.len() >= 8 {
-                        dep_uid[..8].to_string()
-                    } else {
-                        dep_uid.to_string()
-                    }
-                });
-
-            dep_str.push_str(&format!(" dep:[[{}]]", dep_name));
+            let short_uid = if dep_uid.len() >= 8 {
+                &dep_uid[..8]
+            } else {
+                dep_uid
+            };
+            dep_str.push_str(&format!(" dep:{}", short_uid));
         }
 
         out.push_str(&format!(

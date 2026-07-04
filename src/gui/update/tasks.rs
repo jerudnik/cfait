@@ -1327,6 +1327,7 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
         return Task::none();
     } else if let Some(edit_uid) = &app.editing_uid {
         if let Some(task_ref) = app.store.get_task_ref(edit_uid) {
+            let old_href = task_ref.calendar_href.clone();
             let mut task = task_ref.clone();
             task.description = desc_text;
             task.apply_smart_input(&clean_input, &app.tag_aliases, config_time);
@@ -1338,8 +1339,9 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
 
             if let Some(target) = task.target_collection.take() {
                 task.calendar_href =
-                    crate::model::resolve_collection(&target, &app.calendars, &task.calendar_href);
+                    crate::model::resolve_collection(&target, &app.calendars, &old_href);
             }
+            let new_href = task.calendar_href.clone();
 
             task.sequence += 1;
             let task_copy = task.clone();
@@ -1353,6 +1355,9 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
             refresh_filtered_tasks(app);
 
             let mut actions = Vec::new();
+            if old_href != new_href {
+                actions.push(crate::journal::Action::Move(task_copy.clone(), new_href));
+            }
             actions.push(crate::journal::Action::Update(task_copy));
             for t in retroactive_sync_batch {
                 actions.push(crate::journal::Action::Update(t));
@@ -1414,6 +1419,7 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
                     &new_task.calendar_href,
                 );
             }
+            let inherited_href = new_task.calendar_href.clone();
 
             let parent_uid = new_task.uid.clone();
 
@@ -1456,12 +1462,18 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
                     }
                 }
 
-                let actual_parent = ext.parent_uid.unwrap_or(parent_uid.clone());
-                sub.parent_uid = Some(actual_parent);
+                sub.parent_uid = Some(ext.parent_uid.unwrap_or(parent_uid.clone()));
                 sub.dependencies.extend(ext.dependencies);
                 sub.dependencies.sort();
                 sub.dependencies.dedup();
-                sub.calendar_href = target_href.clone();
+
+                if let Some(target) = sub.target_collection.take() {
+                    sub.calendar_href =
+                        crate::model::resolve_collection(&target, &app.calendars, &inherited_href);
+                } else {
+                    sub.calendar_href = inherited_href.clone();
+                }
+
                 if let Some(pc) = ext.percent_complete {
                     sub.percent_complete = Some(pc);
                 }
