@@ -49,6 +49,7 @@ pub enum Message {
     ApplySearch(usize),
     ClearSearch,
     SubmitTask,
+    SaveAndSwitchEditor,
     ToggleTask(usize, bool),
     ToggleTaskShift(String),
     ShiftSpaceSelected,

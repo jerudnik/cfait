@@ -1353,6 +1353,47 @@ pub async fn handle_key_event(
                 save_description(state, action_tx);
                 return None;
             }
+            // Toggle Editor Mode: Ctrl+E
+            KeyCode::Char('e') | KeyCode::Char('E')
+                if key.modifiers.contains(KeyModifiers::CONTROL) =>
+            {
+                if state.creating_with_desc {
+                    return None; // Cannot edit tree of a task that doesn't exist yet
+                }
+
+                let was_tree = matches!(state.mode, InputMode::EditingTree(_));
+                let uid = if let InputMode::EditingTree(ref u) = state.mode {
+                    u.clone()
+                } else if let Some(u) = &state.editing_uid {
+                    u.clone()
+                } else {
+                    return None;
+                };
+
+                // Save current state
+                save_description(state, action_tx);
+
+                // Switch to the other mode
+                if was_tree {
+                    if let Some(t) = state.store.get_task_ref(&uid) {
+                        state.input_buffer = t.description.clone();
+                        state.cursor_position = state.input_buffer.chars().count();
+                        state.edit_scroll_offset = 0;
+                        state.edit_scroll_x = 0;
+                        state.editing_uid = Some(uid);
+                        state.mode = InputMode::EditingDescription;
+                    }
+                } else {
+                    let desc = crate::model::extractor::serialize_task_tree(&state.store, &uid);
+                    state.input_buffer = desc;
+                    state.cursor_position = state.input_buffer.chars().count();
+                    state.edit_scroll_offset = 0;
+                    state.edit_scroll_x = 0;
+                    state.mode = InputMode::EditingTree(uid);
+                }
+                state.needs_redraw = true;
+                return None;
+            }
             KeyCode::F(2) => {
                 save_description(state, action_tx);
                 return None;

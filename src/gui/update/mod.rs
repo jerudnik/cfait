@@ -124,6 +124,7 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::StartCreateWithDescription
         | Message::StartCreateChild(_)
         | Message::SubmitTask
+        | Message::SaveAndSwitchEditor
         | Message::ToggleTask(_, _)
         | Message::EditTaskStart(_)
         | Message::CancelEdit

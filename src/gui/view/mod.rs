@@ -2098,21 +2098,63 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
         let header_label = if app.creating_with_desc {
             rust_i18n::t!("mode_create").into_owned()
         } else if app.editing_tree_uid.is_some() {
-            "Editing Tree".to_string()
+            rust_i18n::t!("edit_tree_title").into_owned()
         } else {
             rust_i18n::t!("editing").into_owned()
         };
 
-        let top_bar = row![
+        let switch_btn = if !app.creating_with_desc {
+            let (icon, label) = if app.editing_tree_uid.is_some() {
+                (
+                    icon::EDIT,
+                    format!(
+                        "{} & {}",
+                        rust_i18n::t!("save"),
+                        rust_i18n::t!("description_label")
+                    ),
+                )
+            } else {
+                (
+                    icon::EDIT_TREE,
+                    format!(
+                        "{} & {}",
+                        rust_i18n::t!("save"),
+                        rust_i18n::t!("edit_tree_title")
+                    ),
+                )
+            };
+
+            Some(
+                tooltip(
+                    iced::widget::button(icon::icon(icon).size(16))
+                        .style(iced::widget::button::secondary)
+                        .on_press(Message::SaveAndSwitchEditor),
+                    text(label).size(12),
+                    tooltip::Position::Top,
+                )
+                .style(tooltip_style)
+                .delay(Duration::from_millis(700)),
+            )
+        } else {
+            None
+        };
+
+        let mut top_bar = row![
             text(header_label)
                 .size(14)
                 .color(Color::from_rgb(0.7, 0.7, 1.0)),
             Space::new().width(Length::Fill),
-            cancel_btn,
-            save_btn
-        ]
-        .align_y(iced::Alignment::Center)
-        .spacing(10);
+        ];
+
+        if let Some(btn) = switch_btn {
+            top_bar = top_bar.push(btn);
+        }
+
+        let top_bar = top_bar
+            .push(cancel_btn)
+            .push(save_btn)
+            .align_y(iced::Alignment::Center)
+            .spacing(10);
 
         column![top_bar, title_row, desc_container]
             .spacing(10)

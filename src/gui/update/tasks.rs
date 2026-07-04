@@ -180,6 +180,22 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
 
         Message::SubmitTask => handle_submit(app),
 
+        Message::SaveAndSwitchEditor => {
+            let to_tree = app.editing_tree_uid.clone();
+            let to_desc = app.editing_uid.clone();
+
+            let task = handle_submit(app);
+
+            if let Some(uid) = to_tree {
+                return Task::batch(vec![task, handle(app, Message::EditTaskTree(uid))]);
+            } else if let Some(uid) = to_desc
+                && let Some(idx) = app.find_task_index_by_uid(&uid)
+            {
+                return Task::batch(vec![task, handle(app, Message::EditTaskStart(idx))]);
+            }
+            task
+        }
+
         Message::EditTaskStart(index) => {
             let data = app
                 .get_task_at_index(index)
