@@ -335,6 +335,7 @@ pub struct MobileViewData {
     pub tags: Vec<MobileTag>,
     pub locations: Vec<MobileLocation>,
     pub goals: Vec<MobileGoalProgress>,
+    pub focused_task_uid: Option<String>,
 }
 
 #[derive(uniffi::Record)]
@@ -1733,7 +1734,11 @@ impl CfaitMobile {
         let expanded_tags_set: HashSet<String> = options.expanded_tags.into_iter().collect();
         let expanded_locations_set: HashSet<String> =
             options.expanded_locations.into_iter().collect();
-        let search_collapsed_set: HashSet<String> = HashSet::new();
+        
+        let session = self.session.lock().await;
+        let search_collapsed_set: HashSet<String> = session.search_collapsed_tasks.iter().cloned().collect();
+        let focused_task_uid = session.focused_task_uid.clone();
+        drop(session);
 
         let cutoff_date = config
             .sort_cutoff_days
@@ -1765,7 +1770,7 @@ impl CfaitMobile {
             max_done_subtasks: config.max_done_subtasks,
             tag_aliases: &config.tag_aliases,
             search_collapsed_tasks: &search_collapsed_set,
-            focused_task_uid: None,
+            focused_task_uid: focused_task_uid.as_deref(),
         });
 
         let tasks = filtered
@@ -1895,6 +1900,7 @@ impl CfaitMobile {
             tags,
             locations,
             goals: evaluated_goals,
+            focused_task_uid,
         }
     }
 

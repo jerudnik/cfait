@@ -4998,6 +4998,7 @@ data class MobileViewData(
     var `tags`: List<MobileTag>,
     var `locations`: List<MobileLocation>,
     var `goals`: List<MobileGoalProgress>,
+    var `focusedTaskUid`: kotlin.String?,
 ) {
     companion object
 }
@@ -5012,6 +5013,7 @@ public object FfiConverterTypeMobileViewData : FfiConverterRustBuffer<MobileView
             FfiConverterSequenceTypeMobileTag.read(buf),
             FfiConverterSequenceTypeMobileLocation.read(buf),
             FfiConverterSequenceTypeMobileGoalProgress.read(buf),
+            FfiConverterOptionalString.read(buf),
         )
 
     override fun allocationSize(value: MobileViewData) =
@@ -5019,7 +5021,8 @@ public object FfiConverterTypeMobileViewData : FfiConverterRustBuffer<MobileView
             FfiConverterSequenceTypeMobileTask.allocationSize(value.`tasks`) +
                 FfiConverterSequenceTypeMobileTag.allocationSize(value.`tags`) +
                 FfiConverterSequenceTypeMobileLocation.allocationSize(value.`locations`) +
-                FfiConverterSequenceTypeMobileGoalProgress.allocationSize(value.`goals`)
+                FfiConverterSequenceTypeMobileGoalProgress.allocationSize(value.`goals`) +
+                FfiConverterOptionalString.allocationSize(value.`focusedTaskUid`)
         )
 
     override fun write(
@@ -5030,6 +5033,7 @@ public object FfiConverterTypeMobileViewData : FfiConverterRustBuffer<MobileView
         FfiConverterSequenceTypeMobileTag.write(value.`tags`, buf)
         FfiConverterSequenceTypeMobileLocation.write(value.`locations`, buf)
         FfiConverterSequenceTypeMobileGoalProgress.write(value.`goals`, buf)
+        FfiConverterOptionalString.write(value.`focusedTaskUid`, buf)
     }
 }
 
@@ -6166,6 +6170,7 @@ enum class MobileSyntaxType {
     GOAL,
     COLLECTION,
     WIKI_LINK,
+    DEPENDENCY,
     ;
 
     companion object

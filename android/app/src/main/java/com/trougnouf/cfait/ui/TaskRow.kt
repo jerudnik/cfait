@@ -476,6 +476,18 @@ fun TaskRow(
                             leadingIcon = { NfIcon(NfIcons.LINK, 16.sp) })
                     }
 
+                    DropdownMenuItem(
+                        text = { Text(androidx.compose.ui.res.stringResource(R.string.focus_hide_others)) },
+                        onClick = { expanded = false; onAction("focus") },
+                        leadingIcon = { NfIcon(NfIcons.FOCUS_FIELD, 16.sp) }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text(androidx.compose.ui.res.stringResource(R.string.action_toggle_pin)) },
+                        onClick = { expanded = false; onAction("toggle_pin") },
+                        leadingIcon = { NfIcon(NfIcons.THUMB_TACK, 16.sp) }
+                    )
+
                     if (task.hasExtractableSubtasks) {
                         DropdownMenuItem(
                             text = { Text(androidx.compose.ui.res.stringResource(R.string.action_extract_subtasks)) },

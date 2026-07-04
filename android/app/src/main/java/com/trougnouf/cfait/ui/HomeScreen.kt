@@ -106,8 +106,9 @@ fun HomeScreen(
     tags: List<MobileTag>,
     locations: List<MobileLocation>,
     aliases: Map<String, List<String>>,
-    onUpdateViewData: (List<MobileTask>, List<MobileTag>, List<MobileLocation>, Map<String, List<String>>, List<com.trougnouf.cfait.core.MobileGoalProgress>) -> Unit,
+    onUpdateViewData: (List<MobileTask>, List<MobileTag>, List<MobileLocation>, Map<String, List<String>>, List<com.trougnouf.cfait.core.MobileGoalProgress>, String?) -> Unit,
     defaultCalHref: String?,
+    focusedTaskUid: String?,
     defaultPriority: Int,
     isLoading: Boolean,
     hasUnsynced: Boolean,
@@ -362,7 +363,7 @@ fun HomeScreen(
                     expandedLocations = expandedLocations.toList()
                 )
                 val viewData = api.getViewTasks(options)
-                onUpdateViewData(viewData.tasks, viewData.tags, viewData.locations, api.getConfig().tagAliases, viewData.goals)
+                onUpdateViewData(viewData.tasks, viewData.tags, viewData.locations, api.getConfig().tagAliases, viewData.goals, viewData.focusedTaskUid)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
             }
@@ -632,6 +633,8 @@ fun HomeScreen(
                 val intent = when(action) {
                     "delete" -> AppIntent.DeleteTask(task.uid)
                     "delete_tree" -> AppIntent.DeleteTaskTree(task.uid)
+                    "focus" -> AppIntent.FocusTaskTree(task.uid)
+                    "toggle_pin" -> AppIntent.TogglePin(task.uid)
                     "duplicate" -> AppIntent.DuplicateTaskTree(task.uid)
                     "promote" -> AppIntent.RemoveParent(task.uid)
                     "cancel" -> AppIntent.CancelTask(task.uid)
@@ -867,9 +870,12 @@ fun HomeScreen(
     BackHandler(enabled = drawerState.isOpen) { scope.launch { drawerState.close() } }
 
     BackHandler(
-        enabled = isSearchActive || searchQuery.isNotBlank() || yankedUid != null || filterTags.isNotEmpty() || filterLocations.isNotEmpty()
+        enabled = isSearchActive || searchQuery.isNotBlank() || yankedUid != null || filterTags.isNotEmpty() || filterLocations.isNotEmpty() || focusedTaskUid != null
     ) {
         when {
+            focusedTaskUid != null -> {
+                scope.launch { api.dispatch(AppIntent.FocusTaskTree(null)); updateTaskList() }
+            }
             isSearchActive -> isSearchActive = false
             yankedUid != null -> {
                 yankedUid = null; yankLockActive = false
@@ -1680,13 +1686,31 @@ fun HomeScreen(
                 topBar = {
                     Column {
                         TopAppBar(
-                            title = headerTitle,
+                            title = {
+                                if (focusedTaskUid != null) {
+                                    val focusedTask = tasks.find { it.uid == focusedTaskUid }
+                                    val titleText = focusedTask?.summary ?: "Focused"
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        NfIcon(NfIcons.FOCUS_FIELD, 20.sp, MaterialTheme.colorScheme.primary)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(titleText, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    }
+                                } else {
+                                    headerTitle()
+                                }
+                            },
                             navigationIcon = {
-                                IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                    NfIcon(
-                                        NfIcons.MENU,
-                                        20.sp
-                                    )
+                                if (focusedTaskUid != null) {
+                                    IconButton(onClick = { scope.launch { api.dispatch(AppIntent.FocusTaskTree(null)); updateTaskList() } }) {
+                                        NfIcon(NfIcons.BACK, 20.sp)
+                                    }
+                                } else {
+                                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                        NfIcon(
+                                            NfIcons.MENU,
+                                            20.sp
+                                        )
+                                    }
                                 }
                             },
                             actions = {
