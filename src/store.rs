@@ -2387,7 +2387,9 @@ impl TaskStore {
                     // otherwise the tree collapses and we lose our visual anchor.
                     if Some(t.uid.as_str()) == options.focused_task_uid {
                         matched_uids.insert(t.uid.clone());
-                        queue.push(t.uid.clone());
+                        if query.matches(t, lex) {
+                            queue.push(t.uid.clone());
+                        }
                         continue;
                     }
                     if query.matches(t, lex) && matched_uids.insert(t.uid.clone()) {
