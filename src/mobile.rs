@@ -511,6 +511,11 @@ impl CfaitMobile {
         }
     }
 
+    pub fn get_task_tree_markdown(&self, uid: String) -> String {
+        let store = self.controller.store.blocking_lock();
+        crate::model::extractor::serialize_task_tree(&store, &uid)
+    }
+
     pub fn export_locations_gpx(&self, uid: String) -> Result<String, MobileError> {
         let store = self.controller.store.blocking_lock();
         let waypoints = store.get_tree_waypoints(&uid);
@@ -2355,6 +2360,45 @@ impl CfaitMobile {
         self.dispatch(crate::model::AppIntent::TogglePin { uid })
             .await?;
         Ok(())
+    }
+
+    pub async fn sync_task_tree_from_markdown(
+        &self,
+        uid: String,
+        markdown: String,
+    ) -> Result<(), MobileError> {
+        let config = Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let def_time =
+            chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
+
+        let mut cals = crate::cache::Cache::load_calendars(self.ctx.as_ref()).unwrap_or_default();
+        if let Ok(locals) = crate::storage::LocalCalendarRegistry::load(self.ctx.as_ref()) {
+            cals.extend(locals);
+        }
+
+        let mut store = self.controller.store.lock().await;
+
+        match store.sync_tree_from_markdown(
+            &uid,
+            &markdown,
+            &config.tag_aliases,
+            def_time,
+            config.trash_retention_days,
+            &cals,
+        ) {
+            Ok(actions) => {
+                drop(store);
+                if !actions.is_empty() {
+                    self.controller
+                        .persist_changes(actions)
+                        .await
+                        .map_err(MobileError::from)?;
+                    self.rebuild_alarm_index().await;
+                }
+                Ok(())
+            }
+            Err(e) => Err(MobileError::from(e)),
+        }
     }
 
     pub async fn extract_subtasks(&self, uid: String) -> Result<(), MobileError> {

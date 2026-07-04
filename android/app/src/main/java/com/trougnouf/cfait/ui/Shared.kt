@@ -342,6 +342,7 @@ object NfIcons {
     val DETAILED_TRIANGLE = get(0xf01c6)
 
     val FAMILY_TREE = get(0xf160e)
+    val EDIT_TREE = get(0xf1144)
     val TREE_FA = get(0xf1bb)
     val TREE_FAE = get(0xe21c)
     val TREE_MD = get(0xf0531)

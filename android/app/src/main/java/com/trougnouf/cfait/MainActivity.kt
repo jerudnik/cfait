@@ -566,6 +566,23 @@ fun CfaitNavHost(
                     onNavigate = { targetUid ->
                         autoScrollUid = targetUid
                         navController.popBackStack("home", inclusive = false)
+                    },
+                    onEditTree = { targetUid ->
+                        navController.navigate("edit_tree/$targetUid")
+                    }
+                )
+            }
+        }
+        composable("edit_tree/{uid}") { backStackEntry ->
+            val uid = backStackEntry.arguments?.getString("uid")
+            if (uid != null) {
+                com.trougnouf.cfait.ui.TreeEditorScreen(
+                    api = api,
+                    uid = uid,
+                    onBack = { navController.popBackStack() },
+                    onSaveComplete = {
+                        refreshLists()
+                        navController.popBackStack()
                     }
                 )
             }

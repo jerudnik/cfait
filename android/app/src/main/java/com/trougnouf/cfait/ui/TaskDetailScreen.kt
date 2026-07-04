@@ -51,6 +51,7 @@ fun TaskDetailScreen(
     onBack: () -> Unit,
     onSave: (String, String) -> Unit,
     onNavigate: (String) -> Unit,
+    onEditTree: (String) -> Unit,
 ) {
     var task by remember { mutableStateOf<MobileTask?>(null) }
     val scope = rememberCoroutineScope()
@@ -224,6 +225,9 @@ fun TaskDetailScreen(
                         IconButton(onClick = { uriHandler.openUri(task!!.url!!) }) {
                             NfIcon(NfIcons.WEB_CHECK, 20.sp)
                         }
+                    }
+                    IconButton(onClick = { onEditTree(task!!.uid) }) {
+                        NfIcon(NfIcons.EDIT_TREE, 20.sp)
                     }
                     if (enabledCalendarCount > 1) {
                         TextButton(onClick = {

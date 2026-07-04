@@ -515,7 +515,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                     false,
                 ),
                 TaskAction::EditTree => (
-                    icon::icon(icon::FAMILY_TREE).size(14).into(),
+                    icon::icon(icon::EDIT_TREE).size(14).into(),
                     Message::EditTaskTree(uid.clone()),
                     false,
                 ),

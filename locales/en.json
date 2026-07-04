@@ -176,6 +176,7 @@
     "edit_description_instructions": "Write notes or subtasks (- [ ]). Ctrl+S to save.",
     "edit_description_title": "Edit description (Markdown supported)",
     "edit_task_title": "Edit task…",
+    "edit_tree_title": "Edit tree",
     "editing": "Editing",
     "editing_cancelled": "Editing cancelled.",
     "eg": "e.g.",
