@@ -132,7 +132,7 @@ fun parseInlineMarkdown(textStr: String, baseColor: androidx.compose.ui.graphics
                 val absStart = currentIdx + startPos
                 val absEnd = currentIdx + endPos + 2
                 if (bestMatch == null || absStart < bestMatch.first) {
-                    bestMatch = Triple(absStart, absEnd, "[[]]")
+                    bestMatch = Triple(absStart, absEnd, "[[")
                     matchLen = 2
                     endLen = 2
                 }
@@ -201,7 +201,7 @@ fun parseInlineMarkdown(textStr: String, baseColor: androidx.compose.ui.graphics
                     builder.append(display)
                     builder.pop()
                 }
-                "[[]]" -> {
+                "[[" -> {
                     val split = innerChunk.indexOf('|')
                     val display = if (split != -1) innerChunk.substring(split + 1) else innerChunk
                     builder.pushStyle(androidx.compose.ui.text.SpanStyle(color = androidx.compose.ui.graphics.Color(0xFF33B5E5), textDecoration = baseDecoration))

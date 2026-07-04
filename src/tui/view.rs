@@ -168,7 +168,7 @@ fn parse_inline_elements(text: &str, base_style: Style, strip_markers: bool) -> 
                     Span::styled(txt, Style::default().fg(Color::Cyan))
                 }
                 "http" => Span::styled(chunk.to_string(), Style::default().fg(Color::Cyan)),
-                "[[]" => {
+                "[[" => {
                     let inner_content = &text[abs_start + start_len..abs_end - end_len];
                     let (_, display) = if let Some((t, d)) = inner_content.split_once('|') {
                         (t, d)

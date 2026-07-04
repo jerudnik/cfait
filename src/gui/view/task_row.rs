@@ -154,7 +154,7 @@ pub fn parse_inline_markdown(
                 "http" => span(chunk.clone())
                     .color(Color::from_rgb(0.2, 0.7, 1.0))
                     .link(chunk),
-                "[[]" => {
+                "[[" => {
                     let inner = &text_str[abs_start + start_len..abs_end - end_len];
                     let (target, display) = if let Some((t, d)) = inner.split_once('|') {
                         (t.to_string(), d.to_string())
