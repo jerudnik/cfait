@@ -2394,13 +2394,15 @@ impl TaskStore {
                         matched_uids.insert(t.uid.clone());
                         expand_queue.push(t.uid.clone());
 
-                        // Add all ancestors to preserve tree structure
-                        let mut curr = t.uid.clone();
-                        while let Some(p) = parent_map.get(&curr) {
-                            if !matched_uids.insert(p.clone()) {
-                                break;
+                        // Add all ancestors to preserve tree structure only when focused
+                        if options.focused_task_uid.is_some() {
+                            let mut curr = t.uid.clone();
+                            while let Some(p) = parent_map.get(&curr) {
+                                if !matched_uids.insert(p.clone()) {
+                                    break;
+                                }
+                                curr = p.clone();
                             }
-                            curr = p.clone();
                         }
                     }
                 }
