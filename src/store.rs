@@ -720,7 +720,11 @@ impl TaskStore {
 
         let mut partial_matches = Vec::new();
 
-        for map in self.calendars.values() {
+        for (href, map) in &self.calendars {
+            // Ignore trashed or recovered tasks when fuzzy matching by title/partial UID
+            if href == crate::storage::LOCAL_TRASH_HREF || href == "local://recovery" {
+                continue;
+            }
             for (uid, task) in map {
                 if uid.starts_with(clean_ref) {
                     exact_uid_match = Some(uid.clone());
