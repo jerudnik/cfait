@@ -174,6 +174,7 @@
     "edit_description_instructions": "Escribe notas o subtareas (- [ ]). Pulsa Ctrl+S para guardar.",
     "edit_description_title": "Editar descripción (Markdown)",
     "edit_task_title": "Editar tarea…",
+    "edit_tree_title": "Editar árbol",
     "editing": "Editando",
     "editing_cancelled": "La edición se ha cancelado.",
     "eg": "p. ej.",
