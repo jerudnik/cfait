@@ -2867,11 +2867,18 @@ pub fn apply_smart_input(
                 task.location = Some(val);
             }
         } else if pref == Some(PrefixToken::Url) {
-            task.url = Some(strip_quotes(rem_original));
+            let val = strip_quotes(rem_original);
+            if !val.is_empty() {
+                task.url = Some(val);
+            } else {
+                summary_words.push(unescape(token));
+            }
         } else if token.starts_with("[[") && token.ends_with("]]") {
             let inner = &token[2..token.len() - 2];
             if inner.starts_with("http://") || inner.starts_with("https://") {
                 task.url = Some(inner.to_string());
+            } else {
+                summary_words.push(unescape(token));
             }
         } else if token_lower == "+cal" {
             task.create_event = Some(true);
@@ -3118,12 +3125,16 @@ pub fn apply_smart_input(
             let val = strip_quotes(rem_original);
             if !val.is_empty() {
                 task.target_collection = Some(val);
+            } else {
+                summary_words.push(unescape(token));
             }
             consumed = 1;
         } else if pref == Some(PrefixToken::Dependency) {
             let val = strip_quotes(rem_original);
             if !val.is_empty() {
                 task.dependencies.push(val);
+            } else {
+                summary_words.push(unescape(token));
             }
             consumed = 1;
         } else if pref == Some(PrefixToken::Goal) {
