@@ -60,8 +60,10 @@ fun TreeEditorScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("tree_markdown", markdownText)))
-                            Toast.makeText(context, context.getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
+                            scope.launch {
+                                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("tree_markdown", markdownText)))
+                                Toast.makeText(context, context.getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
+                            }
                         },
                         enabled = !isLoading
                     ) {

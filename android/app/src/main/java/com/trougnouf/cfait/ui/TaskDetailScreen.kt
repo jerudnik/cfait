@@ -226,7 +226,7 @@ fun TaskDetailScreen(
                             NfIcon(NfIcons.WEB_CHECK, 20.sp)
                         }
                     }
-                    if (task!!.has_subtasks) {
+                    if (task!!.hasSubtasks) {
                         IconButton(onClick = { onEditTree(task!!.uid) }) {
                             NfIcon(NfIcons.EDIT_TREE, 20.sp)
                         }
