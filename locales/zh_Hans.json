@@ -5,7 +5,6 @@
     "about_title": "Cfait",
     "about_version": "版本 %{version}",
     "action_complete_and_shift": "完成并轮班时间表",
-    "action_extract_subtasks": "提取 Markdown 子任务",
     "action_open_locations": "打开位置（GPX）",
     "action_pin": "固定任务",
     "action_toggle_pin": "固定/取消固定",
