@@ -1109,6 +1109,32 @@ impl CfaitMobile {
             .map_err(MobileError::from)
     }
 
+    pub fn move_calendar(&self, href: String, direction: i8) -> Result<(), MobileError> {
+        let mut config = Config::load(self.ctx.as_ref()).unwrap_or_default();
+        let cals = self.get_calendars();
+
+        let mut current_order = config.collection_order.clone();
+        for cal in &cals {
+            if !current_order.contains(&cal.href)
+                && cal.href != crate::storage::LOCAL_TRASH_HREF
+                && cal.href != "local://recovery"
+            {
+                current_order.push(cal.href.clone());
+            }
+        }
+
+        if let Some(idx) = current_order.iter().position(|h| h == &href) {
+            let new_idx =
+                (idx as i32 + direction as i32).clamp(0, (current_order.len() - 1) as i32) as usize;
+            if idx != new_idx {
+                current_order.swap(idx, new_idx);
+                config.collection_order = current_order;
+                config.save(self.ctx.as_ref()).map_err(MobileError::from)?;
+            }
+        }
+        Ok(())
+    }
+
     pub fn get_calendars(&self) -> Vec<MobileCalendar> {
         let config = Config::load(self.ctx.as_ref()).unwrap_or_default();
         let disabled_set: HashSet<String> = config.disabled_calendars.iter().cloned().collect();
@@ -1150,16 +1176,10 @@ impl CfaitMobile {
                 });
             }
         }
-        result.sort_by_key(|c| {
-            if c.href == "local://recovery" {
-                3
-            } else if c.href == crate::storage::LOCAL_TRASH_HREF {
-                4
-            } else if c.is_local {
-                2
-            } else {
-                1
-            }
+
+        let order = config.collection_order.clone();
+        result.sort_by(|a, b| {
+            crate::model::compare_calendars(&a.href, &a.name, &b.href, &b.name, &order)
         });
 
         result

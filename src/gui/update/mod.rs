@@ -117,6 +117,7 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::SubmitRemoteCalendar(_)
         | Message::RemoteCalendarUpdated(_, _)
         | Message::RemoteCalendarCreated(_, _)
+        | Message::MoveCalendar(_, _)
         | Message::SetShowInlineDescriptions(_) => settings::handle(app, message),
 
         Message::InputChanged(_)

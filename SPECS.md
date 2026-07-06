@@ -329,3 +329,4 @@ All persistent state and settings live here. Unrecognized TOML keys must not be 
 *   `expanded_tags`, `expanded_locations`, `expanded_done_groups`: Arrays mapping visual tree expansion states.
 *   `tag_aliases`: HashMap of Alias Key -> Array of Tags/Locations.
 *   `goals`: HashMap of Goal Key -> Goal Object.
+*   `collection_order`: Array of HREFs defining the custom display order of collections.

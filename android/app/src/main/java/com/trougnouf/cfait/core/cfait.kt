@@ -843,6 +843,8 @@ internal object IntegrityCheckingUniffiLib {
 
     external fun uniffi_cfait_checksum_method_cfaitmobile_migrate_local_to(): Int
 
+    external fun uniffi_cfait_checksum_method_cfaitmobile_move_calendar(): Int
+
     external fun uniffi_cfait_checksum_method_cfaitmobile_move_task(): Int
 
     external fun uniffi_cfait_checksum_method_cfaitmobile_parse_duration_string(): Int
@@ -1174,6 +1176,13 @@ internal object UniffiLib {
         `sourceHref`: RustBuffer.ByValue,
         `targetHref`: RustBuffer.ByValue,
     ): Long
+
+    external fun uniffi_cfait_fn_method_cfaitmobile_move_calendar(
+        `ptr`: Long,
+        `href`: RustBuffer.ByValue,
+        `direction`: Byte,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
 
     external fun uniffi_cfait_fn_method_cfaitmobile_move_task(
         `ptr`: Long,
@@ -1699,6 +1708,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_migrate_local_to() != 42795) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_move_calendar() != 38567) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_move_task() != 19055) {
@@ -2472,6 +2484,11 @@ public interface CfaitMobileInterface {
         `sourceHref`: kotlin.String,
         `targetHref`: kotlin.String,
     ): kotlin.String
+
+    fun `moveCalendar`(
+        `href`: kotlin.String,
+        `direction`: kotlin.Byte,
+    )
 
     suspend fun `moveTask`(
         `uid`: kotlin.String,
@@ -3490,6 +3507,21 @@ open class CfaitMobile :
             // Error FFI converter
             MobileException.ErrorHandler,
         )
+
+    @Throws(MobileException::class)
+    override fun `moveCalendar`(
+        `href`: kotlin.String,
+        `direction`: kotlin.Byte,
+    ) = callWithHandle {
+        uniffiRustCallWithError(MobileException) { _status ->
+            UniffiLib.uniffi_cfait_fn_method_cfaitmobile_move_calendar(
+                it,
+                FfiConverterString.lower(`href`),
+                FfiConverterByte.lower(`direction`),
+                _status,
+            )
+        }
+    }
 
     @Throws(MobileException::class)
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")

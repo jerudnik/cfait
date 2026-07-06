@@ -150,7 +150,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
 
     let picker: Element<_> = if !cal_options.is_empty() && is_settings {
         column![
-            text(rust_i18n::t!("default_collection")),
+            text(rust_i18n::t!("default_collection")).size(20),
             iced::widget::pick_list(cal_options, current_cal_opt, |opt| {
                 Message::ObDefaultCalChanged(opt.href)
             })
@@ -893,153 +893,62 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
         Space::new().width(0).into()
     };
 
-    let cal_mgmt_ui: Element<_> =
-        if is_settings && (!app.calendars.is_empty() || !app.remote_cals_editing.is_empty()) {
-            let mut col = column![text(rust_i18n::t!("remote_collections")).size(20)].spacing(10);
-
-            for cal in &app.remote_cals_editing {
-                let cal_href = cal.href.clone();
-                let is_enabled = !app.disabled_calendars.contains(&cal_href);
-
-                let checkbox_elem = {
-                    let href = cal_href.clone();
-                    checkbox::<Message, iced::Theme, iced::Renderer>(is_enabled)
-                        .label("")
-                        .on_toggle(move |v| Message::ToggleCalendarDisabled(href.clone(), !v))
-                };
-
-                let name_input = {
-                    let href = cal_href.clone();
-                    text_input(&rust_i18n::t!("name_label"), &cal.name)
-                        .on_input(move |s| Message::RemoteCalendarNameChanged(href.clone(), s))
-                        .padding(5)
-                        .width(Length::Fill)
-                };
-
-                let original_cal = app.calendars.iter().find(|c| c.href == cal_href);
-                let has_changes = original_cal
-                    .is_none_or(|orig| orig.name != cal.name || orig.color != cal.color);
-
-                let current_color = cal
-                    .color
-                    .as_ref()
-                    .and_then(|h| crate::color_utils::parse_hex_to_floats(h))
-                    .map(|(r, g, b)| Color::from_rgb(r, g, b))
-                    .unwrap_or(Color::from_rgb(0.5, 0.5, 0.5));
-
-                let color_btn = {
-                    let href = cal_href.clone();
-                    button(
-                        text(icon::PALETTE_COLOR.to_string())
-                            .font(icon::FONT)
-                            .size(16)
-                            .color(current_color),
-                    )
-                    .padding(5)
-                    .style(button::text)
-                    .on_press(Message::OpenColorPicker(href.clone(), current_color))
-                };
-
-                let color_widget: Element<_> =
-                    if app.color_picker_active_href.as_ref() == Some(&cal_href) {
-                        color_picker::ColorPicker::new(
-                            true,
-                            current_color,
-                            color_btn,
-                            Message::CancelColorPicker,
-                            Message::SubmitColorPicker,
-                        )
-                        .into()
-                    } else {
-                        color_btn.into()
-                    };
-
-                let save_btn: Element<_> = if has_changes {
-                    let h = cal.href.clone();
-                    button(
-                        icon::icon(icon::CHECK)
-                            .size(16)
-                            .color(app.theme().extended_palette().primary.base.color),
-                    )
-                    .style(button::text)
-                    .padding(5)
-                    .on_press(Message::SubmitRemoteCalendar(h))
-                    .into()
-                } else {
-                    Space::new().width(Length::Fixed(26.0)).into()
-                };
-
-                col = col.push(
-                    row![checkbox_elem, name_input, color_widget, save_btn]
-                        .spacing(5)
-                        .align_y(iced::Alignment::Center),
-                );
-            }
-
-            col = col.push(
-                button(text(rust_i18n::t!("create_new_remote_calendar")))
-                    .style(button::secondary)
-                    .on_press(Message::AddRemoteCalendar),
-            );
-
-            container(col)
-                .padding(10)
-                .style(|_| container::Style {
-                    border: iced::Border {
-                        radius: 4.0.into(),
-                        width: 1.0,
-                        color: Color::from_rgb(0.3, 0.3, 0.3),
-                    },
-                    ..Default::default()
-                })
-                .into()
-        } else {
-            Space::new().width(0).into()
-        };
-
-    let local_cal_ui: Element<_> = if is_settings {
-        let mut local_cal_col = column![
-            text(rust_i18n::t!("local_collections")).size(20),
+    let collections_ui: Element<_> = if is_settings {
+        let mut col = column![
+            text(rust_i18n::t!("manage_collections")).size(20),
             text(rust_i18n::t!("local_collections_explain"))
                 .size(12)
                 .color(Color::from_rgb(0.6, 0.6, 0.6)),
         ]
         .spacing(10);
 
-        for cal in &app.local_cals_editing {
-            let href = cal.href.clone();
-            let is_default = href == LOCAL_CALENDAR_HREF;
+        let mut ordered_cals = Vec::new();
+        for cal in &app.calendars {
+            if cal.href == crate::storage::LOCAL_TRASH_HREF || cal.href == "local://recovery" {
+                continue;
+            }
+            if cal.href.starts_with("local://") {
+                if let Some(edit_cal) = app.local_cals_editing.iter().find(|c| c.href == cal.href) {
+                    ordered_cals.push((edit_cal.clone(), true));
+                }
+            } else {
+                if let Some(edit_cal) = app.remote_cals_editing.iter().find(|c| c.href == cal.href)
+                {
+                    ordered_cals.push((edit_cal.clone(), false));
+                }
+            }
+        }
+        for cal in &app.remote_cals_editing {
+            if cal.href.starts_with("new_remote_") {
+                ordered_cals.push((cal.clone(), false));
+            }
+        }
+
+        for (cal, is_local) in ordered_cals {
+            let cal_href = cal.href.clone();
+            let is_enabled = !app.disabled_calendars.contains(&cal_href);
+            let is_default = cal_href == LOCAL_CALENDAR_HREF;
+
+            let checkbox_elem = checkbox::<Message, iced::Theme, iced::Renderer>(is_enabled)
+                .label("")
+                .on_toggle({
+                    let h = cal_href.clone();
+                    move |v| Message::ToggleCalendarDisabled(h.clone(), !v)
+                });
 
             let name_input = text_input(&rust_i18n::t!("name_label"), &cal.name)
-                .on_input(move |s| Message::LocalCalendarNameChanged(href.clone(), s))
+                .on_input({
+                    let h = cal_href.clone();
+                    move |s| {
+                        if is_local {
+                            Message::LocalCalendarNameChanged(h.clone(), s)
+                        } else {
+                            Message::RemoteCalendarNameChanged(h.clone(), s)
+                        }
+                    }
+                })
                 .padding(5)
-                .width(Length::FillPortion(3));
-
-            let export_href = cal.href.clone();
-            let export_btn = button(
-                row![
-                    icon::icon(icon::EXPORT).size(14),
-                    text(rust_i18n::t!("export")).size(10)
-                ]
-                .spacing(3)
-                .align_y(iced::Alignment::Center),
-            )
-            .padding(5)
-            .style(button::secondary)
-            .on_press(Message::ExportLocalIcs(export_href));
-
-            let import_href = cal.href.clone();
-            let import_btn = button(
-                row![
-                    icon::icon(icon::IMPORT).size(14),
-                    text(rust_i18n::t!("import_action")).size(10)
-                ]
-                .spacing(3)
-                .align_y(iced::Alignment::Center),
-            )
-            .padding(5)
-            .style(button::secondary)
-            .on_press(Message::ImportLocalIcs(import_href));
+                .width(Length::Fill);
 
             let current_color = cal
                 .color
@@ -1056,51 +965,175 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
             )
             .padding(5)
             .style(button::text)
-            .on_press(Message::OpenColorPicker(cal.href.clone(), current_color));
+            .on_press(Message::OpenColorPicker(cal_href.clone(), current_color));
 
             let color_widget: Element<_> =
-                if app.color_picker_active_href.as_ref() == Some(&cal.href) {
-                    color_picker::ColorPicker::new(
-                        true,
-                        current_color,
-                        color_btn,
-                        Message::CancelColorPicker,
-                        Message::SubmitColorPicker,
-                    )
-                    .into()
+                if app.color_picker_active_href.as_ref() == Some(&cal_href) {
+                    #[cfg(feature = "gui")]
+                    {
+                        color_picker::ColorPicker::new(
+                            true,
+                            current_color,
+                            color_btn,
+                            Message::CancelColorPicker,
+                            Message::SubmitColorPicker,
+                        )
+                        .into()
+                    }
+                    #[cfg(not(feature = "gui"))]
+                    {
+                        color_btn.into()
+                    }
                 } else {
                     color_btn.into()
                 };
 
-            let delete_btn: Element<_> = if !is_default {
-                let h = cal.href.clone();
+            let up_btn = button(icon::icon(icon::ARROW_EXPAND_UP).size(14))
+                .style(button::text)
+                .padding(5)
+                .on_press(Message::MoveCalendar(cal_href.clone(), -1));
+            let down_btn = button(icon::icon(icon::ARROW_EXPAND_DOWN).size(14))
+                .style(button::text)
+                .padding(5)
+                .on_press(Message::MoveCalendar(cal_href.clone(), 1));
+
+            let (export_btn, import_btn): (Element<_>, Element<_>) = if is_local {
+                (
+                    button(
+                        row![
+                            icon::icon(icon::EXPORT).size(14),
+                            text(rust_i18n::t!("export")).size(10)
+                        ]
+                        .spacing(3)
+                        .align_y(iced::Alignment::Center),
+                    )
+                    .padding(5)
+                    .style(button::secondary)
+                    .on_press(Message::ExportLocalIcs(cal_href.clone()))
+                    .into(),
+                    button(
+                        row![
+                            icon::icon(icon::IMPORT).size(14),
+                            text(rust_i18n::t!("import_action")).size(10)
+                        ]
+                        .spacing(3)
+                        .align_y(iced::Alignment::Center),
+                    )
+                    .padding(5)
+                    .style(button::secondary)
+                    .on_press(Message::ImportLocalIcs(cal_href.clone()))
+                    .into(),
+                )
+            } else {
+                (Space::new().width(0).into(), Space::new().width(0).into())
+            };
+
+            let delete_btn: Element<_> = if is_local && !is_default {
                 button(icon::icon(icon::TRASH).size(14))
                     .style(button::danger)
                     .padding(5)
-                    .on_press(Message::DeleteLocalCalendar(h))
+                    .on_press(Message::DeleteLocalCalendar(cal_href.clone()))
                     .into()
             } else {
                 Space::new().width(Length::Fixed(22.0)).into()
             };
 
-            local_cal_col = local_cal_col.push(
-                row![name_input, export_btn, import_btn, color_widget, delete_btn]
-                    .spacing(5)
-                    .align_y(iced::Alignment::Center),
+            let save_btn: Element<_> = if !is_local {
+                let original_cal = app.calendars.iter().find(|c| c.href == cal_href);
+                let has_changes = original_cal
+                    .is_none_or(|orig| orig.name != cal.name || orig.color != cal.color);
+                if has_changes {
+                    button(
+                        icon::icon(icon::CHECK)
+                            .size(16)
+                            .color(app.theme().extended_palette().primary.base.color),
+                    )
+                    .style(button::text)
+                    .padding(5)
+                    .on_press(Message::SubmitRemoteCalendar(cal_href.clone()))
+                    .into()
+                } else {
+                    Space::new().width(Length::Fixed(26.0)).into()
+                }
+            } else {
+                Space::new().width(0).into()
+            };
+
+            let tag = if is_local {
+                container(text(rust_i18n::t!("local_label")).size(10))
+                    .padding(3)
+                    .style(|_| container::Style {
+                        background: Some(Color::from_rgb(0.3, 0.3, 0.3).into()),
+                        border: iced::Border {
+                            radius: 4.0.into(),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    })
+            } else {
+                container(text("Remote").size(10))
+                    .padding(3)
+                    .style(|_| container::Style {
+                        background: Some(Color::from_rgb(0.2, 0.4, 0.8).into()),
+                        border: iced::Border {
+                            radius: 4.0.into(),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    })
+            };
+
+            col = col.push(
+                row![
+                    up_btn,
+                    down_btn,
+                    checkbox_elem,
+                    tag,
+                    name_input,
+                    export_btn,
+                    import_btn,
+                    color_widget,
+                    save_btn,
+                    delete_btn
+                ]
+                .spacing(5)
+                .align_y(iced::Alignment::Center),
             );
         }
 
-        local_cal_col = local_cal_col.push(
-            button(text(rust_i18n::t!("create_new_local_calendar")))
-                .style(button::secondary)
-                .on_press(Message::AddLocalCalendar),
-        );
+        let add_buttons_row = row![
+            button(
+                row![
+                    icon::icon(icon::PLUS).size(16),
+                    text(rust_i18n::t!("create_new_local_calendar"))
+                ]
+                .spacing(8)
+                .align_y(iced::Alignment::Center)
+            )
+            .style(button::secondary)
+            .width(Length::Fill)
+            .on_press(Message::AddLocalCalendar),
+            button(
+                row![
+                    icon::icon(icon::PLUS).size(16),
+                    text(rust_i18n::t!("create_new_remote_calendar"))
+                ]
+                .spacing(8)
+                .align_y(iced::Alignment::Center)
+            )
+            .style(button::secondary)
+            .width(Length::Fill)
+            .on_press(Message::AddRemoteCalendar),
+        ]
+        .spacing(10);
 
-        container(local_cal_col)
+        col = col.push(add_buttons_row);
+
+        container(col)
             .padding(10)
             .style(|_| container::Style {
                 border: iced::Border {
-                    radius: 6.0.into(),
+                    radius: 4.0.into(),
                     width: 1.0,
                     color: Color::from_rgba(0.5, 0.5, 0.5, 0.2),
                 },
@@ -1192,8 +1225,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
         lang_picker,  // <-- language picker added to the form layout
         theme_picker, // <-- theme picker added to the form layout
         picker,
-        cal_mgmt_ui,
-        local_cal_ui,
+        collections_ui,
         notifications_ui,
         aliases_ui,
         goals_ui,

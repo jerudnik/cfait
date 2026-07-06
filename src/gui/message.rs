@@ -294,6 +294,7 @@ pub enum Message {
     AddRemoteCalendar,
     RemoteCalendarNameChanged(String, String),
     SubmitRemoteCalendar(String),
+    MoveCalendar(String, i8),
     RemoteCalendarUpdated(String, Result<(), String>),
     RemoteCalendarCreated(String, Result<String, String>),
     OpenColorPicker(String, iced::Color),

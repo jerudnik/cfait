@@ -268,14 +268,9 @@ pub struct GuiApp {
 
 impl GuiApp {
     pub fn sort_calendars(&mut self) {
-        self.calendars.sort_by_key(|c| {
-            if c.href == "local://recovery" {
-                1
-            } else if c.href == crate::storage::LOCAL_TRASH_HREF {
-                2
-            } else {
-                0
-            }
+        let order = self.core_config.collection_order.clone();
+        self.calendars.sort_by(|a, b| {
+            crate::model::compare_calendars(&a.href, &a.name, &b.href, &b.name, &order)
         });
     }
 

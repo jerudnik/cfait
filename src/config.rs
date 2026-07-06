@@ -745,6 +745,8 @@ pub struct Config {
     #[serde(default)]
     pub hidden_calendars: Vec<String>,
     #[serde(default)]
+    pub collection_order: Vec<String>,
+    #[serde(default)]
     pub tag_aliases: HashMap<String, Vec<String>>,
     #[serde(default)]
     pub goals: HashMap<String, Goal>,
@@ -765,6 +767,8 @@ pub struct Config {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct SyncableConfig {
+    #[serde(default)]
+    pub collection_order: Vec<String>,
     #[serde(default)]
     pub tag_aliases: HashMap<String, Vec<String>>,
     #[serde(default)]
@@ -850,6 +854,7 @@ impl Default for Config {
             enable_local_mode: true,
             allow_insecure_certs: false,
             hidden_calendars: Vec::new(),
+            collection_order: Vec::new(),
             disabled_calendars: Vec::new(),
             hide_completed: false,
             hide_fully_completed_tags: true,
@@ -903,6 +908,7 @@ impl Default for Config {
 impl Config {
     pub fn get_syncable(&self) -> SyncableConfig {
         SyncableConfig {
+            collection_order: self.collection_order.clone(),
             tag_aliases: self.tag_aliases.clone(),
             goals: self.goals.clone(),
             hide_completed: self.hide_completed,
@@ -939,6 +945,7 @@ impl Config {
     }
 
     pub fn apply_syncable(&mut self, sync: SyncableConfig) {
+        self.collection_order = sync.collection_order;
         self.tag_aliases = sync.tag_aliases;
         self.goals = sync.goals;
         self.hide_completed = sync.hide_completed;

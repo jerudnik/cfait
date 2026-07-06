@@ -144,7 +144,7 @@
     "could_not_determine_location": "Could not determine location",
     "create_calendar_events_for_tasks_with_dates": "Create calendar events for tasks with dates",
     "create_calendar_events_note": "Events will be retroactively created. Use +cal/-cal per task to override.",
-    "create_new_local_calendar": "Create new local calendar",
+    "create_new_local_calendar": "Create new local collection",
     "create_subtask": "Create subtask",
     "created_label": "Created",
     "last_modified_label": "Last Modified",

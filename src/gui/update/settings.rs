@@ -166,6 +166,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             let config = *config_box;
             app.core_config = config.clone();
 
+            app.sort_calendars();
             app.hidden_calendars = config.hidden_calendars.clone().into_iter().collect();
             app.disabled_calendars = config.disabled_calendars.clone().into_iter().collect();
             app.sort_cutoff_days = config.sort_cutoff_days;
@@ -789,6 +790,31 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::SetSyncSettings(val) => {
             app.sync_settings = val;
             save_config(app);
+            Task::none()
+        }
+        Message::MoveCalendar(href, direction) => {
+            let mut current_order = app.core_config.collection_order.clone();
+            for cal in &app.calendars {
+                if !current_order.contains(&cal.href)
+                    && cal.href != crate::storage::LOCAL_TRASH_HREF
+                    && cal.href != "local://recovery"
+                {
+                    current_order.push(cal.href.clone());
+                }
+            }
+
+            if let Some(idx) = current_order.iter().position(|h| h == &href) {
+                let new_idx = (idx as i32 + direction as i32)
+                    .clamp(0, (current_order.len() - 1) as i32)
+                    as usize;
+                if idx != new_idx {
+                    current_order.swap(idx, new_idx);
+                    app.core_config.collection_order = current_order;
+                    crate::gui::update::common::save_config(app);
+                    app.sort_calendars();
+                    crate::gui::update::common::refresh_filtered_tasks(app);
+                }
+            }
             Task::none()
         }
         Message::SetLogLevel(level) => {

@@ -771,20 +771,20 @@ fun SettingsScreen(
                 )
             }
 
-            // 6. Remote Collections
+            // 6. Collections
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 Text(
-                    stringResource(R.string.remote_collections),
+                    stringResource(R.string.manage_collections),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp),
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-            items(allCalendars.filter { !it.isLocal }) { cal ->
+            items(allCalendars) { cal ->
                 CollectionEditor(
                     cal = cal,
-                    isLocal = false,
+                    isLocal = cal.isLocal,
                     isEnabled = !disabledSet.contains(cal.href),
                     onToggleEnabled = { enabled ->
                         val newSet = disabledSet.toMutableSet()
@@ -795,73 +795,13 @@ fun SettingsScreen(
                     onUpdate = { name, color ->
                         scope.launch {
                             try {
-                                api.updateRemoteCalendar(cal.href, name, color)
+                                if (cal.isLocal) {
+                                    api.updateLocalCalendar(cal.href, name, color)
+                                } else {
+                                    api.updateRemoteCalendar(cal.href, name, color)
+                                    com.trougnouf.cfait.ui.triggerBackgroundSync(context, api)
+                                }
                                 status = context.getString(R.string.collection_updated)
-                                reload()
-                                com.trougnouf.cfait.ui.triggerBackgroundSync(context, api)
-                            } catch (e: Exception) {
-                                if (e is kotlinx.coroutines.CancellationException) throw e
-                                status = context.getString(R.string.error_general, e.message ?: "")
-                            }
-                        }
-                    },
-                    onDelete = {},
-                    onExport = {},
-                    onImport = {}
-                )
-            }
-            item {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            try {
-                                api.createRemoteCalendar(context.getString(R.string.new_calendar_name), null)
-                                status = context.getString(R.string.collection_created)
-                                reload()
-                                com.trougnouf.cfait.ui.triggerBackgroundSync(context, api)
-                            } catch (e: Exception) {
-                                if (e is kotlinx.coroutines.CancellationException) throw e
-                                status = context.getString(R.string.error_general, e.message ?: "")
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                ) {
-                    NfIcon(NfIcons.ADD, 16.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Text(androidx.compose.ui.res.stringResource(R.string.create_new_remote_calendar))
-                }
-            }
-
-            // 7. Local collections
-            item {
-                HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                Text(
-                    stringResource(R.string.local_collections),
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-            items(allCalendars.filter { it.isLocal }) { cal ->
-                CollectionEditor(
-                    cal = cal,
-                    isLocal = true,
-                    isEnabled = !disabledSet.contains(cal.href),
-                    onToggleEnabled = { enabled ->
-                        val newSet = disabledSet.toMutableSet()
-                        if (enabled) newSet.remove(cal.href) else newSet.add(cal.href)
-                        disabledSet = newSet
-                        saveToDisk()
-                    },
-                    onUpdate = { name, color ->
-                        scope.launch {
-                            try {
-                                api.updateLocalCalendar(cal.href, name, color)
                                 reload()
                             } catch (e: Exception) {
                                 if (e is kotlinx.coroutines.CancellationException) throw e
@@ -870,70 +810,122 @@ fun SettingsScreen(
                         }
                     },
                     onDelete = {
-                        scope.launch {
-                            try {
-                                api.deleteLocalCalendar(cal.href)
-                                reload()
-                            } catch (e: Exception) {
-                                if (e is kotlinx.coroutines.CancellationException) throw e
-                                status = context.getString(R.string.error_general, e.message ?: "")
+                        if (cal.isLocal) {
+                            scope.launch {
+                                try {
+                                    api.deleteLocalCalendar(cal.href)
+                                    reload()
+                                } catch (e: Exception) {
+                                    if (e is kotlinx.coroutines.CancellationException) throw e
+                                    status = context.getString(R.string.error_general, e.message ?: "")
+                                }
                             }
                         }
                     },
                     onExport = {
-                        try {
-                            val icsContent = api.exportLocalIcs(cal.href)
-                            val calId = cal.href.removePrefix("local://")
-                            val file = File(context.cacheDir, "cfait_${calId}.ics")
-                            file.writeText(icsContent)
-                            val uri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                file
-                            )
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/calendar"
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        if (cal.isLocal) {
+                            try {
+                                val icsContent = api.exportLocalIcs(cal.href)
+                                val calId = cal.href.removePrefix("local://")
+                                val file = File(context.cacheDir, "cfait_${calId}.ics")
+                                file.writeText(icsContent)
+                                val uri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    file
+                                )
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/calendar"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                val shareIntent = Intent.createChooser(intent, "Export ${cal.name}")
+                                context.startActivity(shareIntent)
+                            } catch (e: Exception) {
+                                status = context.getString(R.string.export_error, e.message ?: "")
                             }
-                            val shareIntent = Intent.createChooser(intent, "Export ${cal.name}")
-                            context.startActivity(shareIntent)
-                        } catch (e: Exception) {
-                            status = context.getString(R.string.export_error, e.message ?: "")
                         }
                     },
                     onImport = {
-                        importTargetHref = cal.href
-                        importLauncher.launch("*/*")
+                        if (cal.isLocal) {
+                            importTargetHref = cal.href
+                            importLauncher.launch("*/*")
+                        }
+                    },
+                    onMoveUp = {
+                        scope.launch {
+                            try {
+                                api.moveCalendar(cal.href, -1)
+                                reload()
+                            } catch (e: Exception) {}
+                        }
+                    },
+                    onMoveDown = {
+                        scope.launch {
+                            try {
+                                api.moveCalendar(cal.href, 1)
+                                reload()
+                            } catch (e: Exception) {}
+                        }
                     }
                 )
             }
             item {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            try {
-                                api.createLocalCalendar(context.getString(R.string.new_calendar_name), null)
-                                reload()
-                            } catch (e: Exception) {
-                                if (e is kotlinx.coroutines.CancellationException) throw e
-                                status = context.getString(R.string.error_general, e.message ?: "")
-                            }
-                        }
-                    },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    NfIcon(NfIcons.ADD, 16.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Text(androidx.compose.ui.res.stringResource(R.string.create_new_local_calendar))
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    api.createLocalCalendar(context.getString(R.string.new_calendar_name), null)
+                                    reload()
+                                } catch (e: Exception) {
+                                    if (e is kotlinx.coroutines.CancellationException) throw e
+                                    status = context.getString(R.string.error_general, e.message ?: "")
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        NfIcon(NfIcons.ADD, 16.sp)
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.local_label))
+                    }
+
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    api.createRemoteCalendar(context.getString(R.string.new_calendar_name), null)
+                                    status = context.getString(R.string.collection_created)
+                                    reload()
+                                    com.trougnouf.cfait.ui.triggerBackgroundSync(context, api)
+                                } catch (e: Exception) {
+                                    if (e is kotlinx.coroutines.CancellationException) throw e
+                                    status = context.getString(R.string.error_general, e.message ?: "")
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        NfIcon(NfIcons.ADD, 16.sp)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Remote")
+                    }
                 }
             }
 
-            // 8. Tag Aliases
+            // 7. Tag Aliases
             item {
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 Text(
@@ -1227,7 +1219,9 @@ fun CollectionEditor(
     onUpdate: (String, String?) -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
-    onImport: () -> Unit
+    onImport: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
 ) {
     var name by remember { mutableStateOf(cal.name) }
     var color by remember { mutableStateOf(cal.color) }
@@ -1245,8 +1239,14 @@ fun CollectionEditor(
         Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                IconButton(onClick = onMoveUp, modifier = Modifier.size(24.dp)) {
+                    NfIcon(NfIcons.ARROW_UP, 16.sp)
+                }
+                IconButton(onClick = onMoveDown, modifier = Modifier.size(24.dp)) {
+                    NfIcon(NfIcons.ARROW_DOWN, 16.sp)
+                }
                 Checkbox(
                     checked = isEnabled,
                     onCheckedChange = onToggleEnabled,
