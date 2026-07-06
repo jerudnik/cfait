@@ -439,25 +439,80 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
         list.sort_by(|a, b| {
             a.compare_for_sort(b, 5, false, crate::config::SortPreset::UrgentStartedDue)
         });
-        let mut result = Vec::new();
+
+        if list.len() <= 1 {
+            continue;
+        }
+
+        let mut uids_in_list = std::collections::HashSet::new();
+        for t in list.iter() {
+            uids_in_list.insert(t.uid.as_str());
+        }
+
+        let mut needs_sort = false;
+        for t in list.iter() {
+            for dep in &t.dependencies {
+                if uids_in_list.contains(dep.as_str()) {
+                    needs_sort = true;
+                    break;
+                }
+            }
+            if needs_sort {
+                break;
+            }
+        }
+
+        if !needs_sort {
+            continue;
+        }
+
+        let mut in_degree: HashMap<&str, usize> = HashMap::new();
+        let mut graph: HashMap<&str, Vec<&str>> = HashMap::new();
+
+        for t in list.iter() {
+            in_degree.insert(t.uid.as_str(), 0);
+        }
+
+        for t in list.iter() {
+            for dep in &t.dependencies {
+                if uids_in_list.contains(dep.as_str()) {
+                    *in_degree.entry(t.uid.as_str()).or_insert(0) += 1;
+                    graph.entry(dep.as_str()).or_default().push(t.uid.as_str());
+                }
+            }
+        }
+
+        let mut result = Vec::with_capacity(list.len());
         let mut remaining = list.clone();
 
         while !remaining.is_empty() {
             let mut progressed = false;
             for i in 0..remaining.len() {
-                let can_emit = remaining[i]
-                    .dependencies
-                    .iter()
-                    .all(|dep| !remaining.iter().any(|t| &t.uid == dep));
-
-                if can_emit {
-                    result.push(remaining.remove(i));
+                let uid = remaining[i].uid.as_str();
+                if *in_degree.get(uid).unwrap_or(&0) == 0 {
+                    let task = remaining.remove(i);
+                    if let Some(dependents) = graph.get(task.uid.as_str()) {
+                        for dep in dependents {
+                            if let Some(deg) = in_degree.get_mut(*dep) {
+                                *deg = deg.saturating_sub(1);
+                            }
+                        }
+                    }
+                    result.push(task);
                     progressed = true;
                     break;
                 }
             }
             if !progressed {
-                result.push(remaining.remove(0));
+                let task = remaining.remove(0);
+                if let Some(dependents) = graph.get(task.uid.as_str()) {
+                    for dep in dependents {
+                        if let Some(deg) = in_degree.get_mut(*dep) {
+                            *deg = deg.saturating_sub(1);
+                        }
+                    }
+                }
+                result.push(task);
             }
         }
         *list = result;

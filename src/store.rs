@@ -152,6 +152,91 @@ pub fn organize_hierarchy(
         }
     }
 
+    fn topological_sort(list: &mut Vec<Task>) {
+        if list.len() <= 1 {
+            return;
+        }
+
+        let mut uids_in_list = HashSet::new();
+        for t in list.iter() {
+            uids_in_list.insert(t.uid.as_str());
+        }
+
+        let mut needs_sort = false;
+        for t in list.iter() {
+            for dep in &t.dependencies {
+                if uids_in_list.contains(dep.as_str()) {
+                    needs_sort = true;
+                    break;
+                }
+            }
+            if needs_sort {
+                break;
+            }
+        }
+
+        if !needs_sort {
+            return;
+        }
+
+        let mut in_degree: HashMap<String, usize> = HashMap::new();
+        let mut graph: HashMap<String, Vec<String>> = HashMap::new();
+
+        for t in list.iter() {
+            in_degree.insert(t.uid.clone(), 0);
+        }
+
+        for t in list.iter() {
+            for dep in &t.dependencies {
+                if uids_in_list.contains(dep.as_str()) {
+                    *in_degree.entry(t.uid.clone()).or_insert(0) += 1;
+                    graph.entry(dep.clone()).or_default().push(t.uid.clone());
+                }
+            }
+        }
+
+        let mut result = Vec::with_capacity(list.len());
+        let mut remaining = std::mem::take(list);
+
+        while !remaining.is_empty() {
+            let mut progressed = false;
+            for i in 0..remaining.len() {
+                let uid = &remaining[i].uid;
+                if *in_degree.get(uid).unwrap_or(&0) == 0 {
+                    let task = remaining.remove(i);
+                    if let Some(dependents) = graph.get(&task.uid) {
+                        for dep in dependents {
+                            if let Some(deg) = in_degree.get_mut(dep) {
+                                *deg = deg.saturating_sub(1);
+                            }
+                        }
+                    }
+                    result.push(task);
+                    progressed = true;
+                    break;
+                }
+            }
+            if !progressed {
+                let task = remaining.remove(0);
+                if let Some(dependents) = graph.get(&task.uid) {
+                    for dep in dependents {
+                        if let Some(deg) = in_degree.get_mut(dep) {
+                            *deg = deg.saturating_sub(1);
+                        }
+                    }
+                }
+                result.push(task);
+            }
+        }
+
+        *list = result;
+    }
+
+    topological_sort(&mut roots);
+    for list in children_map.values_mut() {
+        topological_sort(list);
+    }
+
     let mut result = Vec::new();
     let mut visited_keys = HashSet::new();
 
