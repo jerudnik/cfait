@@ -781,7 +781,7 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-            items(allCalendars) { cal ->
+            items(allCalendars, key = { it.href }) { cal ->
                 CollectionEditor(
                     cal = cal,
                     isLocal = cal.isLocal,
@@ -1223,11 +1223,10 @@ fun CollectionEditor(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit
 ) {
-    var name by remember { mutableStateOf(cal.name) }
-    var color by remember { mutableStateOf(cal.color) }
+    var name by remember(cal.href) { mutableStateOf(cal.name) }
     var showColorPicker by remember { mutableStateOf(false) }
 
-    val hasChanges = name != cal.name || color != cal.color
+    val hasChanges = name != cal.name
     val isDefault = cal.href == "local://default"
 
     Card(
@@ -1272,7 +1271,7 @@ fun CollectionEditor(
 
                 if (hasChanges) {
                     IconButton(
-                        onClick = { showColorPicker = false; onUpdate(name, color) },
+                        onClick = { showColorPicker = false; onUpdate(name, cal.color) },
                         modifier = Modifier.size(32.dp)
                     ) {
                         NfIcon(NfIcons.CHECK, 20.sp, MaterialTheme.colorScheme.primary)
@@ -1312,9 +1311,8 @@ fun CollectionEditor(
                 Column {
                     Spacer(modifier = Modifier.height(12.dp))
                     ColorPickerRow(
-                        selectedColor = color,
+                        selectedColor = cal.color,
                         onColorSelected = {
-                            color = it
                             onUpdate(name, it)
                             showColorPicker = false
                         }

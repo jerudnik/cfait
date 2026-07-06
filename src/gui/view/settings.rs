@@ -1040,8 +1040,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
 
             let save_btn: Element<_> = if !is_local {
                 let original_cal = app.calendars.iter().find(|c| c.href == cal_href);
-                let has_changes = original_cal
-                    .is_none_or(|orig| orig.name != cal.name || orig.color != cal.color);
+                let has_changes = original_cal.is_none_or(|orig| orig.name != cal.name);
                 if has_changes {
                     button(
                         icon::icon(icon::CHECK)
