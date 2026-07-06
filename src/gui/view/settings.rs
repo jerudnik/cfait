@@ -894,10 +894,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
     };
 
     let collections_ui: Element<_> = if is_settings {
-        let mut col = column![
-            text(rust_i18n::t!("manage_collections")).size(20)
-        ]
-        .spacing(10);
+        let mut col = column![text(rust_i18n::t!("manage_collections")).size(20)].spacing(10);
 
         let mut ordered_cals = Vec::new();
         for cal in &app.calendars {
