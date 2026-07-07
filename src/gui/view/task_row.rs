@@ -148,11 +148,11 @@ pub fn parse_inline_markdown(
                     let display = &chunk[1..mid];
                     let url = &chunk[mid + 2..chunk.len() - 1];
                     span(display.to_string())
-                        .color(Color::from_rgb(0.2, 0.7, 1.0))
+                        .color(Color::from_rgba(0.2, 0.7, 1.0, base_color.a))
                         .link(url.to_string())
                 }
                 "http" => span(chunk.clone())
-                    .color(Color::from_rgb(0.2, 0.7, 1.0))
+                    .color(Color::from_rgba(0.2, 0.7, 1.0, base_color.a))
                     .link(chunk),
                 "[[" => {
                     let inner = &text_str[abs_start + start_len..abs_end - end_len];
@@ -162,7 +162,7 @@ pub fn parse_inline_markdown(
                         (inner.to_string(), inner.to_string())
                     };
                     span(display.to_string())
-                        .color(Color::from_rgb(0.2, 0.7, 1.0))
+                        .color(Color::from_rgba(0.2, 0.7, 1.0, base_color.a))
                         .link(target)
                 }
                 "**" | "__" => span(inner_chunk).color(base_color).font(iced::Font {
@@ -174,7 +174,7 @@ pub fn parse_inline_markdown(
                     ..Default::default()
                 }),
                 "`" => span(inner_chunk)
-                    .color(Color::from_rgb(0.8, 0.6, 0.4))
+                    .color(Color::from_rgba(0.8, 0.6, 0.4, base_color.a))
                     .font(iced::Font::MONOSPACE),
                 "~~" => span(inner_chunk).color(base_color).strikethrough(true),
                 _ => span(inner_chunk).color(base_color),
@@ -314,7 +314,9 @@ pub fn view_task_row<'a>(
             let is_dark_theme = theme.extended_palette().is_dark;
             let default_text_color = theme.extended_palette().background.base.text;
 
-            let color = if is_blocked {
+            let dim_factor = if task.is_search_context { 0.35 } else { 1.0 };
+
+            let mut color = if is_blocked {
                 Color::from_rgb(0.5, 0.5, 0.5)
             } else if task.priority == 0 {
                 default_text_color
@@ -322,6 +324,7 @@ pub fn view_task_row<'a>(
                 let (r, g, b) = color_utils::get_priority_rgb(task.priority, is_dark_theme);
                 Color::from_rgb(r, g, b)
             };
+            color.a *= dim_factor;
 
             let show_indent = app.active_cal_href.is_some();
             let indent_size = if show_indent { task.depth * 12 } else { 0 };
@@ -361,12 +364,12 @@ pub fn view_task_row<'a>(
 
                 let is_future_start = task.is_future_start;
                 let is_overdue = task.is_overdue;
-                let dim_color = Color::from_rgb(0.7, 0.7, 0.7);
+                let dim_color = Color::from_rgba(0.7, 0.7, 0.7, dim_factor);
 
                 let due_color = if is_overdue {
-                    Color::from_rgb(0.8, 0.2, 0.2)
+                    Color::from_rgba(0.8, 0.2, 0.2, dim_factor)
                 } else {
-                    Color::from_rgb(0.5, 0.5, 0.5)
+                    Color::from_rgba(0.5, 0.5, 0.5, dim_factor)
                 };
 
                 if task.status.is_done() {
@@ -568,13 +571,14 @@ pub fn view_task_row<'a>(
 
                 for cat in visible_tags {
                     let (r, g, b) = color_utils::generate_color(cat);
-                    let bg_color = Color::from_rgb(r, g, b);
+                    let bg_color = Color::from_rgba(r, g, b, dim_factor);
 
-                    let text_color = if color_utils::is_dark(r, g, b) {
+                    let mut text_color = if color_utils::is_dark(r, g, b) {
                         Color::WHITE
                     } else {
                         Color::BLACK
                     };
+                    text_color.a *= dim_factor;
 
                     let display_cat = if cat.contains('=') {
                         cat.rsplit(':').next().unwrap_or(cat)
@@ -619,12 +623,19 @@ pub fn view_task_row<'a>(
                 }
 
                 if let Some(loc) = &visible_location {
-                    let text_color = Color::WHITE;
+                    let mut text_color = Color::WHITE;
+                    text_color.a *= dim_factor;
+
+                    let loc_bg = {
+                        let mut bg = COLOR_LOCATION;
+                        bg.a *= dim_factor;
+                        bg
+                    };
 
                     let loc_btn = button(text(format!("@@{}", loc)).size(12).color(text_color))
                         .style(move |_theme, status| {
                             let base = button::Style {
-                                background: Some(COLOR_LOCATION.into()),
+                                background: Some(loc_bg.into()),
                                 text_color,
                                 border: iced::Border {
                                     radius: 4.0.into(),
@@ -716,14 +727,14 @@ pub fn view_task_row<'a>(
                     };
 
                     let dur_bg = if task.last_started_at.is_some() {
-                        Color::from_rgb(0.25, 0.50, 0.25)
+                        Color::from_rgba(0.25, 0.50, 0.25, dim_factor)
                     } else {
-                        Color::from_rgb(0.50, 0.50, 0.50)
+                        Color::from_rgba(0.50, 0.50, 0.50, dim_factor)
                     };
                     let dur_border = if task.last_started_at.is_some() {
-                        Color::from_rgb(0.25, 0.60, 0.25)
+                        Color::from_rgba(0.25, 0.60, 0.25, dim_factor)
                     } else {
-                        Color::BLACK.scale_alpha(0.05)
+                        Color::BLACK.scale_alpha(0.05 * dim_factor)
                     };
 
                     tags_row = tags_row.push(
@@ -744,9 +755,9 @@ pub fn view_task_row<'a>(
                 }
                 if task.rrule.is_some() {
                     let r_color = if task.is_relative_recurrence() {
-                        Color::from_rgb(0.67, 0.28, 0.74) // #ab47bc
+                        Color::from_rgba(0.67, 0.28, 0.74, dim_factor) // #ab47bc
                     } else {
-                        Color::from_rgb(0.5, 0.5, 0.5)
+                        Color::from_rgba(0.5, 0.5, 0.5, dim_factor)
                     };
                     let recurrence_icon = icon::icon(icon::REPEAT).size(14).color(r_color);
                     tags_row = tags_row.push(container(recurrence_icon).padding(0));
@@ -1236,7 +1247,7 @@ pub fn view_task_row<'a>(
             actions = actions.push(ellipsis_btn);
 
             // Restore the Native Checkbox
-            let (icon_char, bg_color, default_border_color) = if is_paused {
+            let (icon_char, mut bg_color, mut default_border_color) = if is_paused {
                 (
                     icon::PAUSE,
                     Color::from_rgb(0.9, 0.7, 0.2),
@@ -1263,12 +1274,15 @@ pub fn view_task_row<'a>(
                 }
             };
 
+            bg_color.a *= dim_factor;
+            default_border_color.a *= dim_factor;
+
             let mut custom_border_color = default_border_color;
             if let Some(cal) = app.calendars.iter().find(|c| c.href == task.calendar_href)
                 && let Some(hex) = &cal.color
                 && let Some((r, g, b)) = crate::color_utils::parse_hex_to_floats(hex)
             {
-                custom_border_color = Color::from_rgb(r, g, b);
+                custom_border_color = Color::from_rgba(r, g, b, dim_factor);
             }
 
             let status_btn = button(

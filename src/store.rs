@@ -2305,7 +2305,9 @@ impl TaskStore {
 
         // 3) Define the filtering pipeline as a reusable closure.
         // This allows us to calculate the final tasks, and recalculate aggregates ignoring specific filters for OR modes.
-        let run_pipeline = |ignore_categories: bool, ignore_locations: bool| -> Vec<&Task> {
+        let run_pipeline = |ignore_categories: bool,
+                            ignore_locations: bool|
+         -> (Vec<&Task>, HashSet<String>) {
             let visible_refs: Vec<&Task> = all_allowed_refs
                 .iter()
                 .copied()
@@ -2450,7 +2452,8 @@ impl TaskStore {
 
             // 3) Search term expansion
             if options.search_term.is_empty() {
-                visible_refs
+                let uids = visible_refs.iter().map(|t| t.uid.clone()).collect();
+                (visible_refs, uids)
             } else {
                 let mut children_map = HashMap::new();
                 let mut parent_map = HashMap::new();
@@ -2464,7 +2467,8 @@ impl TaskStore {
                     }
                 }
 
-                let mut matched_uids = HashSet::new();
+                let mut direct_matches = HashSet::new();
+                let mut context_matches = HashSet::new();
                 let mut expand_queue = Vec::new();
 
                 let query = crate::model::matcher::Query::new(options.search_term);
@@ -2472,22 +2476,20 @@ impl TaskStore {
                 for t in &visible_refs {
                     // Always include the focused root so the tree has an anchor
                     if Some(t.uid.as_str()) == options.focused_task_uid {
-                        matched_uids.insert(t.uid.clone());
+                        direct_matches.insert(t.uid.clone());
                     }
 
                     if query.matches(t, lex) {
-                        matched_uids.insert(t.uid.clone());
+                        direct_matches.insert(t.uid.clone());
                         expand_queue.push(t.uid.clone());
 
-                        // Add all ancestors to preserve tree structure only when focused
-                        if options.focused_task_uid.is_some() {
-                            let mut curr = t.uid.clone();
-                            while let Some(p) = parent_map.get(&curr) {
-                                if !matched_uids.insert(p.clone()) {
-                                    break;
-                                }
-                                curr = p.clone();
+                        // Always add all ancestors to preserve tree structure when searched
+                        let mut curr = t.uid.clone();
+                        while let Some(p) = parent_map.get(&curr) {
+                            if !context_matches.insert(p.clone()) {
+                                break; // Already visited this path up
                             }
+                            curr = p.clone();
                         }
                     }
                 }
@@ -2504,33 +2506,35 @@ impl TaskStore {
 
                     if let Some(children) = children_map.get(&curr) {
                         for child in children {
-                            matched_uids.insert(child.clone());
+                            direct_matches.insert(child.clone());
                             expand_queue.push(child.clone());
                         }
                     }
                 }
 
-                visible_refs
+                let filtered_refs = visible_refs
                     .into_iter()
-                    .filter(|t| matched_uids.contains(&t.uid))
-                    .collect()
+                    .filter(|t| direct_matches.contains(&t.uid) || context_matches.contains(&t.uid))
+                    .collect();
+
+                (filtered_refs, direct_matches)
             }
         };
 
         // Execution of pipelines:
         // The final task list applies ALL filters
-        let final_refs = run_pipeline(false, false);
+        let (final_refs, direct_matches) = run_pipeline(false, false);
 
         // For tags: If OR mode, ignore current tag selection so user can pick multiple parallel tags
         let tag_refs = if options.match_all_categories {
             final_refs.clone()
         } else {
-            run_pipeline(true, false)
+            run_pipeline(true, false).0
         };
 
         // For locations: A task only has 1 location, so multiple locations is ALWAYS an OR operation.
         // We always ignore the location filter when computing location aggregates so other locations stay visible.
-        let loc_refs = run_pipeline(false, true);
+        let loc_refs = run_pipeline(false, true).0;
 
         // 4) Build category and location aggregates
         let mut cat_active_counts: HashMap<String, u32> = HashMap::new();
@@ -2744,6 +2748,8 @@ impl TaskStore {
             .into_iter()
             .map(|t_ref| {
                 let mut t = t_ref.clone();
+                t.is_search_context =
+                    !options.search_term.is_empty() && !direct_matches.contains(&t.uid);
                 // Compute blocked flags: explicit vs implicit
                 t.is_blocked = check_is_blocked_explicit(&t, &completed_uids);
                 t.is_implicitly_blocked =
@@ -3311,6 +3317,7 @@ mod tests {
             is_future_start: false,
             is_overdue: false,
             tree_location_count: 0,
+            is_search_context: false,
         }
     }
 

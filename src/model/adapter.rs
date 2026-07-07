@@ -1105,6 +1105,7 @@ impl IcsAdapter {
             is_future_start: false,
             is_overdue: false,
             tree_location_count: 0,
+            is_search_context: false,
         })
     }
 

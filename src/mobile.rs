@@ -228,6 +228,7 @@ pub struct MobileTask {
     // UI Visual resolution fields
     pub visible_categories: Vec<String>,
     pub visible_location: Option<String>,
+    pub is_search_context: bool,
 }
 
 impl MobileTask {
@@ -288,6 +289,7 @@ impl MobileTask {
             rrule_history_stat: None,
             visible_categories: vec![],
             visible_location: None,
+            is_search_context: false,
         }
     }
 }
@@ -733,6 +735,7 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
         rrule_history_stat,
         visible_categories: t.visible_categories.clone(),
         visible_location: t.visible_location.clone(),
+        is_search_context: t.is_search_context,
     }
 }
 

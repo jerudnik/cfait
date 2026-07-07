@@ -4870,6 +4870,7 @@ data class MobileTask(
     var `rruleHistoryStat`: kotlin.String?,
     var `visibleCategories`: List<kotlin.String>,
     var `visibleLocation`: kotlin.String?,
+    var `isSearchContext`: kotlin.Boolean,
 ) {
     companion object
 }
@@ -4935,6 +4936,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
             FfiConverterOptionalString.read(buf),
             FfiConverterSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
+            FfiConverterBoolean.read(buf),
         )
 
     override fun allocationSize(value: MobileTask) =
@@ -4993,7 +4995,8 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
                 FfiConverterSequenceFloat.allocationSize(value.`goalHistory`) +
                 FfiConverterOptionalString.allocationSize(value.`rruleHistoryStat`) +
                 FfiConverterSequenceString.allocationSize(value.`visibleCategories`) +
-                FfiConverterOptionalString.allocationSize(value.`visibleLocation`)
+                FfiConverterOptionalString.allocationSize(value.`visibleLocation`) +
+                FfiConverterBoolean.allocationSize(value.`isSearchContext`)
         )
 
     override fun write(
@@ -5055,6 +5058,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
         FfiConverterOptionalString.write(value.`rruleHistoryStat`, buf)
         FfiConverterSequenceString.write(value.`visibleCategories`, buf)
         FfiConverterOptionalString.write(value.`visibleLocation`, buf)
+        FfiConverterBoolean.write(value.`isSearchContext`, buf)
     }
 }
 

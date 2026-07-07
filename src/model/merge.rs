@@ -85,6 +85,7 @@ pub fn three_way_merge(base: &Task, local: &Task, server: &Task) -> Option<Task>
         is_overdue: _,
         tree_location_count: _,
         target_collection: _,
+        is_search_context: _,
     } = local;
 
     let mut merged = server.clone();

@@ -746,6 +746,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
 
                     let mut base_style = Style::default().fg(base_color);
 
+                    if t.is_search_context {
+                        base_color = Color::DarkGray;
+                        base_style = base_style.fg(base_color).add_modifier(Modifier::DIM);
+                    }
+
                     let is_trash = t.calendar_href == "local://trash";
 
                     if (t.status.is_done() && state.strikethrough_completed) || is_trash {
