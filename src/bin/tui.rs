@@ -55,7 +55,7 @@ fn shell_arg_to_smart_token(arg: &str, lex: &cfait::model::parser::ParserLexicon
     } else if let Some(rem) = arg.strip_prefix('#') {
         format!("#{}", wrap_rem(rem))
     } else {
-        wrap_rem(arg)
+        arg.to_string()
     }
 }
 
