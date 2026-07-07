@@ -1260,7 +1260,7 @@ fun CollectionEditor(
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp)
                 )
 
-                val colorVal = color?.let { parseHexColor(it) } ?: Color.Gray
+                val colorVal = cal.color?.let { parseHexColor(it) } ?: Color.Gray
                 Box(
                     modifier = Modifier
                         .size(24.dp)
