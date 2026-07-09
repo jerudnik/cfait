@@ -374,28 +374,8 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                 checkbox::<Message, iced::Theme, iced::Renderer>(app.sort_standard_by_priority)
                     .label(rust_i18n::t!("sort_standard_by_priority_label"))
                     .on_toggle(Message::ToggleSortStandardByPriority),
-                Space::new().height(10),
-                text(rust_i18n::t!("server_connection")).size(16),
-                row![
-                    text(rust_i18n::t!("tls_client_cert_path")).width(Length::Fixed(200.0)),
-                    text_input("", &app.ob_tls_client_cert_path)
-                        .on_input(Message::SetTlsClientCertPath)
-                        .width(Length::Fill)
-                        .padding(5)
-                ]
-                .spacing(10)
-                .align_y(iced::Alignment::Center),
-                row![
-                    text(rust_i18n::t!("tls_client_key_path")).width(Length::Fixed(200.0)),
-                    text_input("", &app.ob_tls_client_key_path)
-                        .on_input(Message::SetTlsClientKeyPath)
-                        .width(Length::Fill)
-                        .padding(5)
-                ]
-                .spacing(10)
-                .align_y(iced::Alignment::Center),
-                Space::new().height(10),
-                text(rust_i18n::t!("settings_sort_behavior")).size(16),
+
+                text(rust_i18n::t!("settings_sort_behavior")).size(18),
                 row![
                     text(rust_i18n::t!("sorting_preset_label")).width(Length::Fixed(200.0)),
                     iced::widget::pick_list(
@@ -412,7 +392,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .size(12)
                     .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),
-                text(rust_i18n::t!("settings_urgent_definition")).size(16),
+                text(rust_i18n::t!("settings_urgent_definition")).size(18),
                 row![
                     text(rust_i18n::t!("due_within_days")).width(Length::Fixed(150.0)),
                     text_input("1", &app.ob_urgent_days_input)
@@ -435,7 +415,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .size(12)
                     .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),
-                text(rust_i18n::t!("settings_timeframes_cutoffs")).size(16),
+                text(rust_i18n::t!("settings_timeframes_cutoffs")).size(18),
                 row![
                     text(rust_i18n::t!("priority_cutoff_days")).width(Length::Fixed(150.0)),
                     text_input("30", &app.ob_sort_days_input)
@@ -461,7 +441,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .size(12)
                     .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),
-                text(rust_i18n::t!("settings_defaults")).size(16),
+                text(rust_i18n::t!("settings_defaults")).size(18),
                 row![
                     text(rust_i18n::t!("default_priority_label")).width(Length::Fixed(150.0)),
                     text_input("5", &app.ob_default_priority_input)
@@ -475,7 +455,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .size(12)
                     .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),
-                text(rust_i18n::t!("display_limits")).size(16),
+                text(rust_i18n::t!("display_limits")).size(18),
                 row![
                     text(rust_i18n::t!("max_completed_tasks_root")).width(Length::Fixed(200.0)),
                     text_input("20", &app.ob_max_done_roots_input)
@@ -502,7 +482,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .size(12)
                     .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),
-                text(rust_i18n::t!("pinned_actions_label")).size(16),
+                text(rust_i18n::t!("pinned_actions_label")).size(18),
                 {
                     let mut action_col = column![].spacing(2);
                     for action in crate::config::TaskAction::ALL {
@@ -560,7 +540,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     action_col
                 },
                 Space::new().height(10),
-                text(rust_i18n::t!("data_management")).size(16),
+                text(rust_i18n::t!("data_management")).size(18),
                 row![
                     text(rust_i18n::t!("trash_retention_days_label")).width(Length::Fixed(200.0)),
                     text_input("14", &app.ob_trash_retention_input)
@@ -591,7 +571,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .label(rust_i18n::t!("sessions_count_as_completions"))
                     .on_toggle(Message::SetSessionsCountAsCompletions),
                 Space::new().height(10),
-                text(rust_i18n::t!("logging_label")).size(16),
+                text(rust_i18n::t!("logging_label")).size(18),
                 row![
                     text(rust_i18n::t!("log_level_label")).width(Length::Fixed(200.0)),
                     iced::widget::pick_list(
@@ -608,7 +588,7 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                     .size(12)
                     .color(Color::from_rgb(0.6, 0.6, 0.6)),
                 Space::new().height(10),
-                text(rust_i18n::t!("quick_filter_title")).size(16),
+                text(rust_i18n::t!("quick_filter_title")).size(18),
                 checkbox::<Message, iced::Theme, iced::Renderer>(app.show_quick_filter)
                     .label(rust_i18n::t!("quick_filter_show_button"))
                     .on_toggle(Message::SetShowQuickFilter),
@@ -635,6 +615,27 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
                 ]
                 .spacing(10)
                 .align_y(iced::Alignment::Center),
+                Space::new().height(10),
+                text(rust_i18n::t!("server_connection")).size(18),
+                row![
+                    text(rust_i18n::t!("tls_client_cert_path")).width(Length::Fixed(200.0)),
+                    text_input("", &app.ob_tls_client_cert_path)
+                        .on_input(Message::SetTlsClientCertPath)
+                        .width(Length::Fill)
+                        .padding(5)
+                ]
+                .spacing(10)
+                .align_y(iced::Alignment::Center),
+                row![
+                    text(rust_i18n::t!("tls_client_key_path")).width(Length::Fixed(200.0)),
+                    text_input("", &app.ob_tls_client_key_path)
+                        .on_input(Message::SetTlsClientKeyPath)
+                        .width(Length::Fill)
+                        .padding(5)
+                ]
+                .spacing(10)
+                .align_y(iced::Alignment::Center),
+                Space::new().height(10),
             ]
             .spacing(5)
             .padding(10)
