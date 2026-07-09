@@ -127,12 +127,28 @@ impl Journal {
 
                 if same_calendar {
                     match (prev, &action) {
-                        (Action::Create(_), Action::Update(t)) => {
-                            compacted[idx] = Some(Action::Create(t.clone()));
+                        (Action::Create(prev_t), Action::Update(t)) => {
+                            let mut merged_t = t.clone();
+                            if (merged_t.etag.is_empty() || merged_t.etag == "pending_refresh")
+                                && !prev_t.etag.is_empty()
+                                && prev_t.etag != "pending_refresh"
+                            {
+                                merged_t.etag = prev_t.etag.clone();
+                                merged_t.href = prev_t.href.clone();
+                            }
+                            compacted[idx] = Some(Action::Create(merged_t));
                             merged = true;
                         }
-                        (Action::Update(_), Action::Update(t)) => {
-                            compacted[idx] = Some(Action::Update(t.clone()));
+                        (Action::Update(prev_t), Action::Update(t)) => {
+                            let mut merged_t = t.clone();
+                            if (merged_t.etag.is_empty() || merged_t.etag == "pending_refresh")
+                                && !prev_t.etag.is_empty()
+                                && prev_t.etag != "pending_refresh"
+                            {
+                                merged_t.etag = prev_t.etag.clone();
+                                merged_t.href = prev_t.href.clone();
+                            }
+                            compacted[idx] = Some(Action::Update(merged_t));
                             merged = true;
                         }
                         (Action::Create(_), Action::Delete(_)) => {
@@ -140,13 +156,29 @@ impl Journal {
                             uid_map.remove(&uid);
                             merged = true;
                         }
-                        (Action::Update(_), Action::Delete(t)) => {
-                            compacted[idx] = Some(Action::Delete(t.clone()));
+                        (Action::Update(prev_t), Action::Delete(t)) => {
+                            let mut merged_t = t.clone();
+                            if (merged_t.etag.is_empty() || merged_t.etag == "pending_refresh")
+                                && !prev_t.etag.is_empty()
+                                && prev_t.etag != "pending_refresh"
+                            {
+                                merged_t.etag = prev_t.etag.clone();
+                                merged_t.href = prev_t.href.clone();
+                            }
+                            compacted[idx] = Some(Action::Delete(merged_t));
                             merged = true;
                         }
-                        (Action::Create(_), Action::Create(t)) => {
+                        (Action::Create(prev_t), Action::Create(t)) => {
                             // Merge duplicates: keep the newer version (last wins)
-                            compacted[idx] = Some(Action::Create(t.clone()));
+                            let mut merged_t = t.clone();
+                            if (merged_t.etag.is_empty() || merged_t.etag == "pending_refresh")
+                                && !prev_t.etag.is_empty()
+                                && prev_t.etag != "pending_refresh"
+                            {
+                                merged_t.etag = prev_t.etag.clone();
+                                merged_t.href = prev_t.href.clone();
+                            }
+                            compacted[idx] = Some(Action::Create(merged_t));
                             merged = true;
                         }
                         _ => {}
