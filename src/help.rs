@@ -226,7 +226,11 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                 HelpItem {
                     keys: format!("{p_dep}uid / text"),
                     desc: rust_i18n::t!("help_metadata_dependency").to_string(),
-                    example: format!("{p_dep}\"{}\" 1", rust_i18n::t!("example_phase_2")),
+                    example: format!(
+                        "{p_dep}\"{}\" {}",
+                        rust_i18n::t!("example_phase_1"),
+                        rust_i18n::t!("example_phase_2")
+                    ),
                 },
                 HelpItem {
                     keys: format!("{p_url} or [[ ]]"),

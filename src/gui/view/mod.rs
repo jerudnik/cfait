@@ -9,7 +9,7 @@ pub mod syntax;
 pub mod task_row;
 use crate::gui::icon;
 use crate::gui::message::Message;
-use crate::gui::state::{AppState, GuiApp, ResizeDirection, SidebarMode};
+use crate::gui::state::{AppState, Focus, GuiApp, ResizeDirection, SidebarMode};
 use crate::gui::view::help::view_help;
 use crate::gui::view::settings::view_settings;
 use crate::gui::view::sidebar::{view_sidebar_calendars, view_sidebar_categories};
@@ -2033,7 +2033,7 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
     };
 
     let inner_content: Element<'_, Message> = if is_expanded {
-        let max_desc_height = (app.current_window_size.height - 220.0).max(160.0);
+        let max_desc_height = (app.current_window_size.height - 180.0).max(160.0);
 
         let placeholder = if app.creating_with_desc {
             rust_i18n::t!("notes_create_subtasks_placeholder").into_owned()
@@ -2041,10 +2041,11 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
             app.notes_placeholder.clone()
         };
 
-        // Calculate an estimated dynamic height to grow to fit, then stop at max_desc_height
         let text_content = app.description_value.text();
-        let line_count = text_content.lines().count().max(1);
-        let estimated_height = (line_count as f32 * 22.0 + 40.0).clamp(160.0, max_desc_height);
+        let line_count = text_content.chars().filter(|&c| c == '\n').count() + 1;
+        let estimated_height = (line_count as f32 * 21.0 + 30.0).clamp(160.0, max_desc_height);
+
+        let is_focused = app.active_focus == Focus::AddTaskInput;
 
         let input_desc = text_editor(&app.description_value)
             .id("description_input")
@@ -2056,7 +2057,15 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
             )
             .padding(10)
             .height(Length::Shrink)
-            .min_height(160.0);
+            .min_height(estimated_height)
+            .style(move |theme: &Theme, status| {
+                let class = <Theme as iced::widget::text_editor::Catalog>::default();
+                let mut style =
+                    <Theme as iced::widget::text_editor::Catalog>::style(theme, &class, status);
+                style.background = iced::Background::Color(Color::TRANSPARENT);
+                style.border.width = 0.0;
+                style
+            });
 
         let scrollable_desc = scrollable(input_desc)
             .width(Length::Fill)
@@ -2067,7 +2076,22 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
 
         let desc_container = container(scrollable_desc)
             .width(Length::Fill)
-            .height(Length::Fixed(estimated_height));
+            .height(Length::Fixed(estimated_height))
+            .style(move |theme: &Theme| {
+                let status = if is_focused {
+                    iced::widget::text_editor::Status::Focused { is_hovered: false }
+                } else {
+                    iced::widget::text_editor::Status::Active
+                };
+                let class = <Theme as iced::widget::text_editor::Catalog>::default();
+                let te_style =
+                    <Theme as iced::widget::text_editor::Catalog>::style(theme, &class, status);
+                container::Style {
+                    background: Some(te_style.background),
+                    border: te_style.border,
+                    ..Default::default()
+                }
+            });
 
         let cancel_btn = tooltip(
             iced::widget::button(text(rust_i18n::t!("cancel")).size(16))
