@@ -307,7 +307,7 @@ impl ParserLexicon {
         add_prefix("parser_goal", "goal:", PrefixToken::Goal);
         add_prefix("parser_recur", "rec:", PrefixToken::Recur);
         add_prefix("parser_url", "url:", PrefixToken::Url);
-        add_prefix("parser_collection", "cal:,col:", PrefixToken::Collection);
+        add_prefix("parser_collection", "col:", PrefixToken::Collection);
         add_prefix("parser_dep", "dep:,depends:", PrefixToken::Dependency);
         add_prefix("parser_rel", "rel:,related:", PrefixToken::Rel);
 

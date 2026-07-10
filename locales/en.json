@@ -6,7 +6,7 @@
     "about_version": "Version %{version}",
     "action_complete_and_shift": "Complete & shift schedule",
     "action_complete_tree": "Complete tree",
-    "parser_collection": "cal:,col:",
+    "parser_collection": "col:",
     "action_open_locations": "Open locations (GPX)",
     "action_pin": "Pin task",
     "action_toggle_pin": "Pin / Unpin",

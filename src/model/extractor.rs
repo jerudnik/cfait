@@ -547,7 +547,7 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
         let mut smart_string = task.to_smart_string();
         if task.calendar_href != root_href {
             smart_string.push_str(&format!(
-                " cal:{}",
+                " col:{}",
                 crate::model::parser::quote_value(&task.calendar_href)
             ));
         }
