@@ -371,6 +371,7 @@
     "import_failed": "Échec de l'importation : %{error}",
     "import_failed_read_text": "Échec de lecture du fichier en tant que texte : %{error}",
     "import_failed_to_parse": "Échec de l'analyse du fichier ICS : %{error}",
+    "error_cannot_import_to_system_calendar": "Impossible d'importer vers un calendrier système (corbeille/récupération).",
     "import_file_name": "Fichier : %{file}",
     "import_success": {
         "one": "Importation réussie de 1 tâche",

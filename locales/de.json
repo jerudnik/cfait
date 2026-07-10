@@ -371,6 +371,7 @@
     "import_failed": "Import fehlgeschlagen: %{error}",
     "import_failed_read_text": "Fehler beim Lesen der Datei als Text: %{error}",
     "import_failed_to_parse": "Fehler beim Analysieren der ICS-Datei: %{error}",
+    "error_cannot_import_to_system_calendar": "Kann nicht in Systemkalender (Papierkorb/Wiederherstellung) importieren.",
     "import_file_name": "Datei: %{file}",
     "import_success": {
         "one": "1 Aufgabe erfolgreich importiert",

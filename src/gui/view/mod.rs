@@ -2259,7 +2259,10 @@ fn view_ics_import_overlay<'a>(app: &'a GuiApp) -> Element<'a, Message> {
 
     let mut calendar_list = column![].spacing(5);
     for cal in &app.calendars {
-        if app.disabled_calendars.contains(&cal.href) {
+        if app.disabled_calendars.contains(&cal.href)
+            || cal.href == crate::storage::LOCAL_TRASH_HREF
+            || cal.href == "local://recovery"
+        {
             continue;
         }
 

@@ -150,6 +150,14 @@ impl LocalStorage {
         calendar_href: &str,
         ics_content: &str,
     ) -> Result<usize> {
+        // Prevent writing to trash or recovery calendars - redirect to default
+        let calendar_href =
+            if calendar_href == LOCAL_TRASH_HREF || calendar_href == "local://recovery" {
+                LOCAL_CALENDAR_HREF
+            } else {
+                calendar_href
+            };
+
         let mut imported_tasks = Vec::new();
         // Normalize line endings to \r\n for consistent parsing
         let normalized_content = ics_content.replace("\r\n", "\n").replace('\n', "\r\n");

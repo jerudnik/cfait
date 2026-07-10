@@ -291,6 +291,7 @@
     "import_failed": "Ошибка импорта: %{error}",
     "import_failed_read_text": "Не удалось прочитать файл как текст: %{error}",
     "import_failed_to_parse": "Не удалось распознать ICS файл: %{error}",
+    "error_cannot_import_to_system_calendar": "Невозможно импортировать в системный календарь (корзина/восстановление).",
     "import_file_name": "Файл: %{file}",
     "import_success": {
         "one": "Успешно загружена 1 задача",

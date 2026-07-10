@@ -414,6 +414,7 @@
     "import_failed": "Import failed: %{error}",
     "import_failed_read_text": "Failed to read file as text: %{error}",
     "import_failed_to_parse": "Failed to parse ICS file: %{error}",
+    "error_cannot_import_to_system_calendar": "Cannot import to system calendar (trash/recovery).",
     "import_file_name": "File: %{file}",
     "import_success": {
         "one": "Successfully imported 1 task",

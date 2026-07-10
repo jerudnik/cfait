@@ -1292,7 +1292,11 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.ics_import_selected_calendar = app
                 .calendars
                 .iter()
-                .filter(|c| !app.disabled_calendars.contains(&c.href))
+                .filter(|c| {
+                    !app.disabled_calendars.contains(&c.href)
+                        && c.href != crate::storage::LOCAL_TRASH_HREF
+                        && c.href != "local://recovery"
+                })
                 .map(|c| c.href.clone())
                 .next();
 

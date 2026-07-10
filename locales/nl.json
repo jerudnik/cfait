@@ -97,6 +97,7 @@
     "cli_task_placeholder": "taak…",
     "cli_title": "Cfait v%{version} - een krachtige, snelle en elegante CalDAV takenbeheerder (%{mode})",
     "cli_usage_import": "Gebruik: cfait import <bestand.ics> [--collection <id>]",
+    "error_cannot_import_to_system_calendar": "Kan niet importeren naar systeem kalender (prullenbak/herstel).",
     "cli_view_description": "Beschrijving:",
     "cli_view_due": "Uiterste datum:",
     "cli_view_location": "Locatie:",

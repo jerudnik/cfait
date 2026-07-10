@@ -291,6 +291,7 @@
     "import_failed": "Import selhal: %{error}",
     "import_failed_read_text": "Nepodařilo se přečíst soubor jako text: %{error}",
     "import_failed_to_parse": "Nepodařilo se zpracovat soubor ICS: %{error}",
+    "error_cannot_import_to_system_calendar": "Nelze importovat do systémového kalendáře (koš/obnova).",
     "import_file_name": "Soubor: %{file}",
     "import_success": {
         "one": "Úspěšně importován 1 úkol",

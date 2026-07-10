@@ -390,6 +390,7 @@
     "import_failed": "Importación fallida: %{error}",
     "import_failed_read_text": "Error al leer el archivo como texto: %{error}",
     "import_failed_to_parse": "No se ha podido analizar el archivo ICS: %{error}",
+    "error_cannot_import_to_system_calendar": "No se puede importar al calendario del sistema (papelera/recuperación).",
     "import_file_name": "Archivo: %{file}",
     "import_success": {
         "one": "1 tarea importada correctamente",

@@ -852,6 +852,14 @@ impl CfaitMobile {
         calendar_href: String,
         ics_content: String,
     ) -> Result<String, MobileError> {
+        // Prevent importing to trash or recovery calendars
+        if calendar_href == crate::storage::LOCAL_TRASH_HREF || calendar_href == "local://recovery"
+        {
+            return Err(MobileError::from(
+                rust_i18n::t!("error_cannot_import_to_system_calendar").to_string(),
+            ));
+        }
+
         let count = LocalStorage::import_from_ics(self.ctx.as_ref(), &calendar_href, &ics_content)
             .map_err(|e| MobileError::from(e.to_string()))?;
         let msg = if count == 1 {

@@ -380,6 +380,7 @@
     "import_failed": "导入失败：%{error}",
     "import_failed_read_text": "无法将文件作为文本读取：%{error}",
     "import_failed_to_parse": "无法解析 ICS 文件：%{error}",
+    "error_cannot_import_to_system_calendar": "无法导入到系统日历（回收站/恢复）。",
     "import_file_name": "文件：%{file}",
     "import_success": {
         "one": "已成功导入 1 个任务",

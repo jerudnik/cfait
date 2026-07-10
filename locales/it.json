@@ -195,6 +195,7 @@
     "import_action": "Importa",
     "import_error": "Errore nell'importazione: %{error}",
     "import_failed": "Importazione fallita: %{error}",
+    "error_cannot_import_to_system_calendar": "Non è possibile importare nel calendario di sistema (cestino/recupero).",
     "import_file_name": "File: %{file}",
     "import_success": {
         "one": "1 attività importata correttamente",

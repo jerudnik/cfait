@@ -286,6 +286,15 @@ async fn main() -> Result<()> {
                 "local://default".to_string()
             };
 
+            // Prevent importing to trash or recovery calendars
+            if href == cfait::storage::LOCAL_TRASH_HREF || href == "local://recovery" {
+                eprintln!(
+                    "{}",
+                    rust_i18n::t!("error_cannot_import_to_system_calendar")
+                );
+                std::process::exit(1);
+            }
+
             match LocalStorage::import_from_ics(ctx.as_ref(), &href, &ics_content) {
                 Ok(count) => {
                     if count == 1 {
