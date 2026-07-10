@@ -1806,16 +1806,35 @@ impl CfaitMobile {
             focused_task_uid: focused_task_uid.as_deref(),
         });
 
+        let mut last_calendar_href = String::new();
         let tasks = filtered
             .items
             .into_iter()
             .filter_map(|item| {
                 if let crate::store::TaskListItem::Task(t) = item {
-                    Some(task_to_mobile(&t, &store))
+                    let mt = task_to_mobile(&t, &store);
+                    last_calendar_href = mt.calendar_href.clone();
+                    Some(mt)
                 } else if let crate::store::TaskListItem::ExpandGroup(p_uid, depth) = item {
-                    Some(MobileTask::empty_virtual("expand", &p_uid, depth as u32))
+                    let mut vt = MobileTask::empty_virtual("expand", &p_uid, depth as u32);
+                    vt.calendar_href = if p_uid.is_empty() {
+                        last_calendar_href.clone()
+                    } else if let Some(p) = store.get_task_ref(&p_uid) {
+                        p.calendar_href.clone()
+                    } else {
+                        last_calendar_href.clone()
+                    };
+                    Some(vt)
                 } else if let crate::store::TaskListItem::CollapseGroup(p_uid, depth) = item {
-                    Some(MobileTask::empty_virtual("collapse", &p_uid, depth as u32))
+                    let mut vt = MobileTask::empty_virtual("collapse", &p_uid, depth as u32);
+                    vt.calendar_href = if p_uid.is_empty() {
+                        last_calendar_href.clone()
+                    } else if let Some(p) = store.get_task_ref(&p_uid) {
+                        p.calendar_href.clone()
+                    } else {
+                        last_calendar_href.clone()
+                    };
+                    Some(vt)
                 } else {
                     None
                 }
