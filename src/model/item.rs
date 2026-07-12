@@ -1347,4 +1347,24 @@ impl Task {
     pub fn is_paused(&self) -> bool {
         crate::model::TaskDisplay::is_paused(self)
     }
+
+    pub fn inherit_properties(
+        &mut self,
+        parent_categories: &[String],
+        parent_location: &Option<String>,
+        parent_priority: u8,
+    ) {
+        for cat in parent_categories {
+            if !self.categories.contains(cat) {
+                self.categories.push(cat.clone());
+            }
+        }
+        if self.location.is_none() {
+            self.location = parent_location.clone();
+        }
+        if self.priority == 0 {
+            self.priority = parent_priority;
+        }
+        self.categories.sort();
+    }
 }

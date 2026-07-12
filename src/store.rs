@@ -1369,6 +1369,16 @@ impl TaskStore {
         let mut resolved_hrefs = HashMap::new();
         resolved_hrefs.insert(root_uid.to_string(), root_calendar_href.clone());
 
+        let mut resolved_props: HashMap<String, (Vec<String>, Option<String>, u8)> = HashMap::new();
+        resolved_props.insert(
+            root_uid.to_string(),
+            (
+                root_clone.categories.clone(),
+                root_clone.location.clone(),
+                root_clone.priority,
+            ),
+        );
+
         for ext in extracted {
             let task_uid = ext.parsed_existing_uid.clone().unwrap_or(ext.uid.clone());
             active_uids.insert(task_uid.clone());
@@ -1381,6 +1391,8 @@ impl TaskStore {
                 .get(&p_uid_str)
                 .cloned()
                 .unwrap_or_else(|| root_calendar_href.clone());
+
+            let p_props = resolved_props.get(&p_uid_str).cloned();
 
             let parent_uid = if task_uid == root_uid {
                 if let Some(t) = self.get_task_ref(&task_uid) {
@@ -1447,12 +1459,24 @@ impl TaskStore {
                 if old_href != final_href {
                     actions.push(crate::journal::Action::Move(existing.clone(), final_href));
                 }
+                resolved_props.insert(
+                    task_uid.clone(),
+                    (
+                        clone.categories.clone(),
+                        clone.location.clone(),
+                        clone.priority,
+                    ),
+                );
                 tasks_to_update.push(clone);
             } else {
                 let mut new_task =
                     crate::model::Task::new(&ext.raw_text, aliases, default_reminder_time);
                 new_task.uid = task_uid.clone();
                 new_task.description = ext.description;
+
+                if let Some((p_cats, p_loc, p_prio)) = p_props {
+                    new_task.inherit_properties(&p_cats, &p_loc, p_prio);
+                }
 
                 let smart_status = new_task.status;
                 new_task.status = ext.status;
@@ -1492,6 +1516,15 @@ impl TaskStore {
 
                 new_task.is_note = ext.is_note;
                 new_task.percent_complete = ext.percent_complete;
+
+                resolved_props.insert(
+                    task_uid.clone(),
+                    (
+                        new_task.categories.clone(),
+                        new_task.location.clone(),
+                        new_task.priority,
+                    ),
+                );
 
                 tasks_to_create.push(new_task);
             }

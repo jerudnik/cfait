@@ -1346,11 +1346,30 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
                     new_href.clone(),
                 ));
             }
-            actions.push(crate::journal::Action::Update(task_copy));
+            actions.push(crate::journal::Action::Update(task_copy.clone()));
+
+            let mut resolved_props = std::collections::HashMap::new();
+            resolved_props.insert(
+                edit_uid.clone(),
+                (
+                    task_copy.categories.clone(),
+                    task_copy.location.clone(),
+                    task_copy.priority,
+                ),
+            );
 
             for ext in extracted_subtasks {
                 let mut sub = TodoTask::new(&ext.raw_text, &app.tag_aliases, config_time);
                 sub.uid = ext.uid;
+
+                let p_uid_str = ext.parent_uid.clone().unwrap_or_else(|| edit_uid.clone());
+                if let Some((p_cats, p_loc, p_prio)) = resolved_props.get(&p_uid_str) {
+                    sub.inherit_properties(p_cats, p_loc, *p_prio);
+                }
+                resolved_props.insert(
+                    sub.uid.clone(),
+                    (sub.categories.clone(), sub.location.clone(), sub.priority),
+                );
 
                 if let Err(e) = app.store.resolve_dependencies(&mut sub) {
                     app.error_msg = Some(e);
@@ -1469,11 +1488,30 @@ fn handle_submit(app: &mut GuiApp) -> Task<Message> {
 
             let parent_uid = new_task.uid.clone();
 
+            let mut resolved_props = std::collections::HashMap::new();
+            resolved_props.insert(
+                parent_uid.clone(),
+                (
+                    new_task.categories.clone(),
+                    new_task.location.clone(),
+                    new_task.priority,
+                ),
+            );
+
             let mut tasks_to_create = vec![new_task];
 
             for ext in extracted_subtasks {
                 let mut sub = TodoTask::new(&ext.raw_text, &app.tag_aliases, config_time);
                 sub.uid = ext.uid;
+
+                let p_uid_str = ext.parent_uid.clone().unwrap_or_else(|| parent_uid.clone());
+                if let Some((p_cats, p_loc, p_prio)) = resolved_props.get(&p_uid_str) {
+                    sub.inherit_properties(p_cats, p_loc, *p_prio);
+                }
+                resolved_props.insert(
+                    sub.uid.clone(),
+                    (sub.categories.clone(), sub.location.clone(), sub.priority),
+                );
 
                 if let Err(e) = app.store.resolve_dependencies(&mut sub) {
                     app.error_msg = Some(e);

@@ -2293,15 +2293,33 @@ impl CfaitMobile {
             .clone()
             .unwrap_or(crate::storage::LOCAL_CALENDAR_HREF.to_string());
 
+        let parent_props = (
+            task.categories.clone(),
+            task.location.clone(),
+            task.priority,
+        );
+
         let parent_uid = self
             .controller
             .create_task(task)
             .await
             .map_err(MobileError::from)?;
 
+        let mut resolved_props = std::collections::HashMap::new();
+        resolved_props.insert(parent_uid.clone(), parent_props);
+
         for ext in extracted_subtasks {
             let mut sub = Task::new(&ext.raw_text, &config.tag_aliases, def_time);
             sub.uid = ext.uid.clone();
+
+            let p_uid_str = ext.parent_uid.clone().unwrap_or_else(|| parent_uid.clone());
+            if let Some((p_cats, p_loc, p_prio)) = resolved_props.get(&p_uid_str) {
+                sub.inherit_properties(p_cats, p_loc, *p_prio);
+            }
+            resolved_props.insert(
+                sub.uid.clone(),
+                (sub.categories.clone(), sub.location.clone(), sub.priority),
+            );
 
             let store = self.controller.store.lock().await;
             if let Err(e) = store.resolve_dependencies(&mut sub) {
@@ -2430,10 +2448,20 @@ impl CfaitMobile {
 
         let mut store = self.controller.store.lock().await;
         let mut actions = Vec::new();
+        let mut resolved_props = std::collections::HashMap::new();
+
         let parent_href = if let Some((task, _)) = store.get_task_mut(&uid) {
             task.description = clean_desc;
             task.sequence += 1;
             let href = task.calendar_href.clone();
+            resolved_props.insert(
+                uid.clone(),
+                (
+                    task.categories.clone(),
+                    task.location.clone(),
+                    task.priority,
+                ),
+            );
             actions.push(crate::journal::Action::Update(task.clone()));
             href
         } else {
@@ -2443,6 +2471,16 @@ impl CfaitMobile {
         for ext in extracted {
             let mut sub = crate::model::Task::new(&ext.raw_text, &config.tag_aliases, def_time);
             sub.uid = ext.uid;
+
+            let p_uid_str = ext.parent_uid.clone().unwrap_or_else(|| uid.clone());
+            if let Some((p_cats, p_loc, p_prio)) = resolved_props.get(&p_uid_str) {
+                sub.inherit_properties(p_cats, p_loc, *p_prio);
+            }
+            resolved_props.insert(
+                sub.uid.clone(),
+                (sub.categories.clone(), sub.location.clone(), sub.priority),
+            );
+
             if !ext.description.is_empty() {
                 if sub.description.is_empty() {
                     sub.description = ext.description;

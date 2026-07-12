@@ -613,6 +613,9 @@ fun HomeScreen(
             val sb = StringBuilder()
             fun quote(s: String): String =
                 if (s.contains(" ") || s.contains("\"")) "\"${s.replace("\"", "\\\"")}\"" else s
+            if (task.priority.toInt() > 0) {
+                sb.append("!${task.priority} ")
+            }
             task.categories.forEach { cat -> sb.append("#${quote(cat)} ") }
             task.location?.let { loc -> sb.append("@@${quote(loc)} ") }
             newTaskText = sb.toString()

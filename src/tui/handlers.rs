@@ -602,6 +602,17 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
         parent.calendar_href = target_href.clone();
 
         let parent_uid = parent.uid.clone();
+
+        let mut resolved_props = std::collections::HashMap::new();
+        resolved_props.insert(
+            parent_uid.clone(),
+            (
+                parent.categories.clone(),
+                parent.location.clone(),
+                parent.priority,
+            ),
+        );
+
         state.store.add_task(parent.clone());
 
         tokio::spawn({
@@ -618,6 +629,16 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
         for ext in extracted {
             let mut sub = Task::new(&ext.raw_text, &state.tag_aliases, def_time);
             sub.uid = ext.uid;
+
+            let p_uid_str = ext.parent_uid.clone().unwrap_or_else(|| parent_uid.clone());
+            if let Some((p_cats, p_loc, p_prio)) = resolved_props.get(&p_uid_str) {
+                sub.inherit_properties(p_cats, p_loc, *p_prio);
+            }
+            resolved_props.insert(
+                sub.uid.clone(),
+                (sub.categories.clone(), sub.location.clone(), sub.priority),
+            );
+
             if let Err(e) = state.store.resolve_dependencies(&mut sub) {
                 state.message = e;
                 return;
@@ -705,16 +726,36 @@ fn save_description(state: &mut AppState, action_tx: &Sender<Action>) {
             let def_time =
                 chrono::NaiveTime::parse_from_str(&config.default_reminder_time, "%H:%M").ok();
 
+            let mut resolved_props = std::collections::HashMap::new();
+
             if let Some((t_mut, _)) = state.store.get_task_mut(&uid) {
                 t_mut.description = clean_desc;
                 t_mut.sequence += 1;
                 parent_href = t_mut.calendar_href.clone();
+                resolved_props.insert(
+                    uid.clone(),
+                    (
+                        t_mut.categories.clone(),
+                        t_mut.location.clone(),
+                        t_mut.priority,
+                    ),
+                );
                 actions.push(crate::journal::Action::Update(t_mut.clone()));
             }
 
             for ext in extracted {
                 let mut sub = Task::new(&ext.raw_text, &state.tag_aliases, def_time);
                 sub.uid = ext.uid;
+
+                let p_uid_str = ext.parent_uid.clone().unwrap_or_else(|| uid.clone());
+                if let Some((p_cats, p_loc, p_prio)) = resolved_props.get(&p_uid_str) {
+                    sub.inherit_properties(p_cats, p_loc, *p_prio);
+                }
+                resolved_props.insert(
+                    sub.uid.clone(),
+                    (sub.categories.clone(), sub.location.clone(), sub.priority),
+                );
+
                 if let Err(e) = state.store.resolve_dependencies(&mut sub) {
                     state.message = e;
                     return;
