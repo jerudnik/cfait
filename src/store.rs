@@ -1445,6 +1445,7 @@ impl TaskStore {
                 }
 
                 clone.percent_complete = ext.percent_complete;
+                clone.is_note = ext.is_note;
 
                 let final_href = if let Some(target) = clone.target_collection.take() {
                     crate::model::resolve_collection(&target, calendars, &inherited_href)
@@ -1923,7 +1924,7 @@ impl TaskStore {
     /// Determine explicit blocking for a task by checking 'blocked' category and dependencies.
     /// This uses the store's index for O(1) existence checks of dependency UIDs.
     pub fn is_blocked(&self, task: &Task) -> bool {
-        if task.categories.contains(&"blocked".to_string()) {
+        if task.manual_block {
             return true;
         }
         if task.dependencies.is_empty() {
@@ -2235,7 +2236,7 @@ impl TaskStore {
 
         // Helper: explicit blocked state (ignores inherited parent blocking)
         let check_is_blocked_explicit = |t: &Task, done_set: &HashSet<String>| -> bool {
-            if t.categories.contains(&"blocked".to_string()) {
+            if t.manual_block {
                 return true;
             }
             if t.dependencies.is_empty() {
@@ -3352,6 +3353,7 @@ mod tests {
             collapsed,
             pinned: false,
             is_note: false,
+            manual_block: false,
             time_spent_seconds: 0,
             last_started_at: None,
             sessions: vec![],

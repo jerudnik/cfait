@@ -61,6 +61,9 @@ pub enum ExactToken {
     Weekday(&'static str),
     Month(u32),
     Number(u32),
+    IsNote,
+    IsPinned,
+    IsBlocked,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -81,7 +84,6 @@ pub enum PrefixToken {
     Collection,
     Dependency,
     Rel,
-    Note,
 }
 
 pub struct ParserLexicon {
@@ -101,6 +103,7 @@ pub struct ParserLexicon {
     pub search_is_ongoing: String,
     pub search_is_ready: String,
     pub search_is_blocked: String,
+    pub search_is_note: String,
     pub parser_collection: String,
 }
 
@@ -281,6 +284,12 @@ impl ParserLexicon {
         add_exact("parser_months_nov", "nov,november", ExactToken::Month(11));
         add_exact("parser_months_dec", "dec,december", ExactToken::Month(12));
 
+        add_exact("parser_is_note", "is:note", ExactToken::IsNote);
+        add_exact("parser_is_pinned", "is:pinned", ExactToken::IsPinned);
+
+        // Map the existing search translation to the exact token so they match perfectly
+        add_exact("search_is_blocked", "is:blocked", ExactToken::IsBlocked);
+
         let nums_en = "one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve";
         let nums_loc = rust_i18n::t!("parser_numbers_1_to_12");
         for (i, w) in nums_en.split(',').enumerate() {
@@ -311,7 +320,6 @@ impl ParserLexicon {
         add_prefix("parser_collection", "col:", PrefixToken::Collection);
         add_prefix("parser_dep", "dep:,depends:", PrefixToken::Dependency);
         add_prefix("parser_rel", "rel:,related:", PrefixToken::Rel);
-        add_prefix("parser_note", "note:,is:note", PrefixToken::Note);
 
         // Merge logic: Localized translations unconditionally overwrite English canonicals.
         // This ensures e.g., French "mar" (Mardi) overwrites English "mar" (March).
@@ -361,6 +369,7 @@ impl ParserLexicon {
             search_is_ongoing: rust_i18n::t!("search_is_ongoing").to_lowercase(),
             search_is_ready: rust_i18n::t!("search_is_ready").to_lowercase(),
             search_is_blocked: rust_i18n::t!("search_is_blocked").to_lowercase(),
+            search_is_note: rust_i18n::t!("search_is_note").to_lowercase(),
             parser_collection: rust_i18n::t!("parser_collection").to_lowercase(),
         }
     }
@@ -1166,11 +1175,13 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 }
             } else if word_lower == "+cal" || word_lower == "-cal" {
                 matched_kind = Some(SyntaxType::Calendar);
-            } else if word_lower == "+pin" || word_lower == "-pin" {
+            } else if exact == Some(&ExactToken::IsPinned) {
                 matched_kind = Some(SyntaxType::Pin);
-            } else if pref == Some(PrefixToken::Note) {
+            } else if exact == Some(&ExactToken::IsNote) {
                 matched_kind = Some(SyntaxType::Note);
-                words_consumed = 1;
+            } else if exact == Some(&ExactToken::IsBlocked) {
+                // Color it like a dependency (orange) since it's a blocker state
+                matched_kind = Some(SyntaxType::Dependency);
             } else if pref == Some(PrefixToken::Geo) {
                 let mut temp_consumed = 1;
                 let mut raw_val = rem_original.to_string();
@@ -2409,13 +2420,7 @@ pub fn is_special_token(word: &str) -> bool {
 
 pub fn is_special_token_with_lex(word: &str, lex: &ParserLexicon) -> bool {
     let lower = word.to_lowercase();
-    if word.starts_with('#')
-        || word.starts_with('!')
-        || lower == "+pin"
-        || lower == "-pin"
-        || lower == "+cal"
-        || lower == "-cal"
-    {
+    if word.starts_with('#') || word.starts_with('!') || lower == "+cal" || lower == "-cal" {
         return true;
     }
     if lex.extract_prefix(word, &lower).is_some() {
@@ -2423,6 +2428,12 @@ pub fn is_special_token_with_lex(word: &str, lex: &ParserLexicon) -> bool {
     }
     let exact = lex.exact.get(&lower);
     if exact == Some(&ExactToken::Until) || exact == Some(&ExactToken::Except) {
+        return true;
+    }
+    if matches!(
+        exact,
+        Some(ExactToken::IsNote) | Some(ExactToken::IsPinned) | Some(ExactToken::IsBlocked)
+    ) {
         return true;
     }
     false
@@ -2450,10 +2461,13 @@ pub fn apply_smart_input(
     task.create_event = None;
     task.goal = None;
     task.is_note = false;
+    task.pinned = false; // Reset pinned state so deleting the token unpins
     task.categories.clear();
     task.alarms.clear();
     task.exdates.clear();
     task.percent_complete = None;
+
+    let mut explicit_note_flag: Option<bool> = None;
 
     enum PendingAlarm {
         Relative(u32),
@@ -2953,10 +2967,12 @@ pub fn apply_smart_input(
             task.create_event = Some(true);
         } else if token_lower == "-cal" {
             task.create_event = Some(false);
-        } else if token_lower == "+pin" {
+        } else if exact == Some(&ExactToken::IsPinned) {
             task.pinned = true;
-        } else if token_lower == "-pin" {
-            task.pinned = false;
+        } else if exact == Some(&ExactToken::IsNote) {
+            explicit_note_flag = Some(true);
+        } else if exact == Some(&ExactToken::IsBlocked) {
+            task.manual_block = true;
         } else if pref == Some(PrefixToken::Geo) {
             let mut raw_val = rem_original.to_string();
             let mut temp_consumed = 1;
@@ -3221,9 +3237,6 @@ pub fn apply_smart_input(
                 summary_words.push(unescape(token));
             }
             consumed = 1;
-        } else if pref == Some(PrefixToken::Note) {
-            task.is_note = true;
-            consumed = 1;
         } else if pref == Some(PrefixToken::Goal) {
             let val = rem;
             let (target_str, period_str) = if let Some(idx) = val.find('/') {
@@ -3342,6 +3355,16 @@ pub fn apply_smart_input(
     }
 
     task.summary = summary_words.join(" ");
+    let mut implicit_note = false;
+    if task.summary.starts_with("- ") || task.summary.starts_with("* ") {
+        implicit_note = true;
+        task.summary = task.summary[2..].trim_start().to_string();
+    } else if task.summary == "-" || task.summary == "*" {
+        implicit_note = true;
+        task.summary = String::new();
+    }
+    task.is_note = explicit_note_flag.unwrap_or(implicit_note);
+
     task.categories.sort();
     task.categories.dedup();
 

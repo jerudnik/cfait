@@ -487,6 +487,13 @@ impl Task {
             return true;
         }
 
+        if part_lower == "is:note" || part_lower == lex.search_is_note {
+            return self.is_note;
+        }
+        if lex.exact.get(&part_lower) == Some(&crate::model::parser::ExactToken::IsPinned) {
+            return self.pinned;
+        }
+
         // --- Fallback: Text Search ---
         // Matches summary, description, categories, or location.
         let summary_match = self.summary.to_lowercase().contains(&part_lower);

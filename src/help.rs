@@ -58,7 +58,6 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
     let p_url = get_first("parser_url");
     let p_dep = get_first("parser_dep");
     let p_rel = get_first("parser_rel");
-    let p_note = get_first("parser_note");
 
     let e_today = get_first("parser_today");
     let e_tomorrow = get_first("parser_tomorrow");
@@ -265,9 +264,9 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: format!("{} {p_due}{e_tomorrow} +cal", rust_i18n::t!("example_task")),
                 },
                 HelpItem {
-                    keys: "+pin / -pin".to_string(),
+                    keys: "is:pinned".to_string(),
                     desc: rust_i18n::t!("help_metadata_pin_task").to_string(),
-                    example: format!("{} +pin", rust_i18n::t!("example_important_task")),
+                    example: format!("{} is:pinned", rust_i18n::t!("example_important_task")),
                 },
             ],
         },
@@ -325,9 +324,9 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: "\\#not-a-tag".to_string(),
                 },
                 HelpItem {
-                    keys: p_note.to_string(),
+                    keys: "- / is:note".to_string(),
                     desc: rust_i18n::t!("help_metadata_note").to_string(),
-                    example: format!("{} {}", p_note, rust_i18n::t!("example_pantry")),
+                    example: format!("- {}", rust_i18n::t!("example_pantry")),
                 },
                 HelpItem {
                     keys: format!("{p_done}date"),

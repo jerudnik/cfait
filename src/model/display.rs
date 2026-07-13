@@ -133,6 +133,13 @@ impl TaskDisplay for Task {
         use chrono::{Duration, Local};
 
         let mut s = crate::model::parser::escape_summary(&self.summary);
+        if self.is_note {
+            if s.is_empty() {
+                s = "-".to_string();
+            } else {
+                s = format!("- {}", s);
+            }
+        }
         if self.priority > 0 {
             s.push_str(&format!(" !{}", self.priority));
         }
@@ -274,11 +281,19 @@ impl TaskDisplay for Task {
         }
 
         if self.pinned {
-            s.push_str(" +pin");
+            s.push_str(" is:pinned");
         }
 
-        if self.is_note {
-            s.push_str(" note:");
+        if self.manual_block {
+            let block_str = rust_i18n::t!("search_is_blocked");
+            if block_str == "search_is_blocked" || block_str.is_empty() {
+                s.push_str(" is:blocked");
+            } else {
+                s.push_str(&format!(
+                    " {}",
+                    block_str.split(',').next().unwrap_or("is:blocked").trim()
+                ));
+            }
         }
 
         if let Some(goal) = &self.goal {

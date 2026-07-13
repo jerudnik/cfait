@@ -806,14 +806,6 @@ pub fn view_task_row<'a>(
 
             let summary_text: Element<'a, Message> = rich_text(summary_spans)
                 .size(font_size)
-                .font(if task.is_note {
-                    iced::Font {
-                        weight: iced::font::Weight::Bold,
-                        ..Default::default()
-                    }
-                } else {
-                    iced::Font::DEFAULT
-                })
                 .width(Length::Fill)
                 .on_link_click(|target: String| {
                     if target.starts_with("http://") || target.starts_with("https://") {

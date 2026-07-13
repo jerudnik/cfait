@@ -561,6 +561,13 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
             )
         };
         let mut smart_string = task.to_smart_string();
+        if task.is_note {
+            if smart_string.starts_with("- ") || smart_string.starts_with("* ") {
+                smart_string = smart_string[2..].to_string();
+            } else if smart_string == "-" || smart_string == "*" {
+                smart_string = String::new();
+            }
+        }
         if task.calendar_href != root_href {
             smart_string.push_str(&format!(
                 " col:{}",

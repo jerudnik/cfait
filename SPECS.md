@@ -27,6 +27,7 @@ Cfait is an offline-first task manager that seamlessly synchronizes with CalDAV 
 ### 1.2. The Task Entity (`VTODO` Mapping)
 Tasks map strictly to iCalendar `VTODO` components (RFC 5545). Non-standard metadata is stored via `X-CFAIT-` properties.
 *   **Status:** `NeedsAction` (Pending), `InProcess` (Timer running), `Completed`, `Cancelled`.
+*   **Manual Block:** Stored via `X-CFAIT-BLOCKED` (boolean) to explicitly mark a task as blocked without dependencies.
 *   **Dates (`DateType`):** Start (`DTSTART`) and Due (`DUE`). Supported variants:
     *   *Specific:* Exact DateTime (UTC).
     *   *All-Day:* NaiveDate.
@@ -65,7 +66,7 @@ Evaluated instantly during text input. Supported across all clients.
 | `dep:` or `depends:`| Set dependency (blocks the task). Supports short UIDs or fuzzy matching by summary. | `dep:"Install foundation"`, `dep:abc1234` |
 | `rel:` or `related:`| Set related task (sibling). Supports short UIDs or fuzzy matching by summary. | `rel:"Master plan"`, `rel:abc1234` |
 | `geo:` | Geo-coordinates. | `geo:50.1,4.2`, `geo:here` (Mobile: Fetches GPS) |
-| `note:` or `is:note` | Mark task as a note/header (hides checkbox). | `note:` |
+| `- ` or `is:note` | Mark task as a note/header (hides checkbox). | `- Pantry`, `is:note` |
 | `desc:` | Append text to the description. | `desc:"Buy milk"` or `desc:{...}` |
 | `rem:` | Reminder / Alarm. | `rem:10m`, `rem:in 1h`, `rem:8pm`, `rem:next friday` |
 | `done:` | Mark completed / Set percentage. | `done:now`, `done:yesterday`, `done:50%` |
@@ -76,7 +77,7 @@ Evaluated instantly during text input. Supported across all clients.
 | `except` | Exclusion dates (`EXDATE`). | `@daily except sat,sun` |
 | `col:` | Assign task to a specific collection/calendar. | `col:Personal`, `col:"Work Projects"` |
 | `+cal` / `-cal` | Force/prevent companion Calendar Event. | `+cal` |
-| `+pin` / `-pin` | Pin task to the top of the list. | `+pin` |
+| `is:pinned` | Pin task to the top of the list. | `is:pinned` |
 | `goal:` | Goal tracking target. | `goal:5/w`, `goal:2h/daily`, `goal:weekly` |
 
 *Rules:* 
@@ -116,14 +117,14 @@ Cfait natively supports rendering basic inline Markdown across task summaries, d
 The search bar supports a boolean recursive-descent parser.
 *   **Logic:** Implicit `AND` (space), `OR` (`|`), `NOT` (`-`), and Grouping `()`.
 *   **Primitives:**
-    *   *State:* `is:done`, `is:active`, `is:started` / `is:ongoing`, `is:blocked`.
+    *   *State:* `is:done`, `is:active`, `is:started` / `is:ongoing`, `is:blocked`, `is:note`.
     *   *Actionable:* `is:ready` (Excludes completed tasks, explicitly/implicitly blocked tasks, and tasks starting in the future. `InProcess` bypasses this).
     *   *Comparison:* `~<30m` (duration < 30m), `!<4` (priority < 4).
     *   *Dates:* `@<today` (Overdue), `^>1w` (Starts in > 1 week).
 
 ### 3.2. Multi-Stage Sorting Algorithm
 Tasks sort deterministically by rank (0 to 9), then by Overdue -> Priority -> Due Date -> Start Date -> Summary.
-*   **Rank 0:** Pinned (`+pin`).
+*   **Rank 0:** Pinned (`is:pinned`).
 *   **Ranks 1-3 (Urgent/Started/Due Soon):** Order dictated by `sort_preset` (e.g., Urgent > Started > Due Soon).
 *   **Rank 4 (Actionable):** Due date `<=` `sort_cutoff_days`.
 *   **Rank 5 (Deferred):** No due date, or `>` `sort_cutoff_days`.

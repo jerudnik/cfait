@@ -49,6 +49,7 @@ const HANDLED_KEYS: &[&str] = &[
     "X-CFAIT-COLLAPSED",
     "X-CFAIT-PINNED",
     "X-CFAIT-KIND",
+    "X-CFAIT-BLOCKED",
 ];
 
 pub struct IcsAdapter;
@@ -312,6 +313,9 @@ impl IcsAdapter {
         }
         if task.is_note {
             todo.add_property("X-CFAIT-KIND", "NOTE");
+        }
+        if task.manual_block {
+            todo.add_property("X-CFAIT-BLOCKED", "TRUE");
         }
 
         if let Some(goal) = &task.goal {
@@ -631,6 +635,10 @@ impl IcsAdapter {
             .map(|v| v.trim().to_uppercase() == "NOTE")
             .unwrap_or(false);
 
+        let mut manual_block = get_prop("X-CFAIT-BLOCKED")
+            .map(|v| v.trim().to_uppercase() == "TRUE")
+            .unwrap_or(false);
+
         let mut goal = None;
         if let Some(prop) = todo.properties().get("X-CFAIT-GOAL")
             && let Some((t_str, rest)) = prop.value().split_once(':')
@@ -839,6 +847,13 @@ impl IcsAdapter {
         if let Some(prop) = todo.properties().get("CATEGORIES") {
             categories.extend(split_ics_list(prop.value()));
         }
+
+        // MIGRATION: Convert legacy `#blocked` tags into the native property
+        if categories.iter().any(|c| c.eq_ignore_ascii_case("blocked")) {
+            categories.retain(|c| !c.eq_ignore_ascii_case("blocked"));
+            manual_block = true;
+        }
+
         categories.sort();
         categories.dedup();
 
@@ -1088,6 +1103,7 @@ impl IcsAdapter {
             collapsed,
             pinned,
             is_note,
+            manual_block,
             time_spent_seconds,
             last_started_at,
             sessions: manual_sessions, // Use manual parsing result

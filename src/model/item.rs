@@ -310,6 +310,9 @@ pub struct Task {
     /// When `true`, task acts as a structural note or header (hides checkbox).
     #[serde(default)]
     pub is_note: bool,
+    /// When `true`, task is explicitly marked as blocked without relying on dependencies.
+    #[serde(default)]
+    pub manual_block: bool,
 
     // Time-tracking fields:
     // - `time_spent_seconds` accumulates committed seconds of work for this task.
@@ -642,6 +645,7 @@ impl Task {
             collapsed: false,
             pinned: false,
             is_note: false,
+            manual_block: false,
             time_spent_seconds: 0,
             last_started_at: None,
             sessions: Vec::new(),
