@@ -1210,7 +1210,7 @@ impl CfaitMobile {
 
         // Now acquire the store lock once
         let store = self.controller.store.blocking_lock();
-        
+
         // Process locals - need lock to check if trash/recovery are empty
         if !locals.is_empty() {
             for loc in locals {
@@ -1233,7 +1233,7 @@ impl CfaitMobile {
                 });
             }
         }
-        
+
         // Process remote calendars - no need to check store for these
         if !cals.is_empty() {
             for c in cals {
@@ -1357,7 +1357,7 @@ impl CfaitMobile {
     pub fn load_from_cache(&self) {
         // Load all disk data BEFORE acquiring the store lock
         let mut loaded_calendars = Vec::new();
-        
+
         if let Ok(locals) = LocalCalendarRegistry::load(self.ctx.as_ref()) {
             for loc in locals {
                 match LocalStorage::load_for_href(self.ctx.as_ref(), &loc.href) {
@@ -1393,14 +1393,14 @@ impl CfaitMobile {
                 }
             }
         }
-        
+
         // Now acquire the store lock and insert all loaded data
         let mut store = self.controller.store.blocking_lock();
         store.clear();
         for (href, tasks) in loaded_calendars {
             store.insert(href, tasks);
         }
-        
+
         let config = Config::load(self.ctx.as_ref()).unwrap_or_default();
         let index = AlarmIndex::rebuild_from_tasks(
             &store.calendars,

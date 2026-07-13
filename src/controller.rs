@@ -165,7 +165,7 @@ impl TaskController {
         }
 
         let settings_uid = "cfait-global-settings-v1";
-        
+
         // Load from disk cache first to get the freshest settings task
         // The background worker uses an isolated TaskStore which might be stale.
         let mut existing_task_from_disk = None;
@@ -179,19 +179,18 @@ impl TaskController {
                 }
             }
         }
-        
+
         // Now acquire the store lock to check in-memory state
         let mut store = self.store.lock().await;
         let mut existing_task = store.get_task_ref(settings_uid).cloned();
-        
+
         // Prefer the disk version if it's newer
-        if let Some(ref disk_task) = existing_task_from_disk {
-            if existing_task.is_none()
+        if let Some(ref disk_task) = existing_task_from_disk
+            && (existing_task.is_none()
                 || existing_task.as_ref().unwrap().etag != disk_task.etag
-                || existing_task.as_ref().unwrap().sequence < disk_task.sequence
-            {
-                existing_task = existing_task_from_disk;
-            }
+                || existing_task.as_ref().unwrap().sequence < disk_task.sequence)
+        {
+            existing_task = existing_task_from_disk;
         }
 
         let local_syncable = config.get_syncable();
@@ -228,7 +227,7 @@ impl TaskController {
 
                         // Drop the store lock before applying aliases (which may need to load from disk)
                         drop(store);
-                        
+
                         // Re-acquire the lock for alias application and task updates
                         let mut store = self.store.lock().await;
                         let mut modified_tasks = Vec::new();
@@ -303,7 +302,7 @@ impl TaskController {
             None => {
                 // Drop the store lock before loading from disk
                 drop(store);
-                
+
                 // Task doesn't exist, deploy local settings upstream
                 if config.settings_updated_at == 0 {
                     config.settings_updated_at = chrono::Utc::now().timestamp();
