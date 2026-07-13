@@ -715,6 +715,7 @@
     "parser_url": "url:",
     "parser_is_note": "is:note",
     "parser_is_pinned": "is:pinned",
+    "parser_is_permanent": "is:permanent",
     "parser_dep": "dep:,depends:",
     "parser_rel": "rel:,related:",
     "parser_every": "every",
@@ -757,5 +758,6 @@
     "search_is_active": "is:active",
     "search_is_started": "is:started",
     "search_is_ongoing": "is:ongoing",
-    "search_is_note": "is:note"
+    "search_is_note": "is:note",
+    "search_is_permanent": "is:permanent"
 }

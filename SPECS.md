@@ -79,6 +79,7 @@ Evaluated instantly during text input. Supported across all clients.
 | `col:` | Assign task to a specific collection/calendar. | `col:Personal`, `col:"Work Projects"` |
 | `+cal` / `-cal` | Force/prevent companion Calendar Event. | `+cal` |
 | `is:pinned` | Pin task to the top of the list. | `is:pinned` |
+| `is:permanent` | Mark task as a permanent/continuous tracker. | `is:permanent` |
 | `goal:` | Goal tracking target. | `goal:5/w`, `goal:2h/daily`, `goal:weekly` |
 
 *Rules:* 
@@ -187,7 +188,7 @@ Goals act as quotas or habits and can be applied globally or locally.
 *   **Implicit Credit:** If a task with an `estimated_duration` is completed *without* explicitly running a timer, the remaining estimated time is granted instantly as goal progress. Logging a session fulfills "Count" goals if `sessions_count_as_completions` is true.
 
 ### 4.6. Permanent / Continuous Tasks
-Tasks tagged with `#permanent` act as endless trackers. When checked off (Completed), they do not change status. Instead:
+Tasks tagged with `is:permanent` act as endless trackers. When checked off (Completed), they do not change status. Instead:
 1. If a timer is running, it is committed as a work session.
 2. If no timer is running, a session is logged using the task's `estimated_duration` (or the default goal duration).
 3. The task remains in `NeedsAction` state.

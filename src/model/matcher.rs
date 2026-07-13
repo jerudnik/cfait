@@ -490,6 +490,9 @@ impl Task {
         if part_lower == "is:note" || part_lower == lex.search_is_note {
             return self.is_note;
         }
+        if part_lower == "is:permanent" || part_lower == lex.search_is_permanent {
+            return self.permanent;
+        }
         if lex.exact.get(&part_lower) == Some(&crate::model::parser::ExactToken::IsPinned) {
             return self.pinned;
         }

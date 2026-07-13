@@ -50,6 +50,7 @@ const HANDLED_KEYS: &[&str] = &[
     "X-CFAIT-PINNED",
     "X-CFAIT-KIND",
     "X-CFAIT-BLOCKED",
+    "X-CFAIT-PERMANENT",
 ];
 
 pub struct IcsAdapter;
@@ -316,6 +317,9 @@ impl IcsAdapter {
         }
         if task.manual_block {
             todo.add_property("X-CFAIT-BLOCKED", "TRUE");
+        }
+        if task.permanent {
+            todo.add_property("X-CFAIT-PERMANENT", "TRUE");
         }
 
         if let Some(goal) = &task.goal {
@@ -639,6 +643,10 @@ impl IcsAdapter {
             .map(|v| v.trim().to_uppercase() == "TRUE")
             .unwrap_or(false);
 
+        let mut permanent = get_prop("X-CFAIT-PERMANENT")
+            .map(|v| v.trim().to_uppercase() == "TRUE")
+            .unwrap_or(false);
+
         let mut goal = None;
         if let Some(prop) = todo.properties().get("X-CFAIT-GOAL")
             && let Some((t_str, rest)) = prop.value().split_once(':')
@@ -852,6 +860,14 @@ impl IcsAdapter {
         if categories.iter().any(|c| c.eq_ignore_ascii_case("blocked")) {
             categories.retain(|c| !c.eq_ignore_ascii_case("blocked"));
             manual_block = true;
+        }
+        // MIGRATION: Convert legacy `#permanent` tags into the native property
+        if categories
+            .iter()
+            .any(|c| c.eq_ignore_ascii_case("permanent"))
+        {
+            categories.retain(|c| !c.eq_ignore_ascii_case("permanent"));
+            permanent = true;
         }
 
         categories.sort();
@@ -1104,6 +1120,7 @@ impl IcsAdapter {
             pinned,
             is_note,
             manual_block,
+            permanent,
             time_spent_seconds,
             last_started_at,
             sessions: manual_sessions, // Use manual parsing result

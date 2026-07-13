@@ -55,6 +55,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
     let p_done = get_first("parser_done");
     let p_desc = get_first("parser_desc");
     let p_goal = get_first("parser_goal");
+    let is_permanent = get_first("parser_is_permanent");
     let p_url = get_first("parser_url");
     let p_dep = get_first("parser_dep");
     let p_rel = get_first("parser_rel");
@@ -348,10 +349,10 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     ),
                 },
                 HelpItem {
-                    keys: "#permanent".to_string(),
+                    keys: is_permanent.to_string(),
                     desc: rust_i18n::t!("help_org_permanent").to_string(),
                     example: format!(
-                        "{} {p_duration}30{u_m}-3{u_h} #permanent",
+                        "{} {p_duration}30{u_m}-3{u_h} {is_permanent}",
                         rust_i18n::t!("example_develop_photos")
                     ),
                 },

@@ -64,6 +64,7 @@ pub enum ExactToken {
     IsNote,
     IsPinned,
     IsBlocked,
+    IsPermanent,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -104,6 +105,7 @@ pub struct ParserLexicon {
     pub search_is_ready: String,
     pub search_is_blocked: String,
     pub search_is_note: String,
+    pub search_is_permanent: String,
     pub parser_collection: String,
 }
 
@@ -286,6 +288,11 @@ impl ParserLexicon {
 
         add_exact("parser_is_note", "is:note", ExactToken::IsNote);
         add_exact("parser_is_pinned", "is:pinned", ExactToken::IsPinned);
+        add_exact(
+            "parser_is_permanent",
+            "is:permanent",
+            ExactToken::IsPermanent,
+        );
 
         // Map the existing search translation to the exact token so they match perfectly
         add_exact("search_is_blocked", "is:blocked", ExactToken::IsBlocked);
@@ -370,6 +377,7 @@ impl ParserLexicon {
             search_is_ready: rust_i18n::t!("search_is_ready").to_lowercase(),
             search_is_blocked: rust_i18n::t!("search_is_blocked").to_lowercase(),
             search_is_note: rust_i18n::t!("search_is_note").to_lowercase(),
+            search_is_permanent: rust_i18n::t!("parser_is_permanent").to_lowercase(),
             parser_collection: rust_i18n::t!("parser_collection").to_lowercase(),
         }
     }
@@ -1182,6 +1190,8 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
             } else if exact == Some(&ExactToken::IsBlocked) {
                 // Color it like a dependency (orange) since it's a blocker state
                 matched_kind = Some(SyntaxType::Dependency);
+            } else if exact == Some(&ExactToken::IsPermanent) {
+                matched_kind = Some(SyntaxType::Filter);
             } else if pref == Some(PrefixToken::Geo) {
                 let mut temp_consumed = 1;
                 let mut raw_val = rem_original.to_string();
@@ -2432,7 +2442,10 @@ pub fn is_special_token_with_lex(word: &str, lex: &ParserLexicon) -> bool {
     }
     if matches!(
         exact,
-        Some(ExactToken::IsNote) | Some(ExactToken::IsPinned) | Some(ExactToken::IsBlocked)
+        Some(ExactToken::IsNote)
+            | Some(ExactToken::IsPinned)
+            | Some(ExactToken::IsBlocked)
+            | Some(ExactToken::IsPermanent)
     ) {
         return true;
     }
@@ -2462,6 +2475,7 @@ pub fn apply_smart_input(
     task.goal = None;
     task.is_note = false;
     task.pinned = false; // Reset pinned state so deleting the token unpins
+    task.permanent = false;
     task.categories.clear();
     task.alarms.clear();
     task.exdates.clear();
@@ -2973,6 +2987,8 @@ pub fn apply_smart_input(
             explicit_note_flag = Some(true);
         } else if exact == Some(&ExactToken::IsBlocked) {
             task.manual_block = true;
+        } else if exact == Some(&ExactToken::IsPermanent) {
+            task.permanent = true;
         } else if pref == Some(PrefixToken::Geo) {
             let mut raw_val = rem_original.to_string();
             let mut temp_consumed = 1;
@@ -3024,6 +3040,8 @@ pub fn apply_smart_input(
                         // MIGRATION: Convert legacy `#blocked` tags into the native property
                         if clean_cat.eq_ignore_ascii_case("blocked") {
                             task.manual_block = true;
+                        } else if clean_cat.eq_ignore_ascii_case("permanent") {
+                            task.permanent = true;
                         } else {
                             task.categories.push(clean_cat);
                         }

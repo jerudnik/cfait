@@ -251,6 +251,7 @@ pub struct MobileTask {
     pub is_collapsed: bool,
     pub pinned: bool,
     pub has_extractable_subtasks: bool,
+    pub is_permanent: bool,
     pub created_date_iso: Option<String>,
     pub last_modified_date_iso: Option<String>,
 
@@ -316,6 +317,7 @@ impl MobileTask {
             is_collapsed: false,
             pinned: false,
             has_extractable_subtasks: false,
+            is_permanent: false,
             created_date_iso: None,
             last_modified_date_iso: None,
             goal_progress_str: None,
@@ -772,6 +774,7 @@ fn task_to_mobile(t: &Task, store: &TaskStore) -> MobileTask {
         is_collapsed: t.collapsed,
         pinned: t.pinned,
         has_extractable_subtasks: t.has_extractable_subtasks(),
+        is_permanent: t.permanent,
         created_date_iso,
         last_modified_date_iso,
         goal_progress_str,

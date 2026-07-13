@@ -1090,10 +1090,7 @@ impl TaskStore {
         let mut task_copy = self.get_task_ref(uid)?.clone();
         task_copy.sequence += 1;
 
-        let is_permanent = task_copy
-            .categories
-            .iter()
-            .any(|c| c.eq_ignore_ascii_case("permanent"));
+        let is_permanent = task_copy.permanent;
 
         if is_permanent && status == TaskStatus::Completed {
             let mut duration_to_log = 0;
@@ -3370,6 +3367,7 @@ mod tests {
             pinned: false,
             is_note: false,
             manual_block: false,
+            permanent: false,
             time_spent_seconds: 0,
             last_started_at: None,
             sessions: vec![],

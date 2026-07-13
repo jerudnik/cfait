@@ -296,6 +296,18 @@ impl TaskDisplay for Task {
             }
         }
 
+        if self.permanent {
+            let perm_str = rust_i18n::t!("parser_is_permanent");
+            if perm_str == "parser_is_permanent" || perm_str.is_empty() {
+                s.push_str(" is:permanent");
+            } else {
+                s.push_str(&format!(
+                    " {}",
+                    perm_str.split(',').next().unwrap_or("is:permanent").trim()
+                ));
+            }
+        }
+
         if let Some(goal) = &self.goal {
             let type_str = if goal.goal_type == crate::config::GoalType::Duration {
                 crate::model::parser::format_duration_compact(goal.target)

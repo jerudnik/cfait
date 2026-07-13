@@ -313,6 +313,9 @@ pub struct Task {
     /// When `true`, task is explicitly marked as blocked without relying on dependencies.
     #[serde(default)]
     pub manual_block: bool,
+    /// When `true`, the task acts as an endless tracker and logs time instead of completing.
+    #[serde(default)]
+    pub permanent: bool,
 
     // Time-tracking fields:
     // - `time_spent_seconds` accumulates committed seconds of work for this task.
@@ -646,6 +649,7 @@ impl Task {
             pinned: false,
             is_note: false,
             manual_block: false,
+            permanent: false,
             time_spent_seconds: 0,
             last_started_at: None,
             sessions: Vec::new(),
