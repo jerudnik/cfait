@@ -762,7 +762,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                     let inner_char = full_symbol.trim_start_matches('[').trim_end_matches(']');
 
                     let (prefix_bracket_l, prefix_inner, prefix_bracket_r) = if t.is_note {
-                        (Span::raw(""), Span::styled("•", base_style), Span::raw(" "))
+                        (
+                            Span::styled("[", bracket_style),
+                            Span::styled("■", base_style),
+                            Span::styled("]", bracket_style),
+                        )
                     } else {
                         (
                             Span::styled("[", bracket_style),
@@ -863,11 +867,10 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
 
                     let prefix_blocked = Span::raw(if is_blocked { " [B] " } else { " " });
 
-                    let checkbox_width = if t.is_note { 2 } else { 3 };
                     let prefix_width = (if state.active_cal_href.is_some() {
-                        t.depth * 2 + checkbox_width + 3
+                        t.depth * 2 + 6
                     } else {
-                        checkbox_width + 3
+                        6
                     }) + if t.has_visible_subtasks && t.collapsed {
                         3
                     } else {

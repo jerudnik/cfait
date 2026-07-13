@@ -51,6 +51,18 @@ fn get_available_actions(state: &AppState, task: &Task) -> Vec<crate::config::Ta
         || task.rrule.is_some();
 
     for &action in TaskAction::ALL {
+        if task.is_note
+            && matches!(
+                action,
+                crate::config::TaskAction::ToggleTimer
+                    | crate::config::TaskAction::StopTimer
+                    | crate::config::TaskAction::AddSession
+                    | crate::config::TaskAction::CompleteAndShift
+            )
+        {
+            continue;
+        }
+
         let available = match action {
             TaskAction::Move => {
                 let count = state

@@ -1295,15 +1295,23 @@ pub fn view_task_row<'a>(
             }
 
             let status_btn_element: Element<'a, Message> = if task.is_note {
-                container(text("•").size(18).color(Color {
-                    a: dim_factor,
-                    ..theme.extended_palette().background.weak.text
-                }))
-                .width(Length::Fixed(24.0))
-                .height(Length::Fixed(24.0))
-                .align_x(iced::alignment::Horizontal::Center)
-                .align_y(iced::alignment::Vertical::Center)
-                .into()
+                let note_bg = Color {
+                    a: dim_factor * 0.5,
+                    ..custom_border_color
+                };
+                container(Space::new().width(Length::Fill).height(Length::Fill))
+                    .width(Length::Fixed(24.0))
+                    .height(Length::Fixed(24.0))
+                    .style(move |_| container::Style {
+                        background: Some(note_bg.into()),
+                        border: iced::Border {
+                            color: custom_border_color,
+                            width: 1.0,
+                            radius: 4.0.into(),
+                        },
+                        ..Default::default()
+                    })
+                    .into()
             } else {
                 let status_btn = button(
                     container(if icon_char != ' ' {

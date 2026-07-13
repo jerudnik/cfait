@@ -36,9 +36,20 @@ fun TaskCheckbox(
     isDone: Boolean,
     status: String,
     isPaused: Boolean,
+    isNote: Boolean,
     calColor: Color,
     onClick: () -> Unit,
 ) {
+    if (isNote) {
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .background(calColor.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                .border(1.5.dp, calColor, RoundedCornerShape(4.dp))
+        )
+        return
+    }
+
     val bgColor =
         when {
             status == "Cancelled" -> Color(0xFF4D3333)
@@ -113,6 +124,7 @@ fun TaskRow(
                 isDone = task.isDone,
                 status = task.statusString,
                 isPaused = task.isPaused,
+                isNote = task.isNote,
                 calColor = calColor,
                 onClick = onToggle
             )
@@ -441,23 +453,25 @@ fun TaskRow(
                         onClick = { expanded = false; onClick(task.uid) },
                         leadingIcon = { NfIcon(NfIcons.EDIT, 16.sp) })
 
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                if (task.statusString == "InProcess") androidx.compose.ui.res.stringResource(R.string.pause)
-                                else if (task.isPaused) androidx.compose.ui.res.stringResource(R.string.menu_resume)
-                                else androidx.compose.ui.res.stringResource(R.string.start)
-                            )
-                        },
-                        onClick = { expanded = false; onAction("playpause") },
-                        leadingIcon = { NfIcon(if (task.statusString == "InProcess") NfIcons.PAUSE else NfIcons.PLAY, 16.sp) }
-                    )
-
-                    if (task.statusString == "InProcess" || task.isPaused) {
+                    if (!task.isNote) {
                         DropdownMenuItem(
-                            text = { Text(androidx.compose.ui.res.stringResource(R.string.stop_reset)) },
-                            onClick = { expanded = false; onAction("stop") },
-                            leadingIcon = { NfIcon(NfIcons.DEBUG_STOP, 16.sp) })
+                            text = {
+                                Text(
+                                    if (task.statusString == "InProcess") androidx.compose.ui.res.stringResource(R.string.pause)
+                                    else if (task.isPaused) androidx.compose.ui.res.stringResource(R.string.menu_resume)
+                                    else androidx.compose.ui.res.stringResource(R.string.start)
+                                )
+                            },
+                            onClick = { expanded = false; onAction("playpause") },
+                            leadingIcon = { NfIcon(if (task.statusString == "InProcess") NfIcons.PAUSE else NfIcons.PLAY, 16.sp) }
+                        )
+
+                        if (task.statusString == "InProcess" || task.isPaused) {
+                            DropdownMenuItem(
+                                text = { Text(androidx.compose.ui.res.stringResource(R.string.stop_reset)) },
+                                onClick = { expanded = false; onAction("stop") },
+                                leadingIcon = { NfIcon(NfIcons.DEBUG_STOP, 16.sp) })
+                        }
                     }
 
                     DropdownMenuItem(
@@ -489,7 +503,7 @@ fun TaskRow(
                         leadingIcon = { NfIcon(NfIcons.THUMB_TACK, 16.sp) }
                     )
 
-                    if (!task.isDone && task.statusString != "Cancelled") {
+                    if (!task.isDone && task.statusString != "Cancelled" && !task.isNote) {
                         DropdownMenuItem(
                             text = { Text(androidx.compose.ui.res.stringResource(R.string.help_metadata_log_time)) },
                             onClick = { expanded = false; onAction("add_session") },
@@ -511,7 +525,7 @@ fun TaskRow(
                         )
                     }
 
-                    if (task.isRecurring && !task.isRelativeRecurrence && !task.isDone && task.statusString != "Cancelled") {
+                    if (task.isRecurring && !task.isRelativeRecurrence && !task.isDone && task.statusString != "Cancelled" && !task.isNote) {
                         DropdownMenuItem(
                             text = { Text(androidx.compose.ui.res.stringResource(R.string.action_complete_and_shift)) },
                             onClick = { expanded = false; onAction("complete_and_shift") },
