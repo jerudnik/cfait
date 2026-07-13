@@ -323,11 +323,12 @@ impl AppState {
             if sort_by_size {
                 let count_a = sizes.get(&a.href).unwrap_or(&0);
                 let count_b = sizes.get(&b.href).unwrap_or(&0);
-                if count_a != count_b {
-                    return count_b.cmp(count_a);
-                }
+                crate::model::compare_calendars_with_size(
+                    &a.href, &a.name, *count_a, &b.href, &b.name, *count_b, &order,
+                )
+            } else {
+                crate::model::compare_calendars(&a.href, &a.name, &b.href, &b.name, &order)
             }
-            crate::model::compare_calendars(&a.href, &a.name, &b.href, &b.name, &order)
         });
     }
 

@@ -344,4 +344,4 @@ All persistent state and settings live here. Unrecognized TOML keys must not be 
 *   `tag_aliases`: HashMap of Alias Key -> Array of Tags/Locations.
 *   `goals`: HashMap of Goal Key -> Goal Object.
 *   `collection_order`: Array of HREFs defining the custom display order of collections.
-*   `sort_collections_by_size`: Boolean. Automatically sort collections from most to least tasks.
+*   `sort_collections_by_size`: Boolean. Automatically sort collections from most to least tasks. Trash and Recovery collections are always shown below standard collections regardless of their task count.

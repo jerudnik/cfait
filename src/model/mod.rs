@@ -68,6 +68,47 @@ pub fn compare_calendars(
     name_a.cmp(name_b)
 }
 
+/// Compare calendars with optional size information.
+/// When sizes are provided and differ, larger collections come first,
+/// but Trash and Recovery are always sorted below standard collections.
+pub fn compare_calendars_with_size(
+    href_a: &str,
+    name_a: &str,
+    count_a: usize,
+    href_b: &str,
+    name_b: &str,
+    count_b: usize,
+    order: &[String],
+) -> std::cmp::Ordering {
+    // First, check if one is a system collection (Trash/Recovery) and the other is not
+    let a_is_system = href_a == crate::storage::LOCAL_TRASH_HREF || href_a == "local://recovery";
+    let b_is_system = href_b == crate::storage::LOCAL_TRASH_HREF || href_b == "local://recovery";
+
+    // If one is system and the other is standard, standard always comes first
+    if a_is_system && !b_is_system {
+        return std::cmp::Ordering::Greater;
+    }
+    if !a_is_system && b_is_system {
+        return std::cmp::Ordering::Less;
+    }
+
+    // Both are standard or both are system
+    // For standard collections, compare by size (descending)
+    // For system collections, we still want Recovery before Trash regardless of size
+    if !a_is_system && !b_is_system {
+        // Both are standard, compare by size
+        if count_a != count_b {
+            return count_b.cmp(&count_a);
+        }
+    }
+
+    // Fall back to regular comparison which handles:
+    // - Recovery vs Trash ordering (Recovery has rank 3, Trash has rank 4)
+    // - Custom order
+    // - Alphabetical
+    compare_calendars(href_a, name_a, href_b, name_b, order)
+}
+
 pub fn resolve_collection(target: &str, calendars: &[CalendarListEntry], default: &str) -> String {
     let lower = target.to_lowercase();
     if let Some(c) = calendars
