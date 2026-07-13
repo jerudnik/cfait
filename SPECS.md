@@ -23,6 +23,7 @@ Cfait is an offline-first task manager that seamlessly synchronizes with CalDAV 
 *   **Conflict & Error Handling:** 
     *   `412 Precondition Failed` (ETag mismatch): Performs a local 3-way merge. If unmergeable, a "Conflict Copy" is generated.
     *   **Fatal Server Errors (e.g., 400, 403, 415):** The problematic task is rescued into a local `local://recovery` calendar to prevent data loss or sync loop lockups, with the error appended to its description.
+    *   **Duplicate UID Resolution:** If a duplicate UID is detected across collections (e.g., during a remote fetch), active collections always take precedence over system collections (`local://trash`, `local://recovery`). Otherwise, the task with the higher sequence number wins, tie-breaking alphabetically by collection HREF.
 
 ### 1.2. The Task Entity (`VTODO` Mapping)
 Tasks map strictly to iCalendar `VTODO` components (RFC 5545). Non-standard metadata is stored via `X-CFAIT-` properties.

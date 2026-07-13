@@ -677,7 +677,15 @@ impl TaskStore {
                 if let Some(existing_task) =
                     self.calendars.get(existing_href).and_then(|m| m.get(&uid))
                 {
-                    let keep_existing = if existing_task.sequence != task.sequence {
+                    let is_system_cal = |href: &str| {
+                        href == crate::storage::LOCAL_TRASH_HREF || href == "local://recovery"
+                    };
+
+                    let keep_existing = if is_system_cal(existing_href) {
+                        false
+                    } else if is_system_cal(&calendar_href) {
+                        true
+                    } else if existing_task.sequence != task.sequence {
                         existing_task.sequence > task.sequence
                     } else {
                         // Tie-break with href string comparison to ensure consistency across platforms
