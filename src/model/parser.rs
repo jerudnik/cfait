@@ -1625,10 +1625,9 @@ pub fn parse_amount_and_unit_with_lex(
         }
     }
     let lower = first.to_lowercase();
-    let (amt_str, unit_str) = if let Some(idx) = lower.find(|c: char| !c.is_numeric()) {
+    let (amt_str, unit_str) = {
+        let idx = lower.find(|c: char| !c.is_numeric())?;
         lower.split_at(idx)
-    } else {
-        return None;
     };
     if let Ok(amt) = amt_str.parse::<u32>()
         && let Some(ExactToken::Unit(u)) = lex.exact.get(unit_str)
@@ -1911,10 +1910,9 @@ pub fn parse_duration(val: &str) -> Option<u32> {
 
 pub fn parse_duration_with_lex(val: &str, lex: &ParserLexicon) -> Option<u32> {
     let lower = val.to_lowercase();
-    let (amt_str, unit_str) = if let Some(idx) = lower.find(|c: char| !c.is_numeric()) {
+    let (amt_str, unit_str) = {
+        let idx = lower.find(|c: char| !c.is_numeric())?;
         lower.split_at(idx)
-    } else {
-        return None;
     };
     if let Ok(n) = amt_str.parse::<u32>() {
         match lex.exact.get(unit_str) {
@@ -2099,10 +2097,9 @@ pub fn parse_smart_date_with_lex(val: &str, lex: &ParserLexicon) -> Option<DateT
         _ => {}
     }
 
-    let (amt_str, unit_str) = if let Some(idx) = lower.find(|c: char| !c.is_numeric()) {
+    let (amt_str, unit_str) = {
+        let idx = lower.find(|c: char| !c.is_numeric())?;
         lower.split_at(idx)
-    } else {
-        return None;
     };
     if let Ok(n) = amt_str.parse::<i64>() {
         match lex.exact.get(unit_str) {

@@ -61,7 +61,8 @@ fn main() -> Result<()> {
     // Now use the public BindgenLoader API to load metadata and components (this may
     // augment/merge UDL-derived metadata via bindgen paths / config).
     let bindgen_paths = uniffi_bindgen::BindgenPaths::default();
-    let loader = uniffi_bindgen::BindgenLoader::new(bindgen_paths);
+    let loader =
+        uniffi_bindgen::BindgenLoader::new(bindgen_paths, uniffi_bindgen::GlobalConfig::default());
 
     let metadata = loader
         .load_metadata(lib_utf8)

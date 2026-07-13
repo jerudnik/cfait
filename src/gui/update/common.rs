@@ -255,7 +255,7 @@ pub fn scroll_to_selected(app: &GuiApp, focus: bool) -> Task<Message> {
                 let all = get_all_focus_bounds();
                 let mut min_y: f32 = f32::INFINITY;
                 let mut max_y: f32 = 0.0;
-                for (_k, r) in all.iter() {
+                for r in all.values() {
                     min_y = min_y.min(r.y);
                     max_y = max_y.max(r.y + r.height);
                 }
