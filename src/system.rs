@@ -163,31 +163,34 @@ pub fn init_keyring() {
 
     #[cfg(target_os = "linux")]
     {
-        // 1. Probe if we have D-Bus / Portal access
-        let oo7_result = block_on_async(async { get_keyring().await });
+        // 1. Check if we have D-Bus / Portal access
+        let is_flatpak = std::path::Path::new("/.flatpak-info").exists();
+
+        let oo7_works = if is_flatpak {
+            true // Keyutils is blocked by Flatpak seccomp. Force Portal.
+        } else {
+            block_on_async(async { get_keyring().await.is_ok() })
+        };
 
         // 2. Set the store dynamically based on the environment
-        match oo7_result {
-            Ok(_) => {
-                set_default_store(Oo7Store::new());
-                log::info!("Initialized Linux Secret Portal (oo7 wrapper).");
-                let _ = KEYRING_WARNING.set(None);
-            }
-            Err(e) => {
-                log::warn!("oo7 initialization failed: {}", e);
-                if let Ok(store) = linux_keyutils_keyring_store::Store::new() {
-                    set_default_store(store);
-                    log::warn!("Initialized Linux Keyutils (headless fallback).");
-                    let _ = KEYRING_WARNING.set(Some(
-                        "Warning: Using memory-only kernel keyring. Passwords will be lost on reboot. Install a Secret Service provider (e.g. gnome-keyring, kwallet) to save credentials permanently.".to_string(),
-                    ));
-                } else {
-                    log::warn!("Failed to initialize any Linux keyring backend.");
-                    let _ = KEYRING_WARNING.set(Some(
-                        "Warning: No keyring backend available. Passwords cannot be saved securely."
-                            .to_string(),
-                    ));
-                }
+        if oo7_works {
+            set_default_store(Oo7Store::new());
+            log::info!("Initialized Linux Secret Portal (oo7 wrapper).");
+            let _ = KEYRING_WARNING.set(None);
+        } else {
+            log::warn!("oo7 initialization failed");
+            if let Ok(store) = linux_keyutils_keyring_store::Store::new() {
+                set_default_store(store);
+                log::warn!("Initialized Linux Keyutils (headless fallback).");
+                let _ = KEYRING_WARNING.set(Some(
+                    "Warning: Using memory-only kernel keyring. Passwords will be lost on reboot. Install a Secret Service provider (e.g. gnome-keyring, kwallet) to save credentials permanently.".to_string(),
+                ));
+            } else {
+                log::warn!("Failed to initialize any Linux keyring backend.");
+                let _ = KEYRING_WARNING.set(Some(
+                    "Warning: No keyring backend available. Passwords cannot be saved securely."
+                        .to_string(),
+                ));
             }
         }
     }
@@ -206,44 +209,27 @@ pub fn init_keyring() {
 
 #[cfg(target_os = "linux")]
 async fn get_keyring() -> Result<std::sync::Arc<oo7::Keyring>, oo7::Error> {
-    // Cache the DBus connection so we only negotiate with the Secret Portal once per launch
-    static KEYRING: tokio::sync::OnceCell<std::sync::Arc<oo7::Keyring>> =
-        tokio::sync::OnceCell::const_new();
-    let keyring = KEYRING
-        .get_or_try_init(|| async {
-            Ok::<std::sync::Arc<oo7::Keyring>, oo7::Error>(std::sync::Arc::new(
-                oo7::Keyring::new().await?,
-            ))
-        })
-        .await?;
-    Ok(keyring.clone())
+    // Generate a fresh D-Bus connection per request. This avoids carrying
+    // stale connection states across dropped temporary Tokio executors.
+    Ok(std::sync::Arc::new(oo7::Keyring::new().await?))
 }
 
 #[cfg(target_os = "linux")]
-static KEYRING_RUNTIME: once_cell::sync::Lazy<tokio::runtime::Runtime> =
-    once_cell::sync::Lazy::new(|| {
-        tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .worker_threads(1)
-            .thread_name("cfait-keyring")
-            .build()
-            .expect("Failed to create keyring runtime")
-    });
-
-#[cfg(target_os = "linux")]
-/// Safely executes an async keyring block by dispatching it to a dedicated static runtime.
-/// This prevents the D-Bus connection from dropping its executor and isolates
-/// the synchronous keyring calls from panicking iced's async framework.
-fn block_on_async<F: std::future::Future + Send + 'static>(future: F) -> F::Output
+fn block_on_async<F: std::future::Future>(future: F) -> F::Output
 where
-    F::Output: Send + 'static,
+    F::Output: Send,
 {
-    let (tx, rx) = std::sync::mpsc::channel();
-    KEYRING_RUNTIME.spawn(async move {
-        let res = future.await;
-        let _ = tx.send(res);
-    });
-    rx.recv().unwrap()
+    if let Ok(handle) = tokio::runtime::Handle::try_current() {
+        // We are inside a Tokio runtime (e.g., Iced UI or TUI), safely block in place
+        tokio::task::block_in_place(|| handle.block_on(future))
+    } else {
+        // No runtime exists yet (e.g., CLI command), spin up a temporary one
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(future)
+    }
 }
 
 #[cfg(target_os = "linux")]
