@@ -164,25 +164,31 @@ pub fn init_keyring() {
     #[cfg(target_os = "linux")]
     {
         // 1. Probe if we have D-Bus / Portal access
-        let oo7_works = block_on_async(async { get_keyring().await.is_ok() });
+        let oo7_result = block_on_async(async { get_keyring().await });
 
         // 2. Set the store dynamically based on the environment
-        if oo7_works {
-            set_default_store(Oo7Store::new());
-            log::info!("Initialized Linux Secret Portal (oo7 wrapper).");
-            let _ = KEYRING_WARNING.set(None);
-        } else if let Ok(store) = linux_keyutils_keyring_store::Store::new() {
-            set_default_store(store);
-            log::warn!("Initialized Linux Keyutils (headless fallback).");
-            let _ = KEYRING_WARNING.set(Some(
-                "Warning: Using memory-only kernel keyring. Passwords will be lost on reboot. Install a Secret Service provider (e.g. gnome-keyring, kwallet) to save credentials permanently.".to_string(),
-            ));
-        } else {
-            log::warn!("Failed to initialize any Linux keyring backend.");
-            let _ = KEYRING_WARNING.set(Some(
-                "Warning: No keyring backend available. Passwords cannot be saved securely."
-                    .to_string(),
-            ));
+        match oo7_result {
+            Ok(_) => {
+                set_default_store(Oo7Store::new());
+                log::info!("Initialized Linux Secret Portal (oo7 wrapper).");
+                let _ = KEYRING_WARNING.set(None);
+            }
+            Err(e) => {
+                log::warn!("oo7 initialization failed: {}", e);
+                if let Ok(store) = linux_keyutils_keyring_store::Store::new() {
+                    set_default_store(store);
+                    log::warn!("Initialized Linux Keyutils (headless fallback).");
+                    let _ = KEYRING_WARNING.set(Some(
+                        "Warning: Using memory-only kernel keyring. Passwords will be lost on reboot. Install a Secret Service provider (e.g. gnome-keyring, kwallet) to save credentials permanently.".to_string(),
+                    ));
+                } else {
+                    log::warn!("Failed to initialize any Linux keyring backend.");
+                    let _ = KEYRING_WARNING.set(Some(
+                        "Warning: No keyring backend available. Passwords cannot be saved securely."
+                            .to_string(),
+                    ));
+                }
+            }
         }
     }
 
@@ -214,22 +220,30 @@ async fn get_keyring() -> Result<std::sync::Arc<oo7::Keyring>, oo7::Error> {
 }
 
 #[cfg(target_os = "linux")]
-/// Safely runs an async block whether we are currently inside a Tokio runtime or not.
-fn block_on_async<F: std::future::Future>(future: F) -> F::Output
-where
-    F::Output: Send,
-{
-    if let Ok(handle) = tokio::runtime::Handle::try_current() {
-        // We are inside a Tokio runtime (e.g., Iced UI or TUI), safely block in place
-        tokio::task::block_in_place(|| handle.block_on(future))
-    } else {
-        // No runtime exists yet (e.g., CLI command), spin up a temporary one
-        tokio::runtime::Builder::new_current_thread()
+static KEYRING_RUNTIME: once_cell::sync::Lazy<tokio::runtime::Runtime> =
+    once_cell::sync::Lazy::new(|| {
+        tokio::runtime::Builder::new_multi_thread()
             .enable_all()
+            .worker_threads(1)
+            .thread_name("cfait-keyring")
             .build()
-            .unwrap()
-            .block_on(future)
-    }
+            .expect("Failed to create keyring runtime")
+    });
+
+#[cfg(target_os = "linux")]
+/// Safely executes an async keyring block by dispatching it to a dedicated static runtime.
+/// This prevents the D-Bus connection from dropping its executor and isolates
+/// the synchronous keyring calls from panicking iced's async framework.
+fn block_on_async<F: std::future::Future + Send + 'static>(future: F) -> F::Output
+where
+    F::Output: Send + 'static,
+{
+    let (tx, rx) = std::sync::mpsc::channel();
+    KEYRING_RUNTIME.spawn(async move {
+        let res = future.await;
+        let _ = tx.send(res);
+    });
+    rx.recv().unwrap()
 }
 
 #[cfg(target_os = "linux")]
@@ -285,7 +299,11 @@ impl Oo7Cred {
 #[cfg(target_os = "linux")]
 impl keyring_core::api::CredentialApi for Oo7Cred {
     fn set_secret(&self, secret: &[u8]) -> keyring_core::Result<()> {
-        block_on_async(async {
+        let service = self.service.clone();
+        let user = self.user.clone();
+        let secret = secret.to_vec();
+
+        block_on_async(async move {
             let keyring = get_keyring().await.map_err(|e| {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
@@ -296,18 +314,18 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
             let _ = keyring.unlock().await;
             log::info!(
                 "Unlocked Linux Secret Portal keyring for {}/{}",
-                self.service,
-                self.user
+                service,
+                user
             );
 
             keyring
                 .create_item(
-                    &format!("{} ({})", self.service, self.user),
+                    &format!("{} ({})", service, user),
                     &std::collections::HashMap::from([
-                        ("service", self.service.as_str()),
-                        ("user", self.user.as_str()),
+                        ("service", service.as_str()),
+                        ("user", user.as_str()),
                     ]),
-                    secret,
+                    &secret,
                     true,
                 )
                 .await
@@ -320,7 +338,10 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
     }
 
     fn get_secret(&self) -> keyring_core::Result<Vec<u8>> {
-        block_on_async(async {
+        let service = self.service.clone();
+        let user = self.user.clone();
+
+        block_on_async(async move {
             let keyring = get_keyring().await.map_err(|e| {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
@@ -331,14 +352,14 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
             let _ = keyring.unlock().await;
             log::info!(
                 "Unlocked Linux Secret Portal keyring for {}/{}",
-                self.service,
-                self.user
+                service,
+                user
             );
 
             let items = keyring
                 .search_items(&std::collections::HashMap::from([
-                    ("service", self.service.as_str()),
-                    ("user", self.user.as_str()),
+                    ("service", service.as_str()),
+                    ("user", user.as_str()),
                 ]))
                 .await
                 .map_err(|e| {
@@ -357,7 +378,10 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
     }
 
     fn delete_credential(&self) -> keyring_core::Result<()> {
-        block_on_async(async {
+        let service = self.service.clone();
+        let user = self.user.clone();
+
+        block_on_async(async move {
             let keyring = get_keyring().await.map_err(|e| {
                 keyring_core::Error::PlatformFailure(format!("oo7 init: {}", e).into())
             })?;
@@ -366,8 +390,8 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
 
             let items = keyring
                 .search_items(&std::collections::HashMap::from([
-                    ("service", self.service.as_str()),
-                    ("user", self.user.as_str()),
+                    ("service", service.as_str()),
+                    ("user", user.as_str()),
                 ]))
                 .await
                 .map_err(|e| {
