@@ -167,9 +167,12 @@ pub fn spawn_background_worker(
 
                             if config_changed {
                                 let ctx_ref = ctx.clone();
-                                if let Ok(cfg) = tokio::task::spawn_blocking(move || Config::load_with_credentials(ctx_ref.as_ref())).await.unwrap() {
-                                    let _ = ui_tx.send(crate::gui::message::Message::ConfigUpdated(Box::new(cfg))).await;
-                                }
+                                let ui_tx_clone = ui_tx.clone();
+                                tokio::spawn(async move {
+                                    if let Ok(Ok(cfg)) = tokio::task::spawn_blocking(move || Config::load_with_credentials(ctx_ref.as_ref())).await {
+                                        let _ = ui_tx_clone.send(crate::gui::message::Message::ConfigUpdated(Box::new(cfg))).await;
+                                    }
+                                });
                             }
                         }
                         Err(_) => {
