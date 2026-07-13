@@ -2174,7 +2174,13 @@ impl CfaitMobile {
         drop(store);
 
         if task.summary.trim().is_empty() {
-            return Ok("".to_string());
+            if !clean_input.trim().is_empty() {
+                // The parser swallowed the entire string as metadata.
+                // To prevent data loss, force the summary to be the original input.
+                task.summary = clean_input.clone();
+            } else {
+                return Ok("".to_string());
+            }
         }
         #[cfg(target_os = "android")]
         log::debug!(
@@ -2279,7 +2285,13 @@ impl CfaitMobile {
         drop(store);
 
         if task.summary.trim().is_empty() && cleaned_desc.is_empty() {
-            return Ok("".to_string());
+            if !clean_input.trim().is_empty() {
+                // The parser swallowed the entire string as metadata.
+                // To prevent data loss, force the summary to be the original input.
+                task.summary = clean_input.clone();
+            } else {
+                return Ok("".to_string());
+            }
         }
         if !cleaned_desc.is_empty() {
             if task.description.is_empty() {

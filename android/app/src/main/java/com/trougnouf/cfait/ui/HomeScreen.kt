@@ -448,14 +448,7 @@ fun HomeScreen(
             newTaskText = ""
             updateTaskList()
         } else {
-            newTaskText = ""
-            newDescriptionText = ""
-            isCreateExpanded = false
             val currentChildUid = creatingChildUid
-
-            if (!childLockActive) {
-                creatingChildUid = null
-            }
 
             scope.launch {
                 activeOpCount++
@@ -469,6 +462,15 @@ fun HomeScreen(
 
                     // *** CALL THE NEW DESCRIPTION API ***
                     val newUid = api.addTaskWithDescription(text, desc)
+                    
+                    // Clear inputs ONLY on success to prevent data loss
+                    newTaskText = ""
+                    newDescriptionText = ""
+                    isCreateExpanded = false
+                    if (!childLockActive) {
+                        creatingChildUid = null
+                    }
+
                     if (newUid == "ALIAS_UPDATED" || newUid.isEmpty()) {
                         onDataChanged()
                         lastSyncFailed = false
@@ -483,12 +485,32 @@ fun HomeScreen(
                     highlightedUid = newUid
                     onDataChanged()
                     lastSyncFailed = false
-                    updateTaskList()
+                    
+                    // Await the task list update before triggering the scroll to avoid race conditions
+                    try {
+                        val options = MobileFilterOptions(
+                            filterTags = filterTags.toList(),
+                            filterLocations = filterLocations.toList(),
+                            searchQuery = searchQuery,
+                            expandedGroups = expandedGroups.toList(),
+                            matchAllCategories = matchAllCategories,
+                            expandedTags = expandedTags.toList(),
+                            expandedLocations = expandedLocations.toList()
+                        )
+                        val viewData = api.getViewTasks(options)
+                        onUpdateViewData(viewData.tasks, viewData.tags, viewData.locations, api.getConfig().tagAliases, viewData.goals, viewData.focusedTaskUid)
+                    } catch (e: Exception) {
+                        if (e !is CancellationException) {
+                            // Ignored
+                        } else throw e
+                    }
+                    
                     scrollTrigger++
                     triggerBackgroundSync(context, api)
                 } catch (e: Exception) {
                     if (e is CancellationException) throw e
                     lastSyncFailed = true
+                    Toast.makeText(context, e.message ?: "Failed to save task", Toast.LENGTH_LONG).show()
                 } finally {
                     checkSyncStatus()
                     activeOpCount--

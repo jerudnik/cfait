@@ -417,19 +417,26 @@ impl TaskController {
             };
             task.href = full_href;
         }
+
+        // Persist to disk FIRST to guarantee data integrity. If this fails,
+        // we return an error and the UI will NOT clear the text input.
+        self.persist_changes(vec![Action::Create(task.clone())])
+            .await?;
+
         self.store.lock().await.add_task(task.clone());
-        let _ = self
-            .persist_changes(vec![Action::Create(task.clone())])
-            .await;
         Ok(task.uid)
     }
 
     pub async fn update_task(&self, mut task: Task) -> Result<Vec<String>, String> {
         task.sequence += 1;
+
+        // Persist to disk FIRST to guarantee data integrity.
+        self.persist_changes(vec![Action::Update(task.clone())])
+            .await?;
+
         let mut store = self.store.lock().await;
-        store.update_or_add_task(task.clone());
+        store.update_or_add_task(task);
         drop(store);
-        let _ = self.persist_changes(vec![Action::Update(task)]).await;
         Ok(vec![])
     }
 
