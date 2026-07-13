@@ -765,7 +765,7 @@ class MarkdownTransformation(val isDark: Boolean) : VisualTransformation {
 
             if (trimmed.startsWith("#")) {
                 builder.addStyle(SpanStyle(color = headerColor, fontWeight = FontWeight.Bold), lineStart, lineEnd)
-            } else if (trimmed.startsWith("- [") || trimmed.startsWith("* [") || trimmed.startsWith("+ [") || Regex("^\\d+\\.\\s*\[").containsMatchIn(trimmed)) {
+            } else if (trimmed.startsWith("- [") || trimmed.startsWith("* [") || trimmed.startsWith("+ [") || Regex("""^\d+\.\s*\[""").containsMatchIn(trimmed)) {
                 val cbStart = line.indexOf('[')
                 if (cbStart != -1 && cbStart + 2 < line.length && line[cbStart + 2] == ']') {
                     builder.addStyle(SpanStyle(color = checkboxColor), lineStart + cbStart, lineStart + cbStart + 3)
@@ -777,16 +777,16 @@ class MarkdownTransformation(val isDark: Boolean) : VisualTransformation {
 
         try {
             val inlinePatterns = listOf(
-                Pair(Regex("<!-- uid:.*?-->"), SpanStyle(color = dimColor, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)),
-                Pair(Regex("\\[\\[.*?\\]\\]"), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
-                Pair(Regex("\\[.*?\\]\(.*?\)"), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
-                Pair(Regex("https?://[^\\s)\\]]+"), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
-                Pair(Regex("\\*\\*.*?\\*\\*"), SpanStyle(fontWeight = FontWeight.Bold)),
-                Pair(Regex("__.*?__"), SpanStyle(fontWeight = FontWeight.Bold)),
-                Pair(Regex("~~.*?~~"), SpanStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)),
-                Pair(Regex("(?<!\\*)\\*(?!\\*).*?(?<!\\*)\\*(?!\\*)"), SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)),
-                Pair(Regex("(?<!_)_(?!_).*?(?<!_)_(?!_)"), SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)),
-                Pair(Regex("`.*?`"), SpanStyle(color = codeColor, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace))
+                Pair(Regex("""<!-- uid:.*?-->"""), SpanStyle(color = dimColor, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)),
+                Pair(Regex("""\\[\[.*?\]\]"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
+                Pair(Regex("""\\[.*?\]\\(.*?\\)"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
+                Pair(Regex("""https?://[^\s)\]\]+"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
+                Pair(Regex("""\*\*.*?\*\*"""), SpanStyle(fontWeight = FontWeight.Bold)),
+                Pair(Regex("""__.*?__"""), SpanStyle(fontWeight = FontWeight.Bold)),
+                Pair(Regex("""~~.*?~~"""), SpanStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)),
+                Pair(Regex("""(?<!\*)\*(?!\*).*?(?<!\*)\*(?!\*)"""), SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)),
+                Pair(Regex("""(?<!_)_(?!_).*?(?<!_)_(?!_)"""), SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)),
+                Pair(Regex("""`.*?`"""), SpanStyle(color = codeColor, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace))
             )
 
             for ((regex, style) in inlinePatterns) {
