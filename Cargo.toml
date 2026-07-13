@@ -71,9 +71,9 @@ strum = { version = "0.28", features = ["derive"] }
 unicode-width = "0.2"
 
 # --- ANDROID / INTEROP ---
-uniffi = { version = "0.31", features = ["tokio", "build", "cli"], optional = true }
-uniffi_bindgen = { version = "0.31",  optional = true }
-uniffi_meta = "0.31"
+uniffi = { version = "0.32", features = ["tokio", "build", "cli"], optional = true }
+uniffi_bindgen = { version = "0.32",  optional = true }
+uniffi_meta = "0.32"
 
 # --- LOGGING ---
 log = "0.4"
@@ -119,7 +119,7 @@ mockito = "1.7" # For mocking the HTTP server
 tokio = { version = "1", features = ["full"] }
 uuid = { version = "1.23", features = ["v4"] }
 serial_test = "3.5"
-uniffi_meta = "0.31"
+uniffi_meta = "0.32"
 # Required to run the bindgen binary
 
 [features]
