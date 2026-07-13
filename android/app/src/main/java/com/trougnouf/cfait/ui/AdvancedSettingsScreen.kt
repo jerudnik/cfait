@@ -53,6 +53,7 @@ fun AdvancedSettingsScreen(
     var tlsClientKeyPath by remember { mutableStateOf("") }
 
     var sortStandardByPriority by remember { mutableStateOf(false) }
+    var sortPreset by remember { mutableStateOf("UrgentStartedDue") }
     var sortDays by remember { mutableStateOf("30") }
     var urgentDays by remember { mutableStateOf("1") }
     var urgentPrio by remember { mutableStateOf("1") }
@@ -76,6 +77,7 @@ fun AdvancedSettingsScreen(
             tlsClientKeyPath = cfg.tlsClientKeyPath ?: ""
 
             sortStandardByPriority = cfg.sortStandardByPriority
+            sortPreset = cfg.sortPreset
             sortDays = cfg.sortCutoffDays?.toString() ?: ""
             urgentDays = cfg.urgentDays.toString()
             urgentPrio = cfg.urgentPrio.toString()
@@ -105,6 +107,7 @@ fun AdvancedSettingsScreen(
                 tlsClientKeyPath = tlsClientKeyPath.takeIf { it.isNotBlank() },
 
                 sortStandardByPriority = sortStandardByPriority,
+                sortPreset = sortPreset,
                 sortCutoffDays = sortDays.toUIntOrNull(),
                 urgentDays = urgentDays.toUIntOrNull() ?: 1u,
                 urgentPrio = urgentPrio.toUByteOrNull() ?: 1u,
@@ -219,6 +222,32 @@ fun AdvancedSettingsScreen(
             }
             
             Spacer(Modifier.height(16.dp))
+            Text(
+                stringResource(R.string.settings_sort_behavior),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                Text(stringResource(R.string.sorting_preset_label), modifier = Modifier.weight(1f))
+                DropdownPicker(
+                    label = "",
+                    selected = sortPreset,
+                    options = listOf(
+                        "UrgentStartedDue" to "Urgent > Started > Due Soon",
+                        "UrgentDueStarted" to "Urgent > Due Soon > Started",
+                        "StartedUrgentDue" to "Started > Urgent > Due Soon"
+                    ),
+                    onSelect = { sortPreset = it },
+                    modifier = Modifier.width(240.dp)
+                )
+            }
+            Text(
+                stringResource(R.string.settings_sort_preset_explain),
+                fontSize = 12.sp,
+                color = androidx.compose.ui.graphics.Color.Gray,
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            )
+
             Text(
                 stringResource(R.string.settings_urgent_definition),
                 fontWeight = FontWeight.SemiBold,

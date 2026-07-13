@@ -1283,6 +1283,14 @@ impl Config {
             } else if trimmed.starts_with("sort_cutoff_days =") {
                 out.push_str(line);
                 out.push_str(" # Integer/None: Tasks due beyond this many days are ranked lower.");
+            } else if trimmed.starts_with("sort_standard_by_priority =") {
+                out.push_str(line);
+                out.push_str(
+                    " # Boolean: If true, regular tasks sort by priority first, then by date.",
+                );
+            } else if trimmed.starts_with("sort_preset =") {
+                out.push_str(line);
+                out.push_str(" # Enum: Order of urgent buckets (UrgentStartedDue, UrgentDueStarted, StartedUrgentDue).");
             } else if trimmed.starts_with("urgent_days_horizon =") {
                 out.push_str(line);
                 out.push_str(
@@ -1376,6 +1384,12 @@ impl Config {
             } else if trimmed.starts_with("trash_retention_days =") {
                 out.push_str(line);
                 out.push_str(" # Integer: Days to keep deleted items in local trash before permanent delete. 0 disables trash.");
+            } else if trimmed.starts_with("default_duration_goal_mins =") {
+                out.push_str(line);
+                out.push_str(" # Integer: Implicit duration added to goals when completing a task without a timer.");
+            } else if trimmed.starts_with("sessions_count_as_completions =") {
+                out.push_str(line);
+                out.push_str(" # Boolean: If true, logging a time session counts as a completion for 'Count' goals.");
             } else if trimmed.starts_with("log_level =") {
                 out.push_str(line);
                 out.push_str(" # String: Logging verbosity level (Error, Warn, Info, Debug, Trace). Applies to both log file and terminal.");

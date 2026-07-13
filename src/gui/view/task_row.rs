@@ -1220,7 +1220,7 @@ pub fn view_task_row<'a>(
                     TaskAction::Cancel => " (x)",
                     TaskAction::Delete => " (Del)",
                     TaskAction::DeleteTree => " (Ctrl+Del)",
-                    TaskAction::OpenCoordinates => " (g)",
+                    TaskAction::OpenCoordinates | TaskAction::OpenLocations => " (g)",
                     TaskAction::OpenUrl => " (o)",
                     _ => "",
                 };
