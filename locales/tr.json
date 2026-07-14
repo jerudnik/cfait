@@ -108,7 +108,6 @@
     "cli_task_placeholder": "görev…",
     "cli_title": "Cfait v%{version} - güçlü, hızlı ve zarif bir CalDAV görev yöneticisi (%{mode})",
     "cli_usage_collection": "Kullanım: %{binary_name} collection [list|create|edit] ...",
-    "cli_usage_edit": "Kullanım: %{binary_name] edit <görev uid'si> <görev metni...>",
     "cli_usage_import": "Kullanım: cfait import <dosya.ics> [--collection <liste id'si>]",
     "error_cannot_import_to_system_calendar": "Sistem takvimi (çöp/kurtarma) içeri aktarılamaz.",
     "cli_view_description": "Açıklama:",

@@ -113,7 +113,6 @@
     "cli_title": "Cfait v%{version} - un gestor de tareas CalDAV potente, rápido y elegante (%{mode})",
     "cli_usage_append": "Uso: %{binary_name} append <uid> <tarea...>",
     "cli_usage_collection": "Uso: %{binary_name} colección [list|create|edit] ...",
-    "cli_usage_edit": "Uso: %{binary_name} edit <uid> <task...>",
     "cli_usage_import": "Usa: cfait import <archivo.ics> [--collection <id>]",
     "cli_view_description": "Descripción:",
     "cli_view_due": "Fecha límite:",

@@ -109,7 +109,6 @@
     "cli_task_placeholder": "任务…",
     "cli_title": "Cfait v%{version} - 强大、快速、优雅的 CalDAV 任务管理器（%{mode}）",
     "cli_usage_collection": "用法：%{binary_name} collection [list|create|edit] ...",
-    "cli_usage_edit": "用法：%{binary_name} edit <uid> <task...>",
     "cli_usage_import": "用法：cfait import <file.ics> [--collection <id>]",
     "cli_view_description": "描述：",
     "cli_view_due": "到期：",
