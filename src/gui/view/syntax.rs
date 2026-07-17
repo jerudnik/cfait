@@ -362,33 +362,49 @@ impl Highlighter for MarkdownHighlighter {
         };
 
         let mut after_marker = 0;
+        let indent = line.len() - trimmed.len();
 
         // Find end of markdown marker
         if is_header {
-            if let Some(idx) = line.find("# ") {
-                after_marker = idx + 2;
-            } else if let Some(idx) = line.find("## ") {
-                after_marker = idx + 3;
-            } else if let Some(idx) = line.find("### ") {
-                after_marker = idx + 4;
+            if trimmed.starts_with("# ") {
+                after_marker = indent + 2;
+            } else if trimmed.starts_with("## ") {
+                after_marker = indent + 3;
+            } else if trimmed.starts_with("### ") {
+                after_marker = indent + 4;
             }
         } else {
-            if let Some(idx) = line.find("- ") {
-                after_marker = idx + 2;
-            } else if let Some(idx) = line.find("* ") {
-                after_marker = idx + 2;
-            } else if let Some(idx) = line.find("+ ") {
-                after_marker = idx + 2;
-            } else if let Some(idx) = line.find(". ") {
-                after_marker = idx + 2;
+            if trimmed.starts_with("- ") || trimmed.starts_with("* ") || trimmed.starts_with("+ ") {
+                after_marker = indent + 2;
+            } else {
+                let mut digit_bytes = 0;
+                for c in trimmed.chars() {
+                    if c.is_ascii_digit() {
+                        digit_bytes += c.len_utf8();
+                    } else {
+                        break;
+                    }
+                }
+                if digit_bytes > 0 && trimmed[digit_bytes..].starts_with(". ") {
+                    after_marker = indent + digit_bytes + 2;
+                }
             }
         }
 
         // Check for checkbox right after marker
         let mut checkbox_end = 0;
-        if after_marker > 0 && line.len() >= after_marker + 4 {
-            let slice = &line[after_marker..after_marker + 4];
-            if slice.starts_with('[') && slice.ends_with("] ") {
+        if after_marker > 0 {
+            let remainder = &line[after_marker..];
+            if remainder.starts_with("[ ] ")
+                || remainder.starts_with("[x] ")
+                || remainder.starts_with("[X] ")
+                || remainder.starts_with("[/] ")
+                || remainder.starts_with("[-] ")
+                || remainder.starts_with("[<] ")
+                || remainder.starts_with("[>] ")
+                || remainder.starts_with("[*] ")
+                || remainder.starts_with("[~] ")
+            {
                 checkbox_end = after_marker + 4;
             }
         }
