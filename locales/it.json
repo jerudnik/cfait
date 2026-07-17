@@ -120,6 +120,7 @@
     "editing": "Modifica in corso",
     "eg": "es.",
     "error_adding_alias": "Errore nell'aggiunta dell'alias: %{error}",
+    "error_cannot_import_to_system_calendar": "Non è possibile importare nel calendario di sistema (cestino/recupero).",
     "error_could_not_read_file": "Errore: impossibile leggere il file",
     "error_opening_file": "Errore nell'apertura del file: %{error}",
     "events_deleted_on_task_delete": "Gli eventi verranno rimossi quando l'attività corrispondente sarà eliminata.",
@@ -195,7 +196,6 @@
     "import_action": "Importa",
     "import_error": "Errore nell'importazione: %{error}",
     "import_failed": "Importazione fallita: %{error}",
-    "error_cannot_import_to_system_calendar": "Non è possibile importare nel calendario di sistema (cestino/recupero).",
     "import_file_name": "File: %{file}",
     "import_success": {
         "one": "1 attività importata correttamente",
