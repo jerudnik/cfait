@@ -540,7 +540,7 @@
     "priority_cutoff_days": "Límite de prioridad (días):",
     "priority_le": "Prioridad <= (!):",
     "priority_rules": "Reglas de prioridad:",
-    "promote_remove_parent": "Promover (quitar padre)",
+    "promote_remove_parent": "Ascender (subir un nivel)",
     "quick_filter_icon": "Icono (código de NerdFonts)",
     "quick_filter_search_term": "Término de búsqueda",
     "quick_filter_show_button": "Mostrar el botón de filtro rápido",
