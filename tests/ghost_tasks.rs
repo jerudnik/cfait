@@ -69,9 +69,13 @@ async fn test_pending_delete_suppresses_server_item() {
     let task_path = "/cal/zombie.ics";
     let task_uid = "zombie-task";
 
-    let mock_delete = server
-        .mock("DELETE", task_path)
-        .with_status(500)
+    // Mock GET_CTAG request
+    let mock_getctag = server
+        .mock("PROPFIND", cal_path)
+        .match_header("depth", "0")
+        .match_body(mockito::Matcher::Regex("getctag".to_string()))
+        .with_status(207)
+        .with_body(r#"<d:multistatus xmlns:d="DAV:"><d:response><d:href>/cal/</d:href><d:propstat><d:prop><cs:getctag xmlns:cs="http://calendarserver.org/ns/">cached-token</cs:getctag></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>"#)
         .create_async()
         .await;
 
@@ -100,15 +104,16 @@ async fn test_pending_delete_suppresses_server_item() {
 
     assert!(
         tasks.is_ok(),
-        "get_tasks should now succeed even if sync_journal fails"
+        "get_tasks should succeed with cached data and applied journal"
     );
     let list = tasks.unwrap();
 
-    mock_delete.assert();
+    mock_getctag.assert();
+    // LIST request not needed due to fast-path: tokens match and no ghosts
 
     assert!(
         list.is_empty(),
-        "The zombie task should have been filtered out"
+        "The zombie task should have been filtered out by the journal"
     );
 }
 

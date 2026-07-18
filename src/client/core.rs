@@ -371,8 +371,17 @@ impl RustyClient {
 
         // Limit timeout to ensure a clean fallback in problematic scenarios.
         // If the queue is massive, we don't want to block the initial load forever.
-        let _ =
-            tokio::time::timeout(std::time::Duration::from_secs(10), client.sync_journal()).await;
+        let store = Arc::new(tokio::sync::Mutex::new(crate::store::TaskStore::new(
+            ctx.clone(),
+        )));
+        let client_container = Arc::new(tokio::sync::Mutex::new(Some(client.clone())));
+        let controller =
+            crate::controller::TaskController::new(store, client_container, ctx.clone());
+        let _ = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            controller.sync_and_update_store(),
+        )
+        .await;
 
         // Attempt to fetch calendars and optionally auto-correct URL/prefixes
         let ((calendars, corrected_url_opt), warning) = match client.get_calendars().await {
@@ -1478,11 +1487,13 @@ impl RustyClient {
     // persistence/journaling/network steps.
 
     pub async fn get_tasks(&self, calendar_href: &str) -> anyhow::Result<Vec<Task>> {
-        // If sync fails or times out, don't proceed to a full fetch. Fall back to cache + journal.
         // A timeout ensures a slow or rate-limited server doesn't hang the UI startup.
-        let sync_res =
-            tokio::time::timeout(std::time::Duration::from_secs(10), self.sync_journal()).await;
-        if sync_res.is_err() || sync_res.unwrap().is_err() {
+        let fetch_res = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            self.fetch_calendar_tasks_internal(calendar_href, true),
+        )
+        .await;
+        if fetch_res.is_err() || fetch_res.as_ref().unwrap().is_err() {
             if calendar_href.starts_with("local://") {
                 let mut tasks =
                     crate::storage::LocalStorage::load_for_href(self.ctx.as_ref(), calendar_href)?;
@@ -1502,16 +1513,13 @@ impl RustyClient {
                 return Ok(tasks);
             }
         }
-        // If sync succeeded (or was a no-op), proceed with the network fetch.
-        self.fetch_calendar_tasks_internal(calendar_href, true)
-            .await
+        Ok(fetch_res.unwrap().unwrap())
     }
 
     pub async fn get_all_tasks(
         &self,
         calendars: &[CalendarListEntry],
     ) -> anyhow::Result<Vec<(String, Vec<Task>)>> {
-        let _ = tokio::time::timeout(std::time::Duration::from_secs(10), self.sync_journal()).await;
         let hrefs: Vec<String> = calendars.iter().map(|c| c.href.clone()).collect();
         let futures = hrefs.into_iter().map(|href| {
             let client = self.clone();

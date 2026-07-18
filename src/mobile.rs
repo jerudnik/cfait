@@ -1834,6 +1834,38 @@ impl CfaitMobile {
 
     pub async fn sync(&self) -> Result<String, MobileError> {
         let config = Config::load_with_credentials(self.ctx.as_ref()).map_err(MobileError::from)?;
+
+        let client_opt = self.controller.client.lock().await.clone();
+        if let Some(client) = client_opt {
+            // FAST PATH: Already connected
+            // 1. Push local changes to the server
+            let _ = self.controller.sync_and_update_store().await;
+
+            // 2. Fetch remote tasks
+            let cals = crate::cache::Cache::load_calendars(self.ctx.as_ref()).unwrap_or_default();
+            match client.get_all_tasks(&cals).await {
+                Ok(results) => {
+                    let mut store = self.controller.store.lock().await;
+                    for (href, mut tasks) in results {
+                        crate::journal::Journal::apply_to_tasks(
+                            self.ctx.as_ref(),
+                            &mut tasks,
+                            &href,
+                        );
+                        store.insert(href, tasks);
+                    }
+                    drop(store);
+                    self.rebuild_alarm_index().await;
+                    return Ok(rust_i18n::t!("status_connected").to_string());
+                }
+                Err(_e) => {
+                    #[cfg(target_os = "android")]
+                    log::warn!("Fast path sync failed: {}", e);
+                    // Fall through to full reconnect
+                }
+            }
+        }
+
         self.apply_connection(config).await
     }
 
@@ -3213,8 +3245,6 @@ impl CfaitMobile {
             }
         }
         drop(store);
-
-        let _ = self.controller.sync_and_update_store().await;
 
         self.rebuild_alarm_index().await;
         Ok(warning.unwrap_or_else(|| rust_i18n::t!("status_connected").to_string()))
