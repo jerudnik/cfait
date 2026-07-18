@@ -1229,6 +1229,13 @@ impl RustyClient {
             let mut to_fetch = Vec::new();
             let mut server_hrefs = HashSet::new();
 
+            // Helper function to clean ETags by removing W/ prefix and surrounding quotes
+            fn clean_etag(e: &str) -> String {
+                e.trim_start_matches("W/").trim_matches('"').to_string()
+            }
+            // Map from stripped href to raw ETag from PROPFIND response
+            let mut href_to_raw_etag: HashMap<String, String> = HashMap::new();
+
             for resource in list_resp.resources {
                 if !resource.href.ends_with(".ics") {
                     continue;
@@ -1257,9 +1264,17 @@ impl RustyClient {
                 server_hrefs.insert(res_href_stripped.clone());
                 let remote_etag = resource.etag;
 
+                // Store RAW ETag for later use in calendar-multiget
+                if let Some(ref etag) = remote_etag {
+                    href_to_raw_etag.insert(res_href_stripped.clone(), etag.clone());
+                }
+
+                let remote_etag_cleaned = remote_etag.as_deref().map(clean_etag);
+
                 if let Some(local_task) = cache_map.remove(&res_href_stripped) {
-                    if let Some(r_etag) = &remote_etag {
-                        if !r_etag.is_empty() && *r_etag == local_task.etag {
+                    if let Some(r_etag) = remote_etag_cleaned {
+                        let local_etag_cleaned = clean_etag(&local_task.etag);
+                        if !r_etag.is_empty() && r_etag == local_etag_cleaned {
                             final_tasks.push(local_task);
                         } else {
                             to_fetch.push(res_href_stripped);
@@ -1317,18 +1332,24 @@ impl RustyClient {
                     if !batch_error {
                         for fetched_resp in batch_results {
                             for item in fetched_resp.resources {
-                                if let Ok(content) = item.content
-                                    && let Ok(task) = IcsAdapter::from_ics(
+                                let item_href_stripped = strip_host(&item.href);
+                                if let Ok(content) = item.content {
+                                    // Use raw ETag from PROPFIND if available, otherwise fall back to raw content.etag
+                                    let etag = href_to_raw_etag
+                                        .get(&item_href_stripped)
+                                        .cloned()
+                                        .unwrap_or_else(|| content.etag.clone());
+                                    if let Ok(task) = IcsAdapter::from_ics(
                                         &content.data,
-                                        content.etag,
+                                        etag,
                                         item.href,
                                         calendar_href.to_string(),
-                                    )
-                                {
-                                    if apply_journal && pending_deletions.contains(&task.uid) {
-                                        continue;
+                                    ) {
+                                        if apply_journal && pending_deletions.contains(&task.uid) {
+                                            continue;
+                                        }
+                                        final_tasks.push(task);
                                     }
-                                    final_tasks.push(task);
                                 }
                             }
                         }

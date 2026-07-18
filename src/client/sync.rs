@@ -849,7 +849,8 @@ impl RustyClient {
 
         let server_task = self.fetch_remote_task(&local_task.href).await?;
 
-        if server_task.etag == local_task.etag {
+        let clean_etag = |e: &str| e.trim_start_matches("W/").trim_matches('"').to_string();
+        if clean_etag(&server_task.etag) == clean_etag(&local_task.etag) {
             return None;
         }
 
