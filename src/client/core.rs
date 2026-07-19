@@ -933,24 +933,16 @@ impl RustyClient {
             let body_clone = ics_body.clone();
 
             futures.push(Box::pin(async move {
-                let create_req = PutResource::new(&event_path)
-                    .create(body_clone.clone(), "text/calendar; charset=utf-8");
-                match c.request(create_req).await {
-                    Ok(_) => Ok(()),
-                    Err(WebDavError::BadStatusCode(http::StatusCode::PRECONDITION_FAILED))
-                    | Err(WebDavError::PreconditionFailed(_)) => {
-                        let update_req = PutResource::new(&event_path).update(
-                            body_clone,
-                            "text/calendar; charset=utf-8",
-                            "",
-                        );
-                        if c.request(update_req).await.is_err() {
-                            Err(())
-                        } else {
-                            Ok(())
-                        }
-                    }
-                    Err(_) => Err(()),
+                // Use unconditional PUT to prevent 412 fallback double-uploads
+                let update_req = PutResource::new(&event_path).update(
+                    body_clone,
+                    "text/calendar; charset=utf-8",
+                    "",
+                );
+                if c.request(update_req).await.is_err() {
+                    Err(())
+                } else {
+                    Ok(())
                 }
             }));
         }
@@ -1109,22 +1101,16 @@ impl RustyClient {
                     let body_clone = ics_body.clone();
 
                     futures.push(Box::pin(async move {
-                        let create_req = PutResource::new(&event_path)
-                            .create(body_clone.clone(), "text/calendar; charset=utf-8");
-                        match c.request(create_req).await {
-                            Ok(_) => Ok(()),
-                            Err(_) => {
-                                let update_req = PutResource::new(&event_path).update(
-                                    body_clone,
-                                    "text/calendar; charset=utf-8",
-                                    "",
-                                );
-                                if c.request(update_req).await.is_err() {
-                                    Err(())
-                                } else {
-                                    Ok(())
-                                }
-                            }
+                        // Use unconditional PUT to prevent 412 fallback double-uploads
+                        let update_req = PutResource::new(&event_path).update(
+                            body_clone,
+                            "text/calendar; charset=utf-8",
+                            "",
+                        );
+                        if c.request(update_req).await.is_err() {
+                            Err(())
+                        } else {
+                            Ok(())
                         }
                     }));
                 }
