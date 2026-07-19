@@ -1858,10 +1858,11 @@ impl CfaitMobile {
                     self.rebuild_alarm_index().await;
                     return Ok(rust_i18n::t!("status_connected").to_string());
                 }
-                Err(_e) => {
+                Err(e) => {
                     #[cfg(target_os = "android")]
                     log::warn!("Fast path sync failed: {}", e);
                     // Fall through to full reconnect
+                    let _ = &e;
                 }
             }
         }
