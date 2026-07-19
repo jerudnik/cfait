@@ -1125,22 +1125,6 @@ impl RustyClient {
                         }
                     }));
                 }
-
-                // Fallback for legacy events
-                let static_suffixes = ["", "-start", "-due"];
-                for suffix in static_suffixes {
-                    let event_filename = format!("{}{}.ics", base_uid, suffix);
-                    if !generated_events.iter().any(|(s, _)| s == suffix) {
-                        let event_path = format!("{}{}", strip_host(&cal_path), event_filename);
-                        let c = client.clone();
-                        futures.push(Box::pin(async move {
-                            match c.request(Delete::new(&event_path).force()).await {
-                                Ok(_) => Ok(()),
-                                Err(_) => Ok(()),
-                            }
-                        }));
-                    }
-                }
             }
 
             let mut stream = futures::stream::iter(futures).buffer_unordered(8);
