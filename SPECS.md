@@ -65,7 +65,7 @@ Evaluated instantly during text input. Supported across all clients.
 | `~` or `est:` | Estimated duration (supports ranges). | `~30m`, `~1h-2h` |
 | `#` | Tag/Category (Supports brace expansion). | `#work`, `#project{sub1,sub2}` |
 | `@@` or `loc:`| Location. | `@@office` |
-| `url:` / `[[ ]]`| Attach URL or Wiki-link. | `url:https://example.com`, `[[Master plan]]`, `[[Master plan|Alias]]` |
+| `url:` / `[[ ]]`| Attach URL or Wiki-link. (Any `scheme://` or `mailto:` is supported. Bare URLs default to `https://`). | `url:perdu.com`, `[[obsidian://open]]`, `[[Master plan|Alias]]` |
 | `dep:` or `depends:`| Set dependency (blocks the task). Supports short UIDs or fuzzy matching by summary. | `dep:"Install foundation"`, `dep:abc1234` |
 | `rel:` or `related:`| Set related task (sibling). Supports short UIDs or fuzzy matching by summary. | `rel:"Master plan"`, `rel:abc1234` |
 | `geo:` | Geo-coordinates. | `geo:50.1,4.2`, `geo:here` (Mobile: Fetches GPS) |
@@ -113,7 +113,7 @@ Users can also use the "Edit Tree" action (or `Ctrl+E`) to edit an entire existi
 
 ### 2.4. Inline Markdown Formatting
 Cfait natively supports rendering basic inline Markdown across task summaries, descriptions, and the raw text editors.
-*   **Supported Syntax:** `**bold**`, `__bold__`, `*italic*`, `_italic_`, `~~strikethrough~~`, `` `code` ``, standard Markdown links `[label](url)`, and bare `http(s)://` URLs.
+*   **Supported Syntax:** `**bold**`, `__bold__`, `*italic*`, `_italic_`, `~~strikethrough~~`, `` `code` ``, standard Markdown links `[label](url)`, and bare URLs (any `scheme://` or `mailto:`).
 *   **Marker Visibility:** Formatting markers (e.g., `**`, `~~`, `` ` ``) are hidden in read-only views (such as the task list, sidebar, and read-only details) to keep the text clean. The markers are preserved and highlighted in the raw text editors and inputs to ensure a seamless text-based editing experience.
 
 ---

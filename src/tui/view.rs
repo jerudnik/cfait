@@ -103,28 +103,44 @@ fn parse_inline_elements(text: &str, base_style: Style, strip_markers: bool) -> 
             search_idx += start_pos + 1;
         }
 
-        for scheme in &["https://", "http://"] {
-            if let Some(start_pos) = remaining.find(scheme) {
-                let abs_start = current_idx + start_pos;
-
-                // Skip if we already have a better match
-                if let Some(best_pos) = best_match_pos
-                    && best_pos <= abs_start
-                {
-                    continue;
+        if let Some(pos) = remaining.find("://") {
+            let mut scheme_start = pos;
+            for (i, c) in remaining[..pos].char_indices().rev() {
+                if c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.' {
+                    scheme_start = i;
+                } else {
+                    break;
                 }
+            }
+            if scheme_start < pos {
+                let abs_start = current_idx + scheme_start;
+                if best_match.is_none() || abs_start < best_match.as_ref().unwrap().0 {
+                    let mut end_offset = pos + 3;
+                    for c in remaining[pos + 3..].chars() {
+                        if c.is_whitespace() || c == ')' || c == ']' {
+                            break;
+                        }
+                        end_offset += c.len_utf8();
+                    }
+                    if end_offset > pos + 3 {
+                        best_match = Some((abs_start, abs_start + end_offset, "http", 0, 0));
+                    }
+                }
+            }
+        }
 
-                let mut end_offset = 0;
-                for c in text[abs_start..].chars() {
+        if let Some(pos) = remaining.find("mailto:") {
+            let abs_start = current_idx + pos;
+            if best_match.is_none() || abs_start < best_match.as_ref().unwrap().0 {
+                let mut end_offset = 7;
+                for c in remaining[pos + 7..].chars() {
                     if c.is_whitespace() || c == ')' || c == ']' {
                         break;
                     }
                     end_offset += c.len_utf8();
                 }
-                let abs_end = abs_start + end_offset;
-                // Update best_match directly since we dropped the closure
-                if best_match.is_none() || abs_start < best_match.as_ref().unwrap().0 {
-                    best_match = Some((abs_start, abs_end, "http", 0, 0));
+                if end_offset > 7 {
+                    best_match = Some((abs_start, abs_start + end_offset, "http", 0, 0));
                 }
             }
         }

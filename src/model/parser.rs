@@ -1202,7 +1202,7 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 matched_kind = Some(SyntaxType::Url);
             } else if word.starts_with("[[") && word.ends_with("]]") {
                 let inner = &word[2..word.len() - 2];
-                if inner.starts_with("http://") || inner.starts_with("https://") {
+                if inner.contains("://") || inner.starts_with("mailto:") {
                     matched_kind = Some(SyntaxType::Url);
                 } else {
                     matched_kind = Some(SyntaxType::WikiLink);
@@ -3040,13 +3040,17 @@ pub fn apply_smart_input(
         } else if pref == Some(PrefixToken::Url) {
             let val = strip_quotes(rem_original);
             if !val.is_empty() {
-                task.url = Some(val);
+                if !val.contains("://") && !val.starts_with("mailto:") {
+                    task.url = Some(format!("https://{}", val));
+                } else {
+                    task.url = Some(val);
+                }
             } else if !is_bg {
                 summary_words.push(unescape(token));
             }
         } else if token.starts_with("[[") && token.ends_with("]]") {
             let inner = &token[2..token.len() - 2];
-            if inner.starts_with("http://") || inner.starts_with("https://") {
+            if inner.contains("://") || inner.starts_with("mailto:") {
                 task.url = Some(inner.to_string());
             } else if !is_bg {
                 summary_words.push(unescape(token));

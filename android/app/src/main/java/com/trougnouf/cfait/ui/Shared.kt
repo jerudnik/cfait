@@ -141,18 +141,47 @@ fun parseInlineMarkdown(textStr: String, baseColor: androidx.compose.ui.graphics
             searchIdx = startPos + 2
         }
 
-        for (scheme in listOf("https://", "http://")) {
-            val startPos = remaining.indexOf(scheme)
-            if (startPos != -1) {
-                val absStart = currentIdx + startPos
-                var endOffset = 0
-                for (c in textStr.substring(absStart)) {
+        val schemePos = remaining.indexOf("://")
+        if (schemePos != -1) {
+            var schemeStart = schemePos
+            for (i in schemePos - 1 downTo 0) {
+                val c = remaining[i]
+                if (c.isLetterOrDigit() || c == '+' || c == '-' || c == '.') {
+                    schemeStart = i
+                } else {
+                    break
+                }
+            }
+            if (schemeStart < schemePos) {
+                val absStart = currentIdx + schemeStart
+                if (bestMatch == null || absStart < bestMatch.first) {
+                    var endOffset = schemePos + 3
+                    val rest = remaining.substring(endOffset)
+                    for (c in rest) {
+                        if (c.isWhitespace() || c == ')' || c == ']') break
+                        endOffset += 1
+                    }
+                    if (endOffset > schemePos + 3) {
+                        bestMatch = Triple(absStart, currentIdx + endOffset, "http")
+                        matchLen = 0
+                        endLen = 0
+                    }
+                }
+            }
+        }
+
+        val mailtoPos = remaining.indexOf("mailto:")
+        if (mailtoPos != -1) {
+            val absStart = currentIdx + mailtoPos
+            if (bestMatch == null || absStart < bestMatch.first) {
+                var endOffset = 7
+                val rest = remaining.substring(7)
+                for (c in rest) {
                     if (c.isWhitespace() || c == ')' || c == ']') break
                     endOffset += 1
                 }
-                val absEnd = absStart + endOffset
-                if (bestMatch == null || absStart < bestMatch.first) {
-                    bestMatch = Triple(absStart, absEnd, "http")
+                if (endOffset > 7) {
+                    bestMatch = Triple(absStart, currentIdx + endOffset, "http")
                     matchLen = 0
                     endLen = 0
                 }
@@ -780,7 +809,8 @@ class MarkdownTransformation(val isDark: Boolean) : VisualTransformation {
                 Pair(Regex("""<!-- uid:.*?-->"""), SpanStyle(color = dimColor, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)),
                 Pair(Regex("""\\[\[.*?\]\]"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
                 Pair(Regex("""\\[.*?\]\\(.*?\\)"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
-                Pair(Regex("""https?://[^\s)\]\]+"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
+                Pair(Regex("""[a-zA-Z][a-zA-Z0-9+.-]*://[^\s)\]\]+"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
+                Pair(Regex("""mailto:[^\s)\]\]+"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
                 Pair(Regex("""\*\*.*?\*\*"""), SpanStyle(fontWeight = FontWeight.Bold)),
                 Pair(Regex("""__.*?__"""), SpanStyle(fontWeight = FontWeight.Bold)),
                 Pair(Regex("""~~.*?~~"""), SpanStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)),

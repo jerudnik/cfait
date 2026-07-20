@@ -617,7 +617,17 @@ impl IcsAdapter {
         let percent_complete = get_prop("PERCENT-COMPLETE").and_then(|v| v.parse::<u8>().ok());
 
         let location = get_prop("LOCATION").map(|s| unescape_ics(&s));
-        let url = get_prop("URL").map(|s| unescape_ics(&s));
+        let url = get_prop("URL").map(|s| {
+            let unescaped = unescape_ics(&s);
+            if !unescaped.is_empty()
+                && !unescaped.contains("://")
+                && !unescaped.starts_with("mailto:")
+            {
+                format!("https://{}", unescaped)
+            } else {
+                unescaped
+            }
+        });
         let geo = get_prop("GEO").map(|s| s.replace(';', ","));
 
         let create_event =
