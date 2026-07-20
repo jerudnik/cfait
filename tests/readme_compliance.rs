@@ -98,7 +98,7 @@ fn readme_duration() {
 #[test]
 fn readme_extra_fields() {
     let t1 = parse("url:example.com");
-    assert_eq!(t1.url, Some("example.com".to_string()));
+    assert_eq!(t1.url, Some("https://example.com".to_string()));
 
     let t2 = parse("geo:53.04,-121.10");
     assert_eq!(t2.geo, Some("53.04,-121.10".to_string()));

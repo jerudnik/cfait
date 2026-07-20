@@ -27,7 +27,7 @@ fn test_basic_parsing() {
 
     assert_eq!(task.summary, "Buy milk");
     assert_eq!(task.location, Some("Kroger".to_string()));
-    assert_eq!(task.url, Some("google.com".to_string()));
+    assert_eq!(task.url, Some("https://google.com".to_string()));
 }
 
 #[test]
