@@ -441,6 +441,14 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
     for map in store.calendars.values() {
         for t in map.values() {
             if let Some(p) = &t.parent_uid {
+                // Skip trashed/recovered tasks so they don't appear as ghost subtasks,
+                // unless we are explicitly serializing a tree that is ALREADY in the trash.
+                if (t.calendar_href == crate::storage::LOCAL_TRASH_HREF
+                    || t.calendar_href == "local://recovery")
+                    && t.calendar_href != root.calendar_href
+                {
+                    continue;
+                }
                 children_map.entry(p.clone()).or_default().push(t);
             }
         }
