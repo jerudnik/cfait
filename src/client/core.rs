@@ -65,15 +65,20 @@ pub const APPLE_COLOR: PropertyName =
 use crate::client::FollowRedirectLayer;
 use crate::client::FollowRedirectService;
 use crate::client::auth::DynamicAuthService;
+use tower_http::decompression::DecompressionLayer;
 
 // Concrete HttpsClient type used throughout the crate. This is a FollowRedirect
-// wrapper around the DynamicAuthService -> UserAgentService -> hyper Client.
+// wrapper around the DynamicAuthService -> UserAgentService -> Decompression -> hyper Client.
 pub(crate) type HttpsClient = FollowRedirectService<
     DynamicAuthService<
         UserAgentService<
-            Client<
-                hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>,
-                String,
+            tower_http::decompression::Decompression<
+                Client<
+                    hyper_rustls::HttpsConnector<
+                        hyper_util::client::legacy::connect::HttpConnector,
+                    >,
+                    String,
+                >,
             >,
         >,
     >,
@@ -292,6 +297,7 @@ impl RustyClient {
             .build();
 
         let http_client = Client::builder(TokioExecutor::new()).build(https_connector);
+        let decomp_client = DecompressionLayer::new().layer(http_client);
 
         // Build a deterministic User-Agent string
         let version = env!("CARGO_PKG_VERSION");
@@ -301,7 +307,7 @@ impl RustyClient {
             format!("Cfait/{}", version)
         };
 
-        let ua_client = UserAgentLayer::new(ua_string).layer(http_client);
+        let ua_client = UserAgentLayer::new(ua_string).layer(decomp_client);
         let auth_client =
             DynamicAuthLayer::new(user.to_string(), pass.to_string()).layer(ua_client);
         let redirect_client = FollowRedirectLayer::new(10).layer(auth_client);
