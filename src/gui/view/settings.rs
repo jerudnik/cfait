@@ -947,10 +947,13 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
             }
         }
 
-        for (cal, is_local) in ordered_cals {
+        let total = ordered_cals.len();
+        for (index, (cal, is_local)) in ordered_cals.into_iter().enumerate() {
             let cal_href = cal.href.clone();
             let is_enabled = !app.disabled_calendars.contains(&cal_href);
             let is_default = cal_href == LOCAL_CALENDAR_HREF;
+            let can_move_up = index > 0;
+            let can_move_down = index < total - 1;
 
             let checkbox_elem = checkbox::<Message, iced::Theme, iced::Renderer>(is_enabled)
                 .label("")
@@ -1013,20 +1016,30 @@ pub fn view_settings(app: &GuiApp) -> Element<'_, Message> {
 
             let up_btn: Element<_> = if app.sort_collections_by_size {
                 Space::new().width(Length::Fixed(24.0)).into()
-            } else {
+            } else if can_move_up {
                 button(icon::icon(icon::ARROW_EXPAND_UP).size(14))
                     .style(button::text)
                     .padding(5)
                     .on_press(Message::MoveCalendar(cal_href.clone(), -1))
                     .into()
+            } else {
+                button(icon::icon(icon::ARROW_EXPAND_UP).size(14))
+                    .style(button::text)
+                    .padding(5)
+                    .into()
             };
             let down_btn: Element<_> = if app.sort_collections_by_size {
                 Space::new().width(Length::Fixed(24.0)).into()
-            } else {
+            } else if can_move_down {
                 button(icon::icon(icon::ARROW_EXPAND_DOWN).size(14))
                     .style(button::text)
                     .padding(5)
                     .on_press(Message::MoveCalendar(cal_href.clone(), 1))
+                    .into()
+            } else {
+                button(icon::icon(icon::ARROW_EXPAND_DOWN).size(14))
+                    .style(button::text)
+                    .padding(5)
                     .into()
             };
 

@@ -793,13 +793,17 @@ fun SettingsScreen(
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    allCalendars.forEach { cal ->
+                    allCalendars.forEachIndexed { index, cal ->
                         key(cal.href) {
+                            val isTrash = cal.href == "local://trash"
+                            val canMoveUp = !sortCollectionsBySize && index > 0 && !isTrash
+                            val canMoveDown = !sortCollectionsBySize && index < allCalendars.lastIndex && !isTrash
                             CollectionEditor(
                                 cal = cal,
                                 isLocal = cal.isLocal,
                                 isEnabled = !disabledSet.contains(cal.href),
-                                showMoveButtons = !sortCollectionsBySize,
+                                canMoveUp = canMoveUp,
+                                canMoveDown = canMoveDown,
                                 onToggleEnabled = { enabled ->
                                     val newSet = disabledSet.toMutableSet()
                                     if (enabled) newSet.remove(cal.href) else newSet.add(cal.href)
@@ -1232,7 +1236,8 @@ fun CollectionEditor(
     cal: MobileCalendar,
     isLocal: Boolean,
     isEnabled: Boolean,
-    showMoveButtons: Boolean,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
     onToggleEnabled: (Boolean) -> Unit,
     onUpdate: (String, String?) -> Unit,
     onDelete: () -> Unit,
@@ -1258,12 +1263,28 @@ fun CollectionEditor(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (showMoveButtons) {
-                    IconButton(onClick = onMoveUp, modifier = Modifier.size(24.dp)) {
-                        NfIcon(NfIcons.ARROW_UP, 16.sp)
+                if (canMoveUp || canMoveDown) {
+                    IconButton(
+                        onClick = onMoveUp,
+                        modifier = Modifier.size(24.dp),
+                        enabled = canMoveUp
+                    ) {
+                        NfIcon(
+                            NfIcons.ARROW_UP,
+                            16.sp,
+                            if (canMoveUp) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        )
                     }
-                    IconButton(onClick = onMoveDown, modifier = Modifier.size(24.dp)) {
-                        NfIcon(NfIcons.ARROW_DOWN, 16.sp)
+                    IconButton(
+                        onClick = onMoveDown,
+                        modifier = Modifier.size(24.dp),
+                        enabled = canMoveDown
+                    ) {
+                        NfIcon(
+                            NfIcons.ARROW_DOWN,
+                            16.sp,
+                            if (canMoveDown) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        )
                     }
                 }
                 Checkbox(
