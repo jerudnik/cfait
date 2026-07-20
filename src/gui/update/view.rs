@@ -1002,6 +1002,17 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             refresh_filtered_tasks(app);
             Task::none()
         }
+        Message::SetSearchTerm(term) => {
+            app.search_value = iced::widget::text_editor::Content::with_text(&term);
+            app.session.search_term = term;
+            app.session.search_collapsed_tasks.clear();
+            app.search_value
+                .perform(iced::widget::text_editor::Action::Move(
+                    iced::widget::text_editor::Motion::DocumentEnd,
+                ));
+            refresh_filtered_tasks(app);
+            Task::none()
+        }
         Message::ToggleSidebar => {
             app.sidebar_is_hidden = !app.sidebar_is_hidden;
             save_config(app);

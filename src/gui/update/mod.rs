@@ -220,6 +220,7 @@ pub fn update(app: &mut GuiApp, message: Message) -> Task<Message> {
         | Message::SearchChanged(_)
         | Message::ApplySearch(_)
         | Message::ClearSearch
+        | Message::SetSearchTerm(_)
         | Message::SetMinDuration(_)
         | Message::SetMaxDuration(_)
         | Message::ToggleIncludeUnsetDuration(_)

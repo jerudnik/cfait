@@ -152,40 +152,6 @@ impl TaskDisplay for Task {
         if let Some(g) = &self.geo {
             s.push_str(&format!(" geo:{}", crate::model::parser::quote_value(g)));
         }
-        if let (Some(start), Some(due)) = (&self.dtstart, &self.due) {
-            if start == due {
-                s.push_str(&format!(" ^@{}", start.format_smart()));
-            } else if let (
-                crate::model::DateType::Specific(s_dt),
-                crate::model::DateType::Specific(d_dt),
-            ) = (start, due)
-            {
-                let s_loc = s_dt.with_timezone(&chrono::Local);
-                let d_loc = d_dt.with_timezone(&chrono::Local);
-                if s_loc.date_naive() == d_loc.date_naive() {
-                    s.push_str(&format!(
-                        " ^@{} {}-{}",
-                        s_loc.format("%Y-%m-%d"),
-                        s_loc.format("%H:%M"),
-                        d_loc.format("%H:%M")
-                    ));
-                } else {
-                    s.push_str(&format!(" ^{}", start.format_smart()));
-                    s.push_str(&format!(" @{}", due.format_smart()));
-                }
-            } else {
-                s.push_str(&format!(" ^{}", start.format_smart()));
-                s.push_str(&format!(" @{}", due.format_smart()));
-            }
-        } else {
-            if let Some(start) = &self.dtstart {
-                s.push_str(&format!(" ^{}", start.format_smart()));
-            }
-            if let Some(d) = &self.due {
-                s.push_str(&format!(" @{}", d.format_smart()));
-            }
-        }
-
         if let Some(min) = self.estimated_duration {
             let fmt_val = |m: u32| -> String {
                 if m.is_multiple_of(525600) {
@@ -319,6 +285,40 @@ impl TaskDisplay for Task {
                 type_str,
                 goal.interval.format_short()
             ));
+        }
+
+        if let (Some(start), Some(due)) = (&self.dtstart, &self.due) {
+            if start == due {
+                s.push_str(&format!(" ^@{}", start.format_smart()));
+            } else if let (
+                crate::model::DateType::Specific(s_dt),
+                crate::model::DateType::Specific(d_dt),
+            ) = (start, due)
+            {
+                let s_loc = s_dt.with_timezone(&chrono::Local);
+                let d_loc = d_dt.with_timezone(&chrono::Local);
+                if s_loc.date_naive() == d_loc.date_naive() {
+                    s.push_str(&format!(
+                        " ^@{} {}-{}",
+                        s_loc.format("%Y-%m-%d"),
+                        s_loc.format("%H:%M"),
+                        d_loc.format("%H:%M")
+                    ));
+                } else {
+                    s.push_str(&format!(" ^{}", start.format_smart()));
+                    s.push_str(&format!(" @{}", due.format_smart()));
+                }
+            } else {
+                s.push_str(&format!(" ^{}", start.format_smart()));
+                s.push_str(&format!(" @{}", due.format_smart()));
+            }
+        } else {
+            if let Some(start) = &self.dtstart {
+                s.push_str(&format!(" ^{}", start.format_smart()));
+            }
+            if let Some(d) = &self.due {
+                s.push_str(&format!(" @{}", d.format_smart()));
+            }
         }
 
         // Output completion date if present

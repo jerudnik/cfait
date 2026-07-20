@@ -50,6 +50,7 @@ pub enum Message {
     SearchChanged(text_editor::Action),
     ApplySearch(usize),
     ClearSearch,
+    SetSearchTerm(String),
     SubmitTask,
     SaveAndSwitchEditor,
     ToggleTask(usize, bool),

@@ -397,28 +397,41 @@ pub fn view_task_row<'a>(
                                 (icon::CALENDAR_XMARK, Color::from_rgb(0.8, 0.2, 0.2))
                             };
 
+                        let date_str = local_done.format("%Y-%m-%d").to_string();
                         row_content = row_content.push(
-                            container(icon::icon(done_icon).size(12).color(done_color))
+                            button(
+                                row![
+                                    icon::icon(done_icon).size(12).color(done_color),
+                                    text(local_done.format("%Y-%m-%d %H:%M").to_string())
+                                        .size(14)
+                                        .color(done_color)
+                                ]
+                                .spacing(3)
                                 .align_y(iced::Alignment::Center),
-                        );
-                        row_content = row_content.push(
-                            text(local_done.format("%Y-%m-%d %H:%M").to_string())
-                                .size(14)
-                                .color(done_color),
+                            )
+                            .style(iced::widget::button::text)
+                            .padding(0)
+                            .on_press(Message::SetSearchTerm(format!("done:{}", date_str))),
                         );
                     }
                 } else if is_future_start {
-                    row_content = row_content.push(
-                        container(icon::icon(icon::HOURGLASS_START).size(12).color(dim_color))
-                            .align_y(iced::Alignment::Center),
-                    );
-
                     let start_ref = task.dtstart.as_ref().unwrap();
                     let start_str = start_ref.format_smart();
+                    let start_date_str = start_ref.to_date_naive().format("%Y-%m-%d").to_string();
+                    let start_btn = button(
+                        row![
+                            icon::icon(icon::HOURGLASS_START).size(12).color(dim_color),
+                            text(start_str.clone()).size(14).color(dim_color)
+                        ]
+                        .spacing(3)
+                        .align_y(iced::Alignment::Center),
+                    )
+                    .style(iced::widget::button::text)
+                    .padding(0)
+                    .on_press(Message::SetSearchTerm(format!("^{}", start_date_str)));
 
                     if let Some(due) = &task.due {
                         let is_same_day = start_ref.to_date_naive() == due.to_date_naive();
-
                         let due_str = if is_same_day {
                             match due {
                                 crate::model::DateType::Specific(dt) => {
@@ -433,29 +446,41 @@ pub fn view_task_row<'a>(
                         };
 
                         if start_str == due.format_smart() {
-                            row_content =
-                                row_content.push(text(start_str).size(14).color(dim_color));
+                            row_content = row_content.push(start_btn);
                         } else {
-                            row_content = row_content.push(
-                                text(format!("{} - {}", start_str, due_str))
-                                    .size(14)
-                                    .color(dim_color),
-                            );
-                        }
-                        row_content = row_content.push(
-                            container(icon::icon(icon::HOURGLASS_END).size(12).color(dim_color))
+                            let due_date_str = due.to_date_naive().format("%Y-%m-%d").to_string();
+                            let due_btn = button(
+                                row![
+                                    text(format!("- {}", due_str)).size(14).color(dim_color),
+                                    icon::icon(icon::HOURGLASS_END).size(12).color(dim_color)
+                                ]
+                                .spacing(3)
                                 .align_y(iced::Alignment::Center),
-                        );
+                            )
+                            .style(iced::widget::button::text)
+                            .padding(0)
+                            .on_press(Message::SetSearchTerm(format!("@{}", due_date_str)));
+
+                            row_content = row_content.push(start_btn).push(due_btn);
+                        }
                     } else {
-                        row_content = row_content.push(text(start_str).size(14).color(dim_color));
+                        row_content = row_content.push(start_btn);
                     }
                 } else if let Some(d) = &task.due {
+                    let due_date_str = d.to_date_naive().format("%Y-%m-%d").to_string();
                     row_content = row_content.push(
-                        container(icon::icon(icon::CALENDAR).size(12).color(due_color))
+                        button(
+                            row![
+                                icon::icon(icon::CALENDAR).size(12).color(due_color),
+                                text(d.format_smart()).size(14).color(due_color)
+                            ]
+                            .spacing(3)
                             .align_y(iced::Alignment::Center),
+                        )
+                        .style(iced::widget::button::text)
+                        .padding(0)
+                        .on_press(Message::SetSearchTerm(format!("@{}", due_date_str))),
                     );
-                    row_content =
-                        row_content.push(text(d.format_smart()).size(14).color(due_color));
                 }
 
                 container(row_content).width(Length::Shrink).into()
