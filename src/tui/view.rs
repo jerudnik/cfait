@@ -123,7 +123,7 @@ fn parse_inline_elements(text: &str, base_style: Style, strip_markers: bool) -> 
                         end_offset += c.len_utf8();
                     }
                     if end_offset > pos + 3 {
-                        best_match = Some((abs_start, abs_start + end_offset, "http", 0, 0));
+                        best_match = Some((abs_start, current_idx + end_offset, "http", 0, 0));
                     }
                 }
             }

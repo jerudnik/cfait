@@ -622,7 +622,7 @@ impl Highlighter for MarkdownHighlighter {
                             if end_offset > pos + 3 {
                                 best_match = Some((
                                     abs_start,
-                                    abs_start + end_offset,
+                                    cursor + end_offset,
                                     highlighter::Format {
                                         color: link_color,
                                         font: Some(Font {
@@ -1033,7 +1033,7 @@ impl Highlighter for MarkdownHighlighter {
                         if end_offset > pos + 3 {
                             best_match = Some((
                                 abs_start,
-                                abs_start + end_offset,
+                                cursor + end_offset,
                                 highlighter::Format {
                                     color: link_color,
                                     font: Some(Font {
