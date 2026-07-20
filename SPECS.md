@@ -19,7 +19,9 @@ Cfait is an offline-first task manager that seamlessly synchronizes with CalDAV 
 *   **Background Sync:** 
     *   *Desktop (GUI/CLI daemon):* A background worker reads the Journal and pushes changes via `RustyClient`.
     *   *Android:* Handled via `WorkManager`. `PeriodicSyncWorker` runs based on `auto_refresh_interval_mins` (min 15 mins). Foreground manual syncs trigger immediate updates.
-*   **Settings Sync:** User configuration and aliases sync across devices via a hidden `VTODO` task with UID `cfait-global-settings-v1` (status `CANCELLED`, category `cfait-internal`).
+*   **Settings Sync:** User configuration (e.g., `default_calendar`, `disabled_calendars`, sorting presets, goals) and aliases sync across devices via a hidden `VTODO` task with UID `cfait-global-settings-v1` (status `CANCELLED`, category `cfait-internal`). 
+    * *Exclusions:* Purely local view state (`hidden_calendars`, window dimensions, UI scale, expanded tree paths) intentionally do not sync so that each device retains its own independent viewing context.
+*   **Write Target (Active Collection):** When a new task is created, it is assigned to the UI's currently "active" collection. In the TUI/GUI, this is the collection currently selected/highlighted in the sidebar (regardless of how many other collections are visible in the main view). On Android, this is the collection tab currently being viewed. Upon app startup, this active collection is initialized to the globally synced `default_calendar`.
 *   **Conflict & Error Handling:** 
     *   `412 Precondition Failed` (ETag mismatch): Performs a local 3-way merge. If unmergeable, a "Conflict Copy" is generated.
     *   **Fatal Server Errors (e.g., 400, 403, 415):** The problematic task is rescued into a local `local://recovery` calendar to prevent data loss or sync loop lockups, with the error appended to its description.

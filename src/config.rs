@@ -788,6 +788,10 @@ pub struct Config {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct SyncableConfig {
     #[serde(default)]
+    pub default_calendar: Option<String>,
+    #[serde(default)]
+    pub disabled_calendars: Vec<String>,
+    #[serde(default)]
     pub collection_order: Vec<String>,
     #[serde(default)]
     pub tag_aliases: HashMap<String, Vec<String>>,
@@ -934,6 +938,8 @@ impl Default for Config {
 impl Config {
     pub fn get_syncable(&self) -> SyncableConfig {
         SyncableConfig {
+            default_calendar: self.default_calendar.clone(),
+            disabled_calendars: self.disabled_calendars.clone(),
             collection_order: self.collection_order.clone(),
             tag_aliases: self.tag_aliases.clone(),
             goals: self.goals.clone(),
@@ -972,6 +978,12 @@ impl Config {
     }
 
     pub fn apply_syncable(&mut self, sync: SyncableConfig) {
+        // Only overwrite the default calendar if the sync payload contains one,
+        // protecting against downgrades from older clients missing this field.
+        if sync.default_calendar.is_some() {
+            self.default_calendar = sync.default_calendar;
+        }
+        self.disabled_calendars = sync.disabled_calendars;
         self.collection_order = sync.collection_order;
         self.tag_aliases = sync.tag_aliases;
         self.goals = sync.goals;

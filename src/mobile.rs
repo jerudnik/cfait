@@ -1328,8 +1328,13 @@ impl CfaitMobile {
             .filter(|c| c.href != href)
             .map(|c| c.href.clone())
             .collect();
-        config.default_calendar = Some(href);
-        config.save(self.ctx.as_ref()).map_err(MobileError::from)
+        config.save(self.ctx.as_ref()).map_err(MobileError::from)?;
+
+        if let Ok(mut session) = self.session.try_lock() {
+            session.active_calendar_href = Some(href);
+        }
+
+        Ok(())
     }
 
     pub fn remove_alias(&self, key: String) -> Result<(), MobileError> {
@@ -2290,9 +2295,10 @@ impl CfaitMobile {
             task.summary,
             !task.alarms.is_empty()
         );
-        task.calendar_href = config
-            .default_calendar
-            .clone()
+
+        let active_cal = self.session.lock().await.active_calendar_href.clone();
+        task.calendar_href = active_cal
+            .or(config.default_calendar.clone())
             .unwrap_or(LOCAL_CALENDAR_HREF.to_string());
 
         let uid = self
@@ -2401,9 +2407,10 @@ impl CfaitMobile {
                 task.description.push_str(&format!("\n\n{}", cleaned_desc));
             }
         }
-        task.calendar_href = config
-            .default_calendar
-            .clone()
+
+        let active_cal = self.session.lock().await.active_calendar_href.clone();
+        task.calendar_href = active_cal
+            .or(config.default_calendar.clone())
             .unwrap_or(crate::storage::LOCAL_CALENDAR_HREF.to_string());
 
         let parent_props = (
@@ -2476,9 +2483,10 @@ impl CfaitMobile {
 
             sub.parent_uid = Some(ext.parent_uid.unwrap_or(parent_uid.clone()));
             sub.dependencies = ext.dependencies;
-            sub.calendar_href = config
-                .default_calendar
-                .clone()
+
+            let active_cal = self.session.lock().await.active_calendar_href.clone();
+            sub.calendar_href = active_cal
+                .or(config.default_calendar.clone())
                 .unwrap_or(crate::storage::LOCAL_CALENDAR_HREF.to_string());
 
             self.controller
