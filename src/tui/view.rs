@@ -2132,7 +2132,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 )));
                 for item in sec.items {
                     let keys_span = Span::styled(
-                        format!("{:width$}", item.keys, width = 22),
+                        format!("{:width$}", item.keys, width = 26),
                         Style::default().fg(Color::Green),
                     );
                     let desc_span = Span::raw(item.desc);

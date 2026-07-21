@@ -354,7 +354,7 @@ fn help_card<'a>(title: &str, items: &[crate::help::HelpItem]) -> Element<'a, Me
 
         let content = column![
             row![
-                syntax_pill.width(Length::Fixed(180.0)),
+                syntax_pill.width(Length::Fixed(240.0)),
                 text::<Theme, iced::Renderer>(item.desc.clone())
                     .size(15)
                     .width(Length::Fill)
@@ -363,7 +363,7 @@ fn help_card<'a>(title: &str, items: &[crate::help::HelpItem]) -> Element<'a, Me
             .align_y(iced::Alignment::Center),
             if !item.example.is_empty() {
                 Element::from(row![
-                    Space::new().width(Length::Fixed(195.0)),
+                    Space::new().width(Length::Fixed(255.0)),
                     text::<Theme, iced::Renderer>(format!("e.g. {}", item.example))
                         .size(13)
                         .font(Font::MONOSPACE)
