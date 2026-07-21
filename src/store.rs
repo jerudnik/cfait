@@ -1438,10 +1438,72 @@ impl TaskStore {
 
             if let Some(existing) = self.get_task_ref(&task_uid) {
                 let old_href = existing.calendar_href.clone();
+
+                // Reconstruct the exact expected raw_text for the existing task:
+                let mut expected_raw_text = existing.to_smart_string();
+                if existing.is_note {
+                    if expected_raw_text.starts_with("- ") || expected_raw_text.starts_with("* ") {
+                        expected_raw_text = expected_raw_text[2..].trim_start().to_string();
+                    } else if expected_raw_text == "-" || expected_raw_text == "*" {
+                        expected_raw_text = String::new();
+                    }
+                }
+                if existing.calendar_href != root_calendar_href {
+                    expected_raw_text.push_str(&format!(
+                        " col:{}",
+                        crate::model::parser::quote_value(&existing.calendar_href)
+                    ));
+                }
+                let mut dep_str = String::new();
+                let process_relations = |uids: &[String], prefix: &str, out: &mut String| {
+                    for uid in uids {
+                        if let Some(target_task) = self.get_task_ref(uid) {
+                            if target_task.calendar_href == crate::storage::LOCAL_TRASH_HREF
+                                || target_task.calendar_href == "local://recovery"
+                            {
+                                continue;
+                            }
+                        } else {
+                            continue;
+                        }
+                        let display_val = if uid.len() == 36 && uuid::Uuid::parse_str(uid).is_ok() {
+                            &uid[..8]
+                        } else {
+                            uid
+                        };
+                        out.push_str(&format!(
+                            " {}:{}",
+                            prefix,
+                            crate::model::parser::quote_value(display_val)
+                        ));
+                    }
+                };
+                process_relations(&existing.dependencies, "dep", &mut dep_str);
+                process_relations(&existing.related_to, "rel", &mut dep_str);
+                expected_raw_text.push_str(&dep_str);
+
                 let mut clone = existing.clone();
-                clone.apply_smart_input(&ext.raw_text, aliases, default_reminder_time);
+                let mut actually_changed = false;
+
+                if expected_raw_text.trim() != ext.raw_text.trim() {
+                    clone.apply_smart_input(&ext.raw_text, aliases, default_reminder_time);
+                    if !ext.dependencies.is_empty() {
+                        clone.dependencies.extend(ext.dependencies.clone());
+                    }
+                    actually_changed = true;
+                } else {
+                    let dummy =
+                        crate::model::Task::new(&ext.raw_text, aliases, default_reminder_time);
+                    let mut new_deps = dummy.dependencies;
+                    new_deps.extend(ext.dependencies.clone());
+                    clone.dependencies = new_deps;
+                    clone.related_to = dummy.related_to;
+                }
 
                 clone.description = ext.description.clone();
+                clone.is_note = ext.is_note;
+                clone.percent_complete = ext.percent_complete;
+                clone.parent_uid = parent_uid.clone();
 
                 let smart_status = clone.status;
                 clone.status = ext.status;
@@ -1471,14 +1533,6 @@ impl TaskStore {
                     }
                 }
 
-                clone.parent_uid = parent_uid;
-                if !ext.dependencies.is_empty() {
-                    clone.dependencies.extend(ext.dependencies);
-                }
-
-                clone.percent_complete = ext.percent_complete;
-                clone.is_note = ext.is_note;
-
                 let final_href = if let Some(target) = clone.target_collection.take() {
                     crate::model::resolve_collection(&target, calendars, &inherited_href)
                 } else {
@@ -1487,20 +1541,63 @@ impl TaskStore {
                 clone.calendar_href = final_href.clone();
                 resolved_hrefs.insert(task_uid.clone(), final_href.clone());
 
-                clone.sequence += 1;
+                let mut test_existing = existing.clone();
+                let mut test_clone = clone.clone();
+                test_existing.sequence = 0;
+                test_clone.sequence = 0;
+                test_existing.etag = String::new();
+                test_clone.etag = String::new();
+                test_existing.href = String::new();
+                test_clone.href = String::new();
 
-                if old_href != final_href {
-                    actions.push(crate::journal::Action::Move(existing.clone(), final_href));
+                let _ = self.resolve_dependencies(&mut test_existing);
+                let _ = self.resolve_dependencies(&mut test_clone);
+
+                if test_existing.summary != test_clone.summary
+                    || test_existing.description != test_clone.description
+                    || test_existing.status != test_clone.status
+                    || test_existing.priority != test_clone.priority
+                    || test_existing.due != test_clone.due
+                    || test_existing.dtstart != test_clone.dtstart
+                    || test_existing.categories != test_clone.categories
+                    || test_existing.location != test_clone.location
+                    || test_existing.url != test_clone.url
+                    || test_existing.geo != test_clone.geo
+                    || test_existing.percent_complete != test_clone.percent_complete
+                    || test_existing.is_note != test_clone.is_note
+                    || test_existing.pinned != test_clone.pinned
+                    || test_existing.manual_block != test_clone.manual_block
+                    || test_existing.permanent != test_clone.permanent
+                    || test_existing.parent_uid != test_clone.parent_uid
+                    || test_existing.dependencies != test_clone.dependencies
+                    || test_existing.related_to != test_clone.related_to
+                    || test_existing.calendar_href != test_clone.calendar_href
+                    || actually_changed
+                {
+                    clone.sequence += 1;
+
+                    if old_href != final_href {
+                        actions.push(crate::journal::Action::Move(existing.clone(), final_href));
+                    }
+                    resolved_props.insert(
+                        task_uid.clone(),
+                        (
+                            clone.categories.clone(),
+                            clone.location.clone(),
+                            clone.priority,
+                        ),
+                    );
+                    tasks_to_update.push(clone);
+                } else {
+                    resolved_props.insert(
+                        task_uid.clone(),
+                        (
+                            existing.categories.clone(),
+                            existing.location.clone(),
+                            existing.priority,
+                        ),
+                    );
                 }
-                resolved_props.insert(
-                    task_uid.clone(),
-                    (
-                        clone.categories.clone(),
-                        clone.location.clone(),
-                        clone.priority,
-                    ),
-                );
-                tasks_to_update.push(clone);
             } else {
                 let mut new_task =
                     crate::model::Task::new(&ext.raw_text, aliases, default_reminder_time);

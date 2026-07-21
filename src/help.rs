@@ -82,7 +82,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
     let is_done = rust_i18n::t!("search_is_done");
     let is_status = rust_i18n::t!("help_keys_search_status");
 
-    vec![
+    let mut sections = vec![
         HelpSection {
             title: rust_i18n::t!("help_quick_start").to_string(),
             items: vec![
@@ -440,7 +440,42 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                 },
             ],
         },
-    ]
+    ];
+
+    if !rust_i18n::locale().to_lowercase().starts_with("en") {
+        sections.push(HelpSection {
+            title: rust_i18n::t!("help_en_fallback_title").to_string(),
+            items: vec![
+                HelpItem {
+                    keys: "due:, start:, est:, rem:, spent:, done:".to_string(),
+                    desc: rust_i18n::t!("help_en_fallback_prefixes").to_string(),
+                    example: "".to_string(),
+                },
+                HelpItem {
+                    keys: "today, tomorrow, yesterday, now".to_string(),
+                    desc: rust_i18n::t!("help_en_fallback_dates").to_string(),
+                    example: "".to_string(),
+                },
+                HelpItem {
+                    keys: "next, in, every, after, until, except".to_string(),
+                    desc: rust_i18n::t!("help_en_fallback_logic").to_string(),
+                    example: "".to_string(),
+                },
+                HelpItem {
+                    keys: "m, h, d, w, mo, y".to_string(),
+                    desc: rust_i18n::t!("help_timeline_units_desc").to_string(),
+                    example: "".to_string(),
+                },
+                HelpItem {
+                    keys: "mon, tue, wed, thu, fri, sat, sun".to_string(),
+                    desc: rust_i18n::t!("help_key_weekdays").to_string(),
+                    example: "".to_string(),
+                },
+            ],
+        });
+    }
+
+    sections
 }
 
 pub fn get_shortcuts_help(is_gui: bool) -> Vec<HelpSection> {
