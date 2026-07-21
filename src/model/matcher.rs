@@ -463,23 +463,23 @@ impl Task {
         }
 
         // --- Status Filters ---
-        if part_lower == "is:done" || part_lower == lex.search_is_done {
+        if part_lower == "is:done" || lex.search_is_done.contains(&part_lower) {
             return self.status.is_done();
         }
         if part_lower == "is:started"
             || part_lower == "is:ongoing"
-            || part_lower == lex.search_is_started
-            || part_lower == lex.search_is_ongoing
+            || lex.search_is_started.contains(&part_lower)
+            || lex.search_is_ongoing.contains(&part_lower)
         {
             return self.status == TaskStatus::InProcess;
         }
-        if part_lower == "is:active" || part_lower == lex.search_is_active {
+        if part_lower == "is:active" || lex.search_is_active.contains(&part_lower) {
             return !self.status.is_done();
         }
         if part_lower == "is:ready"
             || part_lower == "is:blocked"
-            || part_lower == lex.search_is_ready
-            || part_lower == lex.search_is_blocked
+            || lex.search_is_ready.contains(&part_lower)
+            || lex.search_is_blocked.contains(&part_lower)
         {
             // "ready/blocked" states are computed transiently in store.filter()
             // but for simple text matching here we mostly ignore them or treat as valid.
@@ -487,10 +487,10 @@ impl Task {
             return true;
         }
 
-        if part_lower == "is:note" || part_lower == lex.search_is_note {
+        if part_lower == "is:note" || lex.search_is_note.contains(&part_lower) {
             return self.is_note;
         }
-        if part_lower == "is:permanent" || part_lower == lex.search_is_permanent {
+        if part_lower == "is:permanent" || lex.search_is_permanent.contains(&part_lower) {
             return self.permanent;
         }
         if lex.exact.get(&part_lower) == Some(&crate::model::parser::ExactToken::IsPinned) {

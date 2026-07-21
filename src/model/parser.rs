@@ -97,16 +97,16 @@ pub struct ParserLexicon {
     pub unit_w: String,
     pub unit_mo: String,
     pub unit_y: String,
-    pub search_prefix: String,
-    pub search_is_done: String,
-    pub search_is_active: String,
-    pub search_is_started: String,
-    pub search_is_ongoing: String,
-    pub search_is_ready: String,
-    pub search_is_blocked: String,
-    pub search_is_note: String,
-    pub search_is_permanent: String,
-    pub parser_collection: String,
+    pub search_prefix: Vec<String>,
+    pub search_is_done: Vec<String>,
+    pub search_is_active: Vec<String>,
+    pub search_is_started: Vec<String>,
+    pub search_is_ongoing: Vec<String>,
+    pub search_is_ready: Vec<String>,
+    pub search_is_blocked: Vec<String>,
+    pub search_is_note: Vec<String>,
+    pub search_is_permanent: Vec<String>,
+    pub parser_collection: Vec<String>,
 }
 
 impl ParserLexicon {
@@ -189,6 +189,19 @@ impl ParserLexicon {
             } else {
                 def.to_string()
             }
+        };
+
+        let get_all = |loc_key: &str, def: &str| -> Vec<String> {
+            let t = rust_i18n::t!(loc_key);
+            let s = if t != loc_key && !t.is_empty() {
+                t.to_string()
+            } else {
+                def.to_string()
+            };
+            s.split(',')
+                .map(|x| x.trim().to_lowercase())
+                .filter(|x| !x.is_empty())
+                .collect()
         };
 
         add_exact("parser_today", "today,tdy", ExactToken::Today);
@@ -369,16 +382,16 @@ impl ParserLexicon {
             unit_w: get_first("parser_unit_weeks", "w"),
             unit_mo: get_first("parser_unit_months", "mo"),
             unit_y: get_first("parser_unit_years", "y"),
-            search_prefix: rust_i18n::t!("search_is_prefix").to_lowercase(),
-            search_is_done: rust_i18n::t!("search_is_done").to_lowercase(),
-            search_is_active: rust_i18n::t!("search_is_active").to_lowercase(),
-            search_is_started: rust_i18n::t!("search_is_started").to_lowercase(),
-            search_is_ongoing: rust_i18n::t!("search_is_ongoing").to_lowercase(),
-            search_is_ready: rust_i18n::t!("search_is_ready").to_lowercase(),
-            search_is_blocked: rust_i18n::t!("search_is_blocked").to_lowercase(),
-            search_is_note: rust_i18n::t!("search_is_note").to_lowercase(),
-            search_is_permanent: rust_i18n::t!("parser_is_permanent").to_lowercase(),
-            parser_collection: rust_i18n::t!("parser_collection").to_lowercase(),
+            search_prefix: get_all("search_is_prefix", "is:"),
+            search_is_done: get_all("search_is_done", "is:done"),
+            search_is_active: get_all("search_is_active", "is:active"),
+            search_is_started: get_all("search_is_started", "is:started"),
+            search_is_ongoing: get_all("search_is_ongoing", "is:ongoing"),
+            search_is_ready: get_all("search_is_ready", "is:ready"),
+            search_is_blocked: get_all("search_is_blocked", "is:blocked"),
+            search_is_note: get_all("search_is_note", "is:note"),
+            search_is_permanent: get_all("parser_is_permanent", "is:permanent"),
+            parser_collection: get_all("parser_collection", "col:"),
         }
     }
 }
@@ -930,7 +943,7 @@ pub fn tokenize_smart_input(input: &str, is_search_query: bool) -> Vec<SyntaxTok
                 matched_kind = Some(SyntaxType::Operator);
             } else if word.starts_with('-') && word.len() > 1
                 || word_lower.starts_with("is:")
-                || word_lower.starts_with(&lex.search_prefix)
+                || lex.search_prefix.iter().any(|p| word_lower.starts_with(p))
                 || ((word.starts_with('!')
                     || word.starts_with('~')
                     || word.starts_with('@')

@@ -2424,18 +2424,18 @@ impl TaskStore {
 
         for word in search_lower.split_whitespace() {
             let w = word.trim_start_matches('-'); // Support negated status searches
-            if w == "is:ready" || w == lex.search_is_ready {
+            if w == "is:ready" || lex.search_is_ready.iter().any(|x| x.as_str() == w) {
                 is_ready_mode = true;
-            } else if w == "is:blocked" || w == lex.search_is_blocked {
+            } else if w == "is:blocked" || lex.search_is_blocked.iter().any(|x| x.as_str() == w) {
                 is_blocked_mode = true;
             } else if w == "is:done"
-                || w == lex.search_is_done
+                || lex.search_is_done.iter().any(|x| x.as_str() == w)
                 || w == "is:active"
-                || w == lex.search_is_active
+                || lex.search_is_active.iter().any(|x| x.as_str() == w)
                 || w == "is:started"
-                || w == lex.search_is_started
+                || lex.search_is_started.iter().any(|x| x.as_str() == w)
                 || w == "is:ongoing"
-                || w == lex.search_is_ongoing
+                || lex.search_is_ongoing.iter().any(|x| x.as_str() == w)
             {
                 has_status_filter = true;
             }

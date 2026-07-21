@@ -78,8 +78,8 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
     let u_mo = get_first("parser_unit_months");
     let u_y = get_first("parser_unit_years");
 
-    let is_ready = rust_i18n::t!("search_is_ready");
-    let is_done = rust_i18n::t!("search_is_done");
+    let is_ready = get_first("search_is_ready");
+    let is_done = get_first("search_is_done");
     let is_status = rust_i18n::t!("help_keys_search_status");
 
     let mut sections = vec![
