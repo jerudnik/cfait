@@ -180,7 +180,7 @@
     "error_deleting_session": "Oturumu silerken hata: %{error}",
     "error_failed_to_parse_time": "Saat formatını anlayamadım.",
     "error_fetch_failed": "Veri alma başarısız oldu: %{error}",
-    "error_format": "Format hatası: %{error}",
+    "error_format": "Format hatası: %{msg}",
     "error_general": "Hata: %{error}",
     "error_invalid_duration": "Geçersiz süre: \"%{val}\"",
     "error_invalid_tls": "Bağlantı başarısız oldu: Geçersiz TLS Sertifikası. %{error}",
