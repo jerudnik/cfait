@@ -1,1 +1,1 @@
-Gestor de tareas / TODO potente, rápido y elegante. (CalDAV y local)
+Gestor de tareas potente, rápido y elegante. (CalDAV y local)
