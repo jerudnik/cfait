@@ -168,7 +168,7 @@
     "error_cannot_relate_to_self": "Не может относиться к себе!",
     "error_client_not_connected": "Клиент не подключен",
     "error_could_not_read_file": "Ошибка чтения файла",
-    "error_deleting_session": "Ошибка при удалении сеанса: %{ошибка}",
+    "error_deleting_session": "Ошибка при удалении сеанса: %{error}",
     "error_empty_task_description": "Ошибка: описание задачи не может быть пустым.",
     "error_failed_to_parse_time": "Не удалось распознать формат времени.",
     "error_fetch_failed": "Сбой загрузки: %{error}",

@@ -152,14 +152,39 @@ impl ParserLexicon {
         let mut prefixes_en = Vec::new();
         let mut prefixes_loc = Vec::new();
 
+        let remove_accents_lowercase = |s: &str| -> String {
+            s.chars()
+                .map(|c| match c {
+                    'á' | 'à' | 'â' | 'ä' | 'ã' | 'å' => 'a',
+                    'é' | 'è' | 'ê' | 'ë' => 'e',
+                    'í' | 'ì' | 'î' | 'ï' => 'i',
+                    'ó' | 'ò' | 'ô' | 'ö' | 'õ' => 'o',
+                    'ú' | 'ù' | 'û' | 'ü' => 'u',
+                    'ç' => 'c',
+                    'ñ' => 'n',
+                    _ => c,
+                })
+                .collect()
+        };
+
         let mut add_exact = |loc_key: &str, default_en: &str, token: ExactToken| {
             for k in default_en.split(',') {
-                exact_en.insert(k.trim().to_lowercase(), token);
+                let clean = k.trim().to_lowercase();
+                exact_en.insert(clean.clone(), token);
+                let unaccented = remove_accents_lowercase(&clean);
+                if unaccented != clean {
+                    exact_en.insert(unaccented, token);
+                }
             }
             let localized = rust_i18n::t!(loc_key);
             if localized != loc_key && !localized.is_empty() {
                 for k in localized.split(',') {
-                    exact_loc.insert(k.trim().to_lowercase(), token);
+                    let clean = k.trim().to_lowercase();
+                    exact_loc.insert(clean.clone(), token);
+                    let unaccented = remove_accents_lowercase(&clean);
+                    if unaccented != clean {
+                        exact_loc.insert(unaccented, token);
+                    }
                 }
             }
         };
@@ -168,7 +193,11 @@ impl ParserLexicon {
             for k in default_en.split(',') {
                 let clean = k.trim().to_lowercase();
                 if !clean.is_empty() {
-                    prefixes_en.push((clean, token));
+                    prefixes_en.push((clean.clone(), token));
+                    let unaccented = remove_accents_lowercase(&clean);
+                    if unaccented != clean {
+                        prefixes_en.push((unaccented, token));
+                    }
                 }
             }
             let localized = rust_i18n::t!(loc_key);
@@ -176,7 +205,11 @@ impl ParserLexicon {
                 for k in localized.split(',') {
                     let clean = k.trim().to_lowercase();
                     if !clean.is_empty() {
-                        prefixes_loc.push((clean, token));
+                        prefixes_loc.push((clean.clone(), token));
+                        let unaccented = remove_accents_lowercase(&clean);
+                        if unaccented != clean {
+                            prefixes_loc.push((unaccented, token));
+                        }
                     }
                 }
             }
@@ -198,10 +231,18 @@ impl ParserLexicon {
             } else {
                 def.to_string()
             };
-            s.split(',')
-                .map(|x| x.trim().to_lowercase())
-                .filter(|x| !x.is_empty())
-                .collect()
+            let mut results = Vec::new();
+            for x in s.split(',') {
+                let clean = x.trim().to_lowercase();
+                if !clean.is_empty() {
+                    let unaccented = remove_accents_lowercase(&clean);
+                    results.push(clean.clone());
+                    if unaccented != clean {
+                        results.push(unaccented);
+                    }
+                }
+            }
+            results
         };
 
         add_exact("parser_today", "today,tdy", ExactToken::Today);
@@ -3622,4 +3663,119 @@ pub fn parse_session_input(input: &str) -> Option<crate::model::item::WorkSessio
     }
 
     None
+}
+
+#[cfg(test)]
+mod i18n_tests {
+    use std::collections::HashSet;
+    use std::fs;
+    use std::path::PathBuf;
+
+    fn extract_placeholders(text: &str) -> HashSet<String> {
+        let mut placeholders = HashSet::new();
+        let mut start = 0;
+        while let Some(idx) = text[start..].find("%{") {
+            let absolute_start = start + idx;
+            if let Some(end_idx) = text[absolute_start..].find('}') {
+                let placeholder = &text[absolute_start + 2..absolute_start + end_idx];
+                placeholders.insert(placeholder.to_string());
+                start = absolute_start + end_idx + 1;
+            } else {
+                break;
+            }
+        }
+        placeholders
+    }
+
+    #[test]
+    fn test_translation_placeholders_and_limits() {
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let locales_dir = PathBuf::from(manifest_dir).join("locales");
+
+        let en_path = locales_dir.join("en.json");
+        let en_str = fs::read_to_string(&en_path).expect("Failed to read en.json");
+        let en_json: serde_json::Value = serde_json::from_str(&en_str).unwrap();
+        let en_obj = en_json.as_object().unwrap();
+
+        for entry in fs::read_dir(&locales_dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let lang = path.file_stem().unwrap().to_str().unwrap();
+            let loc_str = fs::read_to_string(&path).unwrap();
+            let loc_json: serde_json::Value = serde_json::from_str(&loc_str).unwrap();
+            let loc_obj = loc_json.as_object().unwrap();
+
+            for (key, en_val) in en_obj {
+                // Check placeholders perfectly match English defaults
+                if let Some(en_str) = en_val.as_str() {
+                    let en_placeholders = extract_placeholders(en_str);
+
+                    if let Some(loc_val) = loc_obj.get(key) {
+                        if let Some(loc_str) = loc_val.as_str() {
+                            let loc_placeholders = extract_placeholders(loc_str);
+                            assert_eq!(
+                                en_placeholders, loc_placeholders,
+                                "Placeholder mismatch in locale '{}' for key '{}'. Expected {:?}, got {:?}",
+                                lang, key, en_placeholders, loc_placeholders
+                            );
+                        } else if let Some(loc_dict) = loc_val.as_object()
+                            && let Some(en_dict) = en_val.as_object()
+                        {
+                            for (plural_key, en_plural_val) in en_dict {
+                                if let Some(en_plural_str) = en_plural_val.as_str() {
+                                    let en_pl_placeholders = extract_placeholders(en_plural_str);
+                                    if let Some(loc_plural_val) = loc_dict.get(plural_key)
+                                        && let Some(loc_plural_str) = loc_plural_val.as_str()
+                                    {
+                                        let loc_pl_placeholders =
+                                            extract_placeholders(loc_plural_str);
+                                        assert_eq!(
+                                            en_pl_placeholders,
+                                            loc_pl_placeholders,
+                                            "Placeholder mismatch in locale '{}' for plural key '{}.{}'. Expected {:?}, got {:?}",
+                                            lang,
+                                            key,
+                                            plural_key,
+                                            en_pl_placeholders,
+                                            loc_pl_placeholders
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Check brevity and formatting for parser/search keys
+                if (key.starts_with("parser_") || key.starts_with("search_"))
+                    && let Some(loc_val) = loc_obj.get(key).and_then(|v| v.as_str())
+                {
+                    let parts: Vec<&str> = loc_val.split(',').collect();
+
+                    if key != "parser_numbers_1_to_12" {
+                        assert!(
+                            parts.len() <= 6,
+                            "Too many synonyms in locale '{}' for key '{}' (found {}, max 6 allowed). Values: {}",
+                            lang,
+                            key,
+                            parts.len(),
+                            loc_val
+                        );
+                    }
+
+                    for part in parts {
+                        assert!(
+                            !part.starts_with(' '),
+                            "Syntax tokens should not have spaces after commas! Locale '{}', key '{}', found: '{}'",
+                            lang,
+                            key,
+                            part
+                        );
+                    }
+                }
+            }
+        }
+    }
 }

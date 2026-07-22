@@ -233,7 +233,7 @@
     "metadata": "Metadati",
     "migrating_tasks_background": "Migrazione in background…",
     "migration_complete": "Migrazione completata",
-    "migration_failed": "Migrazione fallita",
+    "migration_failed": "Migrazione fallita: %{error}",
     "min": "Min",
     "move_failed": "Spostamento fallito: %{error}",
     "move_task_title": "Sposta attività",
