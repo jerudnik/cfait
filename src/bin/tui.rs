@@ -1719,6 +1719,89 @@ async fn main() -> Result<()> {
             }
             return Ok(());
         }
+        "move" | "mv" => {
+            let mut target_href = None;
+            let mut partial_uid = String::new();
+            let mut no_wait = false;
+            let mut wait = false;
+            let mut use_tree = false;
+            let mut i = 2;
+            while i < args.len() {
+                if args[i] == "--no-wait" || args[i] == "-n" {
+                    no_wait = true;
+                    i += 1;
+                } else if args[i] == "--wait" || args[i] == "-w" {
+                    wait = true;
+                    i += 1;
+                } else if args[i] == "--tree" || args[i] == "-t" {
+                    use_tree = true;
+                    i += 1;
+                } else if partial_uid.is_empty() {
+                    partial_uid = args[i].clone();
+                    i += 1;
+                } else if target_href.is_none() {
+                    target_href = Some(args[i].clone());
+                    i += 1;
+                } else {
+                    i += 1;
+                }
+            }
+
+            if partial_uid.is_empty() || target_href.is_none() {
+                eprintln!("Usage: {} move <uid> <collection> [--tree]", binary_name);
+                std::process::exit(1);
+            }
+            let target_str = target_href.unwrap();
+            let matched_href = resolve_collection_href(&ctx, &target_str).await;
+
+            let mut store = build_store_cli(&ctx).await;
+            let full_uid = match resolve_uid(&store, &partial_uid) {
+                Some(uid) => uid,
+                None => std::process::exit(1),
+            };
+
+            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+            let intent = if use_tree {
+                cfait::model::AppIntent::MoveTaskTree {
+                    uid: full_uid.clone(),
+                    target_href: matched_href,
+                }
+            } else {
+                cfait::model::AppIntent::MoveTask {
+                    uid: full_uid.clone(),
+                    target_href: matched_href,
+                }
+            };
+
+            let actions = store.apply_task_intent(&intent, &config);
+
+            if !actions.is_empty() {
+                let store_arc = Arc::new(tokio::sync::Mutex::new(store));
+                let client_arc = Arc::new(tokio::sync::Mutex::new(None));
+                let controller = cfait::controller::TaskController::new(store_arc, client_arc, ctx.clone());
+
+                controller.persist_changes(actions).await.map_err(|e| anyhow::anyhow!(e))?;
+                println!("Task moved successfully.");
+
+                let (effective_no_wait, is_auto) = get_sync_strategy(no_wait, wait, &ctx);
+
+                if !effective_no_wait {
+                    if let Err(e) = maybe_sync(ctx.clone()).await {
+                        eprintln!(
+                            "{}",
+                            rust_i18n::t!("warning_background_sync_failed", error = e.to_string())
+                        );
+                    }
+                } else if is_auto {
+                    println!("{}", rust_i18n::t!("cli_action_queued_auto"));
+                } else {
+                    println!("{}", rust_i18n::t!("cli_action_queued"));
+                }
+            } else {
+                println!("No changes made (task already in collection).");
+            }
+            return Ok(());
+        }
         "delete" | "rm" => {
             let mut partial_uid = String::new();
             let mut no_wait = false;

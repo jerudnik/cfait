@@ -10,7 +10,7 @@ and DateTime::<Utc>::from_utc(...) to construct timezone-aware values.
 
 use crate::config::Config;
 use crate::model::parser::{extract_inline_aliases, validate_alias_integrity};
-use crate::model::{AppIntent, Task, TaskStatus};
+use crate::model::{AppIntent, CalendarListEntry, Task, TaskStatus};
 use crate::storage::LOCAL_CALENDAR_HREF;
 use crate::system::SystemEvent;
 use crate::tui::action::{Action, AppEvent, SidebarMode};
@@ -2513,21 +2513,30 @@ pub async fn handle_key_event(
             KeyCode::Char('M') => {
                 if let Some(task) = state.get_selected_task() {
                     let current_href = task.calendar_href.clone();
-                    state.move_targets = state
+                    let has_subtasks = task.has_subtasks;
+                    let include_current = has_subtasks;
+                    let move_targets: Vec<CalendarListEntry> = state
                         .calendars
                         .iter()
                         .filter(|c| {
-                            c.href != current_href
+                            (include_current || c.href != current_href)
                                 && !state.disabled_calendars.contains(&c.href)
                                 && c.href != crate::storage::LOCAL_TRASH_HREF
                                 && c.href != "local://recovery"
                         })
                         .cloned()
                         .collect();
-                    if !state.move_targets.is_empty() {
+                    if !move_targets.is_empty() {
+                        state.move_targets = move_targets;
                         state.move_selection_state.select(Some(0));
                         state.mode = InputMode::Moving;
-                        state.message = rust_i18n::t!("tui_select_calendar_prompt").to_string();
+                        state.moving_tree = has_subtasks;
+                        
+                        state.message = if has_subtasks {
+                            format!("{} ({})", rust_i18n::t!("tui_select_calendar_prompt"), rust_i18n::t!("tui_move_toggle"))
+                        } else {
+                            rust_i18n::t!("tui_select_calendar_prompt").to_string()
+                        };
                     }
                 }
             }
@@ -3192,6 +3201,33 @@ pub async fn handle_key_event(
                 state.mode = InputMode::Normal;
                 state.message = String::new();
             }
+            KeyCode::Char('t') | KeyCode::Char('T') => {
+                if let Some(task) = state.get_selected_task() {
+                    if task.has_subtasks {
+                        let current_href = task.calendar_href.clone();
+                        let new_moving_tree = !state.moving_tree;
+                        let include_current = new_moving_tree;
+                        let move_targets: Vec<CalendarListEntry> = state
+                            .calendars
+                            .iter()
+                            .filter(|c| {
+                                (include_current || c.href != current_href)
+                                    && !state.disabled_calendars.contains(&c.href)
+                                    && c.href != crate::storage::LOCAL_TRASH_HREF
+                                    && c.href != "local://recovery"
+                            })
+                            .cloned()
+                            .collect();
+                        state.moving_tree = new_moving_tree;
+                        state.move_targets = move_targets;
+                        if let Some(idx) = state.move_selection_state.selected() {
+                            if idx >= state.move_targets.len() && !state.move_targets.is_empty() {
+                                state.move_selection_state.select(Some(state.move_targets.len() - 1));
+                            }
+                        }
+                    }
+                }
+            }
             KeyCode::Down | KeyCode::Char('j') => state.next_move_target(),
             KeyCode::Up | KeyCode::Char('k') => state.previous_move_target(),
             KeyCode::Enter => {
@@ -3210,9 +3246,16 @@ pub async fn handle_key_event(
 
                 if let Some((uid, target_href)) = data {
                     let config = Config::load(state.ctx.as_ref()).unwrap_or_default();
-                    let intent = AppIntent::MoveTask {
-                        uid: uid.clone(),
-                        target_href: target_href.clone(),
+                    let intent = if state.moving_tree {
+                        AppIntent::MoveTaskTree {
+                            uid: uid.clone(),
+                            target_href: target_href.clone(),
+                        }
+                    } else {
+                        AppIntent::MoveTask {
+                            uid: uid.clone(),
+                            target_href: target_href.clone(),
+                        }
                     };
 
                     let actions = state.store.apply_task_intent(&intent, &config);

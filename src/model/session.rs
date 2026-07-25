@@ -171,6 +171,7 @@ pub enum AppIntent {
     PauseTask { uid: String },
     StopTask { uid: String },
     MoveTask { uid: String, target_href: String },
+    MoveTaskTree { uid: String, target_href: String },
     DuplicateTaskTree { uid: String },
     RemoveParent { uid: String },
     MakeChild { uid: String, parent_uid: String },

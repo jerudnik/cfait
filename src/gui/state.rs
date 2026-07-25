@@ -131,6 +131,7 @@ pub struct GuiApp {
     pub editing_tree_uid: Option<String>,
     pub creating_child_of: Option<String>,
     pub moving_task_uid: Option<String>,
+    pub moving_task_is_tree: bool,
     pub move_target_idx: usize,
     pub child_lock_active: bool,
     pub creating_with_desc: bool,
@@ -334,11 +335,11 @@ impl GuiApp {
         })
     }
 
-    pub fn get_move_targets(&self, task_calendar_href: &str) -> Vec<&CalendarListEntry> {
+    pub fn get_move_targets(&self, task_calendar_href: &str, include_current: bool) -> Vec<&CalendarListEntry> {
         self.calendars
             .iter()
             .filter(|c| {
-                c.href != task_calendar_href
+                (include_current || c.href != task_calendar_href)
                     && !self.disabled_calendars.contains(&c.href)
                     && c.href != crate::storage::LOCAL_TRASH_HREF
                     && c.href != "local://recovery"
@@ -463,6 +464,7 @@ impl Default for GuiApp {
             editing_tree_uid: None,
             creating_child_of: None,
             moving_task_uid: None,
+            moving_task_is_tree: false,
             move_target_idx: 0,
             child_lock_active: false,
             creating_with_desc: false,

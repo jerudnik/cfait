@@ -630,14 +630,18 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         Message::MoveTask(uid, target_href) => {
             app.selected_uid = Some(uid.clone());
             app.moving_task_uid = None;
-            dispatch_and_maintain_selection(
-                app,
+            let intent = if app.moving_task_is_tree {
+                AppIntent::MoveTaskTree {
+                    uid: uid.clone(),
+                    target_href,
+                }
+            } else {
                 AppIntent::MoveTask {
                     uid: uid.clone(),
                     target_href,
-                },
-                &uid,
-            );
+                }
+            };
+            dispatch_and_maintain_selection(app, intent, &uid);
             Task::none()
         }
 
@@ -862,9 +866,28 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
         }
 
         Message::StartMoveTask(uid) => {
-            app.moving_task_uid = Some(uid);
+            app.moving_task_uid = Some(uid.clone());
             app.move_target_idx = 0;
             app.active_context_menu = None; // Hide context menu if open
+            if let Some(task) = app.store.get_task_ref(&uid) {
+                app.moving_task_is_tree = task.has_subtasks;
+            } else {
+                app.moving_task_is_tree = false;
+            }
+            Task::none()
+        }
+
+        Message::ToggleMoveTree(is_tree) => {
+            app.moving_task_is_tree = is_tree;
+            if let Some(uid) = &app.moving_task_uid
+                && let Some(idx) = app.find_task_index_by_uid(uid)
+                && let Some(task) = app.get_task_at_index(idx)
+            {
+                let targets = app.get_move_targets(&task.calendar_href, is_tree);
+                if app.move_target_idx >= targets.len() {
+                    app.move_target_idx = targets.len().saturating_sub(1);
+                }
+            }
             Task::none()
         }
 

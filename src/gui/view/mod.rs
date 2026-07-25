@@ -792,7 +792,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         && let Some(idx) = app.find_task_index_by_uid(uid)
         && let Some(task) = app.get_task_at_index(idx)
     {
-        let targets = app.get_move_targets(&task.calendar_href);
+        let targets = app.get_move_targets(&task.calendar_href, app.moving_task_is_tree);
 
         let icon_header = container(
             icon::icon(icon::MOVE)
@@ -802,7 +802,11 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         .padding(5)
         .center_x(Length::Fill);
 
-        let title = text(rust_i18n::t!("move_task_title"))
+        let title = text(if app.moving_task_is_tree {
+            rust_i18n::t!("move_task_tree")
+        } else {
+            rust_i18n::t!("move_task_title")
+        })
             .size(24)
             .font(iced::Font {
                 weight: iced::font::Weight::Bold,
@@ -847,10 +851,20 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
                 Scrollbar::new().width(8).scroller_width(8),
             ));
 
+        let mut bottom_controls = row![].spacing(10).align_y(iced::Alignment::Center);
+        if task.has_subtasks {
+            bottom_controls = bottom_controls.push(
+                iced::widget::checkbox(rust_i18n::t!("move_task_tree"), app.moving_task_is_tree)
+                    .on_toggle(Message::ToggleMoveTree)
+            );
+        }
+
         let cancel_btn = button(text(rust_i18n::t!("cancel")).size(14))
             .style(iced::widget::button::secondary)
             .padding([8, 16])
             .on_press(Message::CancelMoveTask);
+        
+        bottom_controls = bottom_controls.push(Space::new().width(Length::Fill)).push(cancel_btn);
 
         let modal_content = column![
             icon_header,
@@ -862,9 +876,8 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             Space::new().height(Length::Fixed(5.0)),
             calendar_scroll,
             Space::new().height(Length::Fixed(20.0)),
-            container(cancel_btn)
+            container(bottom_controls)
                 .width(Length::Fill)
-                .center_x(Length::Fill)
         ]
         .spacing(5)
         .align_x(iced::Alignment::Center);

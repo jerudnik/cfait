@@ -922,37 +922,52 @@ fun HomeScreen(
     }
 
     if (taskToMove != null) {
+        var moveTree by remember { mutableStateOf(taskToMove!!.hasSubtasks) }
         val targetCals =
-            remember(calendars) { calendars.filter { it.href != taskToMove!!.calendarHref && !it.isDisabled } }
+            remember(calendars, taskToMove, moveTree) { 
+                calendars.filter { (moveTree || it.href != taskToMove!!.calendarHref) && !it.isDisabled && it.href != "local://trash" && it.href != "local://recovery" }
+            }
         AlertDialog(
             onDismissRequest = { taskToMove = null },
-            title = { Text(stringResource(R.string.move_task_title)) },
+            title = { Text(stringResource(if (moveTree && taskToMove!!.hasSubtasks) R.string.move_task_tree else R.string.move_task_title)) },
             text = {
-                LazyColumn {
-                    items(targetCals) { cal ->
-                        ListItem(
-                            headlineContent = { Text(cal.name) },
-                            leadingContent = { NfIcon(NfIcons.CALENDAR, 16.sp) },
-                            modifier = Modifier.clickable {
-                                val uid = taskToMove?.uid ?: return@clickable
-                                scope.launch {
-                                    try {
-                                        api.moveTask(uid, cal.href)
-                                        taskToMove = null
-                                        updateTaskList()
-                                        onDataChanged()
-                                        triggerBackgroundSync(context, api)
-                                    } catch (e: Exception) {
-                                        if (e is CancellationException) throw e
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.move_failed, e.message ?: ""),
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                Column {
+                    LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
+                        items(targetCals) { cal ->
+                            ListItem(
+                                headlineContent = { Text(cal.name) },
+                                leadingContent = { NfIcon(NfIcons.CALENDAR, 16.sp) },
+                                modifier = Modifier.clickable {
+                                    val uid = taskToMove?.uid ?: return@clickable
+                                    scope.launch {
+                                        try {
+                                            if (moveTree) api.moveTaskTree(uid, cal.href) else api.moveTask(uid, cal.href)
+                                            taskToMove = null
+                                            updateTaskList()
+                                            onDataChanged()
+                                            triggerBackgroundSync(context, api)
+                                        } catch (e: Exception) {
+                                            if (e is CancellationException) throw e
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.move_failed, e.message ?: ""),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
                                     }
-                                }
-                            },
-                        )
+                                },
+                            )
+                        }
+                    }
+                    if (taskToMove!!.hasSubtasks) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().clickable { moveTree = !moveTree }.padding(top = 8.dp)
+                        ) {
+                            Checkbox(checked = moveTree, onCheckedChange = { moveTree = it })
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.move_task_tree))
+                        }
                     }
                 }
             },

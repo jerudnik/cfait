@@ -3460,6 +3460,39 @@ impl TaskStore {
                     }
                 }
             }
+            AppIntent::MoveTaskTree { uid, target_href } => {
+                let safe_target = if target_href == crate::storage::LOCAL_TRASH_HREF
+                    || target_href == "local://recovery"
+                {
+                    crate::storage::LOCAL_CALENDAR_HREF.to_string()
+                } else {
+                    target_href.clone()
+                };
+
+                let mut uids = self.get_descendant_uids(uid);
+                uids.push(uid.clone());
+
+                for u in uids {
+                    if let Some((orig, updated)) = self.move_task(&u, safe_target.clone()) {
+                        if !orig.calendar_href.starts_with("local://")
+                            && safe_target.starts_with("local://")
+                        {
+                            actions.push(JournalAction::Delete(orig));
+                            actions.push(JournalAction::Create(updated));
+                        } else if orig.calendar_href.starts_with("local://")
+                            && !safe_target.starts_with("local://")
+                        {
+                            actions.push(JournalAction::Delete(orig));
+                            let mut moved = updated.clone();
+                            moved.href = String::new();
+                            moved.etag = String::new();
+                            actions.push(JournalAction::Create(moved));
+                        } else {
+                            actions.push(JournalAction::Move(orig, safe_target.clone()));
+                        }
+                    }
+                }
+            }
             AppIntent::DuplicateTaskTree { uid } => {
                 let new_tasks = self.duplicate_task_tree(uid);
                 actions.extend(new_tasks.into_iter().map(JournalAction::Create));

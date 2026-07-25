@@ -172,33 +172,47 @@ fun TaskDetailScreen(
     }
 
     if (showMoveDialog) {
+        var moveTree by remember { mutableStateOf(task!!.hasSubtasks) }
         val targetCals =
-            remember(calendars) {
-                calendars.filter { it.href != task!!.calendarHref && !it.isDisabled }
+            remember(calendars, task, moveTree) {
+                calendars.filter { (moveTree || it.href != task!!.calendarHref) && !it.isDisabled && it.href != "local://trash" && it.href != "local://recovery" }
             }
         AlertDialog(
             onDismissRequest = { showMoveDialog = false },
-            title = { Text(stringResource(R.string.move_task_title)) },
+            title = { Text(stringResource(if (moveTree && task!!.hasSubtasks) R.string.move_task_tree else R.string.move_task_title)) },
             text = {
-                LazyColumn {
-                    items(targetCals) { cal ->
-                        TextButton(onClick = {
-                            scope.launch {
-                                try {
-                                    api.dispatch(AppIntent.MoveTask(uid, cal.href))
-                                    showMoveDialog = false
-                                    onBack()
-                                    triggerBackgroundSync(context, api)
-                                } catch (e: Exception) {
-                                    if (e is CancellationException) throw e
-                                    android.widget.Toast.makeText(
-                                        context,
-                                        "Error: ${e.message}",
-                                        android.widget.Toast.LENGTH_SHORT
-                                    ).show()
+                Column {
+                    LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
+                        items(targetCals) { cal ->
+                            TextButton(onClick = {
+                                scope.launch {
+                                    try {
+                                        val intent = if (moveTree) AppIntent.MoveTaskTree(uid, cal.href) else AppIntent.MoveTask(uid, cal.href)
+                                        api.dispatch(intent)
+                                        showMoveDialog = false
+                                        onBack()
+                                        triggerBackgroundSync(context, api)
+                                    } catch (e: Exception) {
+                                        if (e is CancellationException) throw e
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "Error: ${e.message}",
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 }
-                            }
-                        }, modifier = Modifier.fillMaxWidth()) { Text(cal.name) }
+                            }, modifier = Modifier.fillMaxWidth()) { Text(cal.name) }
+                        }
+                    }
+                    if (task!!.hasSubtasks) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().clickable { moveTree = !moveTree }.padding(top = 8.dp)
+                        ) {
+                            Checkbox(checked = moveTree, onCheckedChange = { moveTree = it })
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.move_task_tree))
+                        }
                     }
                 }
             },
@@ -229,7 +243,7 @@ fun TaskDetailScreen(
                     IconButton(onClick = { onEditTree(task!!.uid) }) {
                         NfIcon(NfIcons.EDIT_TREE, 20.sp)
                     }
-                    if (enabledCalendarCount > 1) {
+                    if (enabledCalendarCount > 1 || task!!.hasSubtasks) {
                         TextButton(onClick = {
                             showMoveDialog = true
                         }) { 

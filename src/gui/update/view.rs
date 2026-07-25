@@ -444,7 +444,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 if let Some(idx) = app.find_task_index_by_uid(uid)
                     && let Some(task) = app.get_task_at_index(idx)
                 {
-                    let targets = app.get_move_targets(&task.calendar_href);
+                    let targets = app.get_move_targets(&task.calendar_href, app.moving_task_is_tree);
                     if let Some(target) = targets.get(app.move_target_idx) {
                         return crate::gui::update::tasks::handle(
                             app,
@@ -504,7 +504,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                 if let Some(idx) = app.find_task_index_by_uid(uid)
                     && let Some(task) = app.get_task_at_index(idx)
                 {
-                    let targets = app.get_move_targets(&task.calendar_href);
+                    let targets = app.get_move_targets(&task.calendar_href, app.moving_task_is_tree);
                     let targets_len = targets.len();
                     if !targets.is_empty() {
                         app.move_target_idx = (app.move_target_idx + 1).min(targets_len - 1);
@@ -621,7 +621,7 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                     && let Some(idx) = app.find_task_index_by_uid(uid)
                     && let Some(task) = app.get_task_at_index(idx)
                 {
-                    let targets = app.get_move_targets(&task.calendar_href);
+                    let targets = app.get_move_targets(&task.calendar_href, app.moving_task_is_tree);
                     let targets_len = targets.len();
 
                     let viewport_h = 250.0;

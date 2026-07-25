@@ -259,6 +259,7 @@ Tasks tagged with `is:permanent` act as endless trackers. When checked off (Comp
     *   `+` / `-`: Increase/Decrease priority.
     *   `e`: Edit title. `E`: Edit description (Markdown). `Ctrl+E`: Edit tree (Markdown) / Switch editor mode. `Ctrl+N`: Create new task with description.
     *   `Delete`: Move to trash. `Ctrl+Delete`: Delete entire tree.
+    *   `M`: Move task (or task tree) to another collection.
     *   `t`: Log time session manually.
 *   **Tree/Relationships:** 
     *   `z`: Fold/Unfold tree.
@@ -291,6 +292,7 @@ Used for headless automation, scripting, and piping. Operates directly on the `T
 *   `cfait view <uid> [--json]`: Outputs detailed task info.
 *   `cfait tree <uid>`: Views the task tree starting at `<uid>` serialized into markdown format (same format used by the `Ctrl+E` editor).
 *   `cfait start|pause|toggle|done|complete|delete <uid>`: State mutation commands.
+*   `cfait move <uid> <collection> [--tree]`: Moves a task to a different collection.
 *   `cfait export [--collection <id>]`: Dumps collection as standard ICS to stdout.
 *   `cfait import <file.ics> [--collection <id>]`: Parses and imports ICS to store.
 *   `cfait sync`: Foreground network sync.

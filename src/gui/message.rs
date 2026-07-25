@@ -190,6 +190,7 @@ pub enum Message {
     StartMoveTask(String),
     CancelMoveTask,
     MoveTask(String, String),
+    ToggleMoveTree(bool),
     MoveSelected,
     MigrateLocalTo(String, String),
     JumpToTag(String),
