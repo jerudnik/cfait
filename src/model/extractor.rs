@@ -559,15 +559,19 @@ pub fn serialize_task_tree(
         *list = result;
     }
 
+    struct SerializeContext<'a> {
+        children_map: &'a std::collections::HashMap<String, Vec<&'a crate::model::Task>>,
+        store: &'a crate::store::TaskStore,
+        calendars: &'a [crate::model::CalendarListEntry],
+    }
+
     fn serialize_node(
+        ctx: &SerializeContext,
         task: &crate::model::Task,
-        children_map: &std::collections::HashMap<String, Vec<&crate::model::Task>>,
         depth: usize,
         out: &mut String,
         prefix: &str,
-        root_href: &str,
-        store: &crate::store::TaskStore,
-        calendars: &[crate::model::CalendarListEntry],
+        parent_href: &str,
     ) {
         let status_str = if task.is_note {
             String::new()
@@ -592,8 +596,9 @@ pub fn serialize_task_tree(
                 smart_string = String::new();
             }
         }
-        if task.calendar_href != root_href {
-            let cal_name = calendars
+        if task.calendar_href != parent_href {
+            let cal_name = ctx
+                .calendars
                 .iter()
                 .find(|c| c.href == task.calendar_href)
                 .map(|c| c.name.as_str())
@@ -614,7 +619,7 @@ pub fn serialize_task_tree(
         let process_relations = |uids: &[String], prefix: &str, out: &mut String| {
             for uid in uids {
                 // Skip trashed/recovered/missing references so they self-heal (disappear) on save
-                if let Some(target_task) = store.get_task_ref(uid) {
+                if let Some(target_task) = ctx.store.get_task_ref(uid) {
                     if target_task.calendar_href == crate::storage::LOCAL_TRASH_HREF
                         || target_task.calendar_href == "local://recovery"
                     {
@@ -660,7 +665,7 @@ pub fn serialize_task_tree(
             }
         }
 
-        if let Some(children) = children_map.get(&task.uid) {
+        if let Some(children) = ctx.children_map.get(&task.uid) {
             let mut prefixes = Vec::new();
             let mut current_number = 1;
             let mut uses_number_prev = false;
@@ -704,30 +709,17 @@ pub fn serialize_task_tree(
             }
 
             for (child, prefix) in children.iter().zip(prefixes.iter()) {
-                serialize_node(
-                    child,
-                    children_map,
-                    depth + 1,
-                    out,
-                    prefix,
-                    root_href,
-                    store,
-                    calendars,
-                );
+                serialize_node(ctx, child, depth + 1, out, prefix, &task.calendar_href);
             }
         }
     }
 
-    serialize_node(
-        root,
-        &children_map,
-        0,
-        &mut out,
-        "-",
-        &root.calendar_href,
+    let ctx = SerializeContext {
+        children_map: &children_map,
         store,
         calendars,
-    );
+    };
+    serialize_node(&ctx, root, 0, &mut out, "-", &root.calendar_href);
 
     out.trim_end().to_string()
 }
