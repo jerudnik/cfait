@@ -2684,7 +2684,11 @@ impl CfaitMobile {
         Ok(())
     }
 
-    pub async fn move_task_tree(&self, uid: String, new_cal_href: String) -> Result<(), MobileError> {
+    pub async fn move_task_tree(
+        &self,
+        uid: String,
+        new_cal_href: String,
+    ) -> Result<(), MobileError> {
         self.dispatch(crate::model::AppIntent::MoveTaskTree {
             uid,
             target_href: new_cal_href,

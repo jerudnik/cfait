@@ -2531,9 +2531,13 @@ pub async fn handle_key_event(
                         state.move_selection_state.select(Some(0));
                         state.mode = InputMode::Moving;
                         state.moving_tree = has_subtasks;
-                        
+
                         state.message = if has_subtasks {
-                            format!("{} ({})", rust_i18n::t!("tui_select_calendar_prompt"), rust_i18n::t!("tui_move_toggle"))
+                            format!(
+                                "{} ({})",
+                                rust_i18n::t!("tui_select_calendar_prompt"),
+                                rust_i18n::t!("tui_move_toggle")
+                            )
                         } else {
                             rust_i18n::t!("tui_select_calendar_prompt").to_string()
                         };
@@ -3202,29 +3206,32 @@ pub async fn handle_key_event(
                 state.message = String::new();
             }
             KeyCode::Char('t') | KeyCode::Char('T') => {
-                if let Some(task) = state.get_selected_task() {
-                    if task.has_subtasks {
-                        let current_href = task.calendar_href.clone();
-                        let new_moving_tree = !state.moving_tree;
-                        let include_current = new_moving_tree;
-                        let move_targets: Vec<CalendarListEntry> = state
-                            .calendars
-                            .iter()
-                            .filter(|c| {
-                                (include_current || c.href != current_href)
-                                    && !state.disabled_calendars.contains(&c.href)
-                                    && c.href != crate::storage::LOCAL_TRASH_HREF
-                                    && c.href != "local://recovery"
-                            })
-                            .cloned()
-                            .collect();
-                        state.moving_tree = new_moving_tree;
-                        state.move_targets = move_targets;
-                        if let Some(idx) = state.move_selection_state.selected() {
-                            if idx >= state.move_targets.len() && !state.move_targets.is_empty() {
-                                state.move_selection_state.select(Some(state.move_targets.len() - 1));
-                            }
-                        }
+                if let Some(task) = state.get_selected_task()
+                    && task.has_subtasks
+                {
+                    let current_href = task.calendar_href.clone();
+                    let new_moving_tree = !state.moving_tree;
+                    let include_current = new_moving_tree;
+                    let move_targets: Vec<CalendarListEntry> = state
+                        .calendars
+                        .iter()
+                        .filter(|c| {
+                            (include_current || c.href != current_href)
+                                && !state.disabled_calendars.contains(&c.href)
+                                && c.href != crate::storage::LOCAL_TRASH_HREF
+                                && c.href != "local://recovery"
+                        })
+                        .cloned()
+                        .collect();
+                    state.moving_tree = new_moving_tree;
+                    state.move_targets = move_targets;
+                    if let Some(idx) = state.move_selection_state.selected()
+                        && idx >= state.move_targets.len()
+                        && !state.move_targets.is_empty()
+                    {
+                        state
+                            .move_selection_state
+                            .select(Some(state.move_targets.len() - 1));
                     }
                 }
             }

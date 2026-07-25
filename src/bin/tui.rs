@@ -1760,7 +1760,8 @@ async fn main() -> Result<()> {
                 None => std::process::exit(1),
             };
 
-            let config = cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
+            let config =
+                cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
             let intent = if use_tree {
                 cfait::model::AppIntent::MoveTaskTree {
                     uid: full_uid.clone(),
@@ -1778,9 +1779,13 @@ async fn main() -> Result<()> {
             if !actions.is_empty() {
                 let store_arc = Arc::new(tokio::sync::Mutex::new(store));
                 let client_arc = Arc::new(tokio::sync::Mutex::new(None));
-                let controller = cfait::controller::TaskController::new(store_arc, client_arc, ctx.clone());
+                let controller =
+                    cfait::controller::TaskController::new(store_arc, client_arc, ctx.clone());
 
-                controller.persist_changes(actions).await.map_err(|e| anyhow::anyhow!(e))?;
+                controller
+                    .persist_changes(actions)
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
                 println!("Task moved successfully.");
 
                 let (effective_no_wait, is_auto) = get_sync_strategy(no_wait, wait, &ctx);

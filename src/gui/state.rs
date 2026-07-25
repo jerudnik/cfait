@@ -335,7 +335,11 @@ impl GuiApp {
         })
     }
 
-    pub fn get_move_targets(&self, task_calendar_href: &str, include_current: bool) -> Vec<&CalendarListEntry> {
+    pub fn get_move_targets(
+        &self,
+        task_calendar_href: &str,
+        include_current: bool,
+    ) -> Vec<&CalendarListEntry> {
         self.calendars
             .iter()
             .filter(|c| {

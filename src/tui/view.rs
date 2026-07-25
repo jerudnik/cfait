@@ -1782,13 +1782,13 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             .iter()
             .map(|c| ListItem::new(c.name.as_str()))
             .collect();
-            
+
         let title_text = if state.moving_tree {
             rust_i18n::t!("move_task_tree")
         } else {
             rust_i18n::t!("move_task_title")
         };
-        
+
         let popup = List::new(items)
             .block(
                 Block::default()

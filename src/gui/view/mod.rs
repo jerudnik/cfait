@@ -807,13 +807,13 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         } else {
             rust_i18n::t!("move_task_title")
         })
-            .size(24)
-            .font(iced::Font {
-                weight: iced::font::Weight::Bold,
-                ..Default::default()
-            })
-            .width(Length::Fill)
-            .align_x(Horizontal::Center);
+        .size(24)
+        .font(iced::Font {
+            weight: iced::font::Weight::Bold,
+            ..Default::default()
+        })
+        .width(Length::Fill)
+        .align_x(Horizontal::Center);
 
         let mut cal_list = column![].spacing(5);
         for (i, cal) in targets.iter().enumerate() {
@@ -854,8 +854,9 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         let mut bottom_controls = row![].spacing(10).align_y(iced::Alignment::Center);
         if task.has_subtasks {
             bottom_controls = bottom_controls.push(
-                iced::widget::checkbox(rust_i18n::t!("move_task_tree"), app.moving_task_is_tree)
-                    .on_toggle(Message::ToggleMoveTree)
+                iced::widget::checkbox(app.moving_task_is_tree)
+                    .label(rust_i18n::t!("move_task_tree"))
+                    .on_toggle(Message::ToggleMoveTree),
             );
         }
 
@@ -863,8 +864,10 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             .style(iced::widget::button::secondary)
             .padding([8, 16])
             .on_press(Message::CancelMoveTask);
-        
-        bottom_controls = bottom_controls.push(Space::new().width(Length::Fill)).push(cancel_btn);
+
+        bottom_controls = bottom_controls
+            .push(Space::new().width(Length::Fill))
+            .push(cancel_btn);
 
         let modal_content = column![
             icon_header,
@@ -876,8 +879,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
             Space::new().height(Length::Fixed(5.0)),
             calendar_scroll,
             Space::new().height(Length::Fixed(20.0)),
-            container(bottom_controls)
-                .width(Length::Fill)
+            container(bottom_controls).width(Length::Fill)
         ]
         .spacing(5)
         .align_x(iced::Alignment::Center);
