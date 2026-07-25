@@ -1498,6 +1498,7 @@ impl TaskStore {
                     new_deps.extend(ext.dependencies.clone());
                     clone.dependencies = new_deps;
                     clone.related_to = dummy.related_to;
+                    clone.target_collection = dummy.target_collection;
                 }
 
                 clone.description = ext.description.clone();
