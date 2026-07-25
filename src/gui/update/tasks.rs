@@ -869,8 +869,16 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
             app.moving_task_uid = Some(uid.clone());
             app.move_target_idx = 0;
             app.active_context_menu = None; // Hide context menu if open
-            if let Some(task) = app.store.get_task_ref(&uid) {
-                app.moving_task_is_tree = task.has_subtasks;
+            if let Some(idx) = app.find_task_index_by_uid(&uid)
+                && let Some(task) = app.get_task_at_index(idx)
+            {
+                let calendar_href = task.calendar_href.clone();
+                let has_subtasks = task.has_subtasks;
+                app.moving_task_is_tree = has_subtasks;
+                let targets = app.get_move_targets(&calendar_href, has_subtasks);
+                if app.move_target_idx >= targets.len() {
+                    app.move_target_idx = targets.len().saturating_sub(1);
+                }
             } else {
                 app.moving_task_is_tree = false;
             }

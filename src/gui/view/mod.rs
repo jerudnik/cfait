@@ -854,9 +854,11 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         let mut bottom_controls = row![].spacing(10).align_y(iced::Alignment::Center);
         if task.has_subtasks {
             bottom_controls = bottom_controls.push(
-                iced::widget::checkbox(app.moving_task_is_tree)
-                    .label(rust_i18n::t!("move_task_tree"))
-                    .on_toggle(Message::ToggleMoveTree),
+                iced::widget::checkbox::<Message, iced::Theme, iced::Renderer>(
+                    app.moving_task_is_tree,
+                )
+                .label(rust_i18n::t!("move_task_tree"))
+                .on_toggle(Message::ToggleMoveTree),
             );
         }
 
