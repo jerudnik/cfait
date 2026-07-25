@@ -293,7 +293,8 @@ async fn execute_task_action(
             state.mode = InputMode::Editing;
         }
         EditTree => {
-            let desc = crate::model::extractor::serialize_task_tree(&state.store, &uid);
+            let desc =
+                crate::model::extractor::serialize_task_tree(&state.store, &uid, &state.calendars);
             match run_external_editor(&desc, state.ctx.as_ref()) {
                 Ok(Some(new_desc)) => {
                     if new_desc != desc {
@@ -1433,7 +1434,11 @@ pub async fn handle_key_event(
                         state.mode = InputMode::EditingDescription;
                     }
                 } else {
-                    let desc = crate::model::extractor::serialize_task_tree(&state.store, &uid);
+                    let desc = crate::model::extractor::serialize_task_tree(
+                        &state.store,
+                        &uid,
+                        &state.calendars,
+                    );
                     state.input_buffer = desc;
                     state.cursor_position = state.input_buffer.chars().count();
                     state.edit_scroll_offset = 0;
@@ -1787,7 +1792,11 @@ pub async fn handle_key_event(
             {
                 if let Some(t) = state.get_selected_task() {
                     let uid = t.uid.clone();
-                    let desc = crate::model::extractor::serialize_task_tree(&state.store, &uid);
+                    let desc = crate::model::extractor::serialize_task_tree(
+                        &state.store,
+                        &uid,
+                        &state.calendars,
+                    );
                     match run_external_editor(&desc, state.ctx.as_ref()) {
                         Ok(Some(new_desc)) => {
                             if new_desc != desc {

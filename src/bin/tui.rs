@@ -1173,7 +1173,12 @@ async fn main() -> Result<()> {
                 cfait::config::Config::load_with_credentials(ctx.as_ref()).unwrap_or_default();
 
             let initial_content = if use_tree {
-                cfait::model::extractor::serialize_task_tree(&store, &full_uid)
+                let mut cals =
+                    cfait::cache::Cache::load_calendars(ctx.as_ref()).unwrap_or_default();
+                if let Ok(locals) = cfait::storage::LocalCalendarRegistry::load(ctx.as_ref()) {
+                    cals.extend(locals);
+                }
+                cfait::model::extractor::serialize_task_tree(&store, &full_uid, &cals)
             } else {
                 let task = store.get_task_ref(&full_uid).unwrap();
                 let mut content = task.to_smart_string();
@@ -1438,7 +1443,11 @@ async fn main() -> Result<()> {
                 None => std::process::exit(1),
             };
 
-            let tree_md = cfait::model::extractor::serialize_task_tree(&store, &uid);
+            let mut cals = cfait::cache::Cache::load_calendars(ctx.as_ref()).unwrap_or_default();
+            if let Ok(locals) = cfait::storage::LocalCalendarRegistry::load(ctx.as_ref()) {
+                cals.extend(locals);
+            }
+            let tree_md = cfait::model::extractor::serialize_task_tree(&store, &uid, &cals);
             println!("{}", tree_md);
             return Ok(());
         }

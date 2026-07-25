@@ -227,8 +227,11 @@ pub fn handle(app: &mut GuiApp, message: Message) -> Task<Message> {
                     // The entire tree (including root) is edited in the description field.
                     app.input_value = text_editor::Content::new();
 
-                    let tree_md =
-                        crate::model::extractor::serialize_task_tree(&app.store, &task_uid);
+                    let tree_md = crate::model::extractor::serialize_task_tree(
+                        &app.store,
+                        &task_uid,
+                        &app.calendars,
+                    );
                     app.description_value = text_editor::Content::with_text(&tree_md);
                     app.editing_tree_uid = Some(task_uid.clone());
                     app.selected_uid = Some(task_uid);

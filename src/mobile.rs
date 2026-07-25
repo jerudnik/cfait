@@ -578,7 +578,11 @@ impl CfaitMobile {
 
     pub fn get_task_tree_markdown(&self, uid: String) -> String {
         let store = self.controller.store.blocking_lock();
-        crate::model::extractor::serialize_task_tree(&store, &uid)
+        let mut cals = crate::cache::Cache::load_calendars(self.ctx.as_ref()).unwrap_or_default();
+        if let Ok(locals) = crate::storage::LocalCalendarRegistry::load(self.ctx.as_ref()) {
+            cals.extend(locals);
+        }
+        crate::model::extractor::serialize_task_tree(&store, &uid, &cals)
     }
 
     pub fn export_locations_gpx(&self, uid: String) -> Result<String, MobileError> {

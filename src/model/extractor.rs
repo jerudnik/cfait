@@ -444,7 +444,11 @@ pub fn extract_markdown_tasks(input: &str) -> (String, Vec<ExtractedTask>) {
     (cleaned_root_desc, extracted)
 }
 
-pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> String {
+pub fn serialize_task_tree(
+    store: &crate::store::TaskStore,
+    root_uid: &str,
+    calendars: &[crate::model::CalendarListEntry],
+) -> String {
     let mut out = String::new();
     let root = if let Some(r) = store.get_task_ref(root_uid) {
         r
@@ -563,6 +567,7 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
         prefix: &str,
         root_href: &str,
         store: &crate::store::TaskStore,
+        calendars: &[crate::model::CalendarListEntry],
     ) {
         let status_str = if task.is_note {
             String::new()
@@ -588,9 +593,15 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
             }
         }
         if task.calendar_href != root_href {
+            let cal_name = calendars
+                .iter()
+                .find(|c| c.href == task.calendar_href)
+                .map(|c| c.name.as_str())
+                .unwrap_or(task.calendar_href.as_str());
+
             smart_string.push_str(&format!(
                 " col:{}",
-                crate::model::parser::quote_value(&task.calendar_href)
+                crate::model::parser::quote_value(cal_name)
             ));
         }
 
@@ -701,6 +712,7 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
                     prefix,
                     root_href,
                     store,
+                    calendars,
                 );
             }
         }
@@ -714,6 +726,7 @@ pub fn serialize_task_tree(store: &crate::store::TaskStore, root_uid: &str) -> S
         "-",
         &root.calendar_href,
         store,
+        calendars,
     );
 
     out.trim_end().to_string()
