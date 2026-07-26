@@ -47,7 +47,7 @@ println("Cfait Android Build: v$appVersionName (Code: $appVersionCode)")
 
 android {
     namespace = "com.trougnouf.cfait"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = "27.3.13750724"
 
     signingConfigs {
