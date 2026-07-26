@@ -186,6 +186,13 @@ pub struct MobileSyntaxToken {
 }
 
 #[derive(uniffi::Record)]
+pub struct MobileResolvedDependency {
+    pub uid: String,
+    pub summary: String,
+    pub is_found: bool,
+}
+
+#[derive(uniffi::Record)]
 pub struct MobileFilterOptions {
     pub filter_tags: Vec<String>,
     pub filter_locations: Vec<String>,
@@ -557,6 +564,43 @@ impl CfaitMobile {
             .iter()
             .map(|s| s.to_string())
             .collect()
+    }
+
+    pub fn get_token_context(&self, raw_word: String, kind: MobileSyntaxType) -> Option<MobileResolvedDependency> {
+        let clean_uid = if matches!(kind, MobileSyntaxType::WikiLink) {
+            crate::model::parser::strip_quotes(raw_word.trim_start_matches("[[").trim_end_matches("]]"))
+        } else {
+            let lex_guard = crate::model::parser::LEXICON.read().unwrap();
+            let lower = raw_word.to_lowercase();
+            if let Some((p_str, _, _)) = lex_guard.match_prefix(&lower) {
+                crate::model::parser::strip_quotes(&raw_word[p_str.len()..])
+            } else {
+                crate::model::parser::strip_quotes(&raw_word)
+            }
+        };
+
+        if clean_uid.is_empty() {
+            return None;
+        }
+
+        let store = self.controller.store.blocking_lock();
+        match store.resolve_dependency_ref(&clean_uid) {
+            Ok(uid) => {
+                let summary = store.get_summary(&uid).unwrap_or_else(|| "Resolving...".to_string());
+                Some(MobileResolvedDependency {
+                    uid,
+                    summary,
+                    is_found: true,
+                })
+            }
+            Err(_) => {
+                Some(MobileResolvedDependency {
+                    uid: "".to_string(),
+                    summary: format!("Unknown: {}", clean_uid),
+                    is_found: false,
+                })
+            }
+        }
     }
 
     pub fn resolve_selection_aliases(&self, selection: String, is_location: bool) -> Vec<String> {

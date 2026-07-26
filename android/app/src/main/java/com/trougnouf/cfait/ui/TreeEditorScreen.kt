@@ -34,7 +34,7 @@ fun TreeEditorScreen(
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
 
-    var markdownText by remember { mutableStateOf("") }
+    var markdownText by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
     val isDark = isSystemInDarkTheme()
@@ -42,9 +42,9 @@ fun TreeEditorScreen(
     LaunchedEffect(uid) {
         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                markdownText = api.getTaskTreeMarkdown(uid)
+                markdownText = androidx.compose.ui.text.input.TextFieldValue(api.getTaskTreeMarkdown(uid))
             } catch (e: Exception) {
-                markdownText = context.getString(R.string.error_general, e.message ?: "")
+                markdownText = androidx.compose.ui.text.input.TextFieldValue(context.getString(R.string.error_general, e.message ?: ""))
             } finally {
                 isLoading = false
             }
@@ -62,7 +62,7 @@ fun TreeEditorScreen(
                     IconButton(
                         onClick = {
                             scope.launch {
-                                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("tree_markdown", markdownText)))
+                                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("tree_markdown", markdownText.text)))
                                 Toast.makeText(context, context.getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
                             }
                         },
@@ -75,7 +75,7 @@ fun TreeEditorScreen(
                             isSaving = true
                             scope.launch {
                                 try {
-                                    api.syncTaskTreeFromMarkdown(uid, markdownText)
+                                    api.syncTaskTreeFromMarkdown(uid, markdownText.text)
                                     triggerBackgroundSync(context, api)
                                     onSaveComplete()
                                 } catch (e: Exception) {
@@ -101,23 +101,28 @@ fun TreeEditorScreen(
                 CircularProgressIndicator()
             }
         } else {
-            OutlinedTextField(
-                value = markdownText,
-                onValueChange = { markdownText = it },
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
                     .imePadding()
-                    .padding(16.dp),
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
-                visualTransformation = remember(isDark) {
-                    com.trougnouf.cfait.ui.MarkdownTransformation(isDark, api)
-                },
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.None
+                    .padding(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = markdownText,
+                    onValueChange = { markdownText = it },
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                    visualTransformation = remember(isDark) {
+                        com.trougnouf.cfait.ui.MarkdownTransformation(isDark, api)
+                    },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.None
+                    )
                 )
-            )
+                com.trougnouf.cfait.ui.CursorContextBanner(api, markdownText)
+            }
         }
     }
 }

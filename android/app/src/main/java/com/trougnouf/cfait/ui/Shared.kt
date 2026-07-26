@@ -46,6 +46,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.trougnouf.cfait.R
 import com.trougnouf.cfait.core.CfaitMobile
 import com.trougnouf.cfait.core.MobileSyntaxType
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.foundation.border
+import androidx.compose.material3.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -939,6 +947,76 @@ class SmartSyntaxTransformation(
         }
 
         return TransformedText(builder.toAnnotatedString(), OffsetMapping.Identity)
+    }
+}
+
+@Composable
+fun CursorContextBanner(api: CfaitMobile, textFieldValue: TextFieldValue) {
+    val cursor = textFieldValue.selection.start
+    val text = textFieldValue.text
+
+    var activeToken by remember { mutableStateOf<com.trougnouf.cfait.core.MobileSyntaxToken?>(null) }
+    var resolvedDep by remember { mutableStateOf<com.trougnouf.cfait.core.MobileResolvedDependency?>(null) }
+    var rawWord by remember { mutableStateOf("") }
+
+    LaunchedEffect(cursor, text) {
+        try {
+            val tokens = api.parseSmartString(text, false)
+            val token = tokens.find { cursor >= it.start && cursor <= it.end &&
+                (it.kind == com.trougnouf.cfait.core.MobileSyntaxType.DEPENDENCY ||
+                 it.kind == com.trougnouf.cfait.core.MobileSyntaxType.RELATION ||
+                 it.kind == com.trougnouf.cfait.core.MobileSyntaxType.WIKI_LINK)
+            }
+
+            if (token != null) {
+                val word = text.substring(token.start, token.end)
+                if (token != activeToken || word != rawWord) {
+                    activeToken = token
+                    rawWord = word
+                    resolvedDep = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        api.getTokenContext(word, token.kind)
+                    }
+                }
+            } else {
+                activeToken = null
+                resolvedDep = null
+            }
+        } catch (e: Exception) {
+            activeToken = null
+            resolvedDep = null
+        }
+    }
+
+    if (activeToken != null && resolvedDep != null) {
+        val isDep = activeToken!!.kind == com.trougnouf.cfait.core.MobileSyntaxType.DEPENDENCY
+        val iconChar = if (!resolvedDep!!.isFound) NfIcons.SYNC_ALERT else if (isDep) NfIcons.BLOCKED else NfIcons.LINK
+        val color = if (!resolvedDep!!.isFound) Color(0xFFE53935) else if (isDep) Color(0xFFFF9800) else Color(0xFF42A5F5)
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(color.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                    .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                NfIcon(iconChar, 14.sp, color)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "$rawWord ➔ ${resolvedDep!!.summary}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = color,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }
 

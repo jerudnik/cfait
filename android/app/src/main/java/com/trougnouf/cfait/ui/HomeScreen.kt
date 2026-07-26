@@ -276,8 +276,8 @@ fun HomeScreen(
     var highlightedUid by remember { mutableStateOf(autoScrollUid) }
     var scrollTrigger by remember { mutableLongStateOf(0L) }
 
-    var newTaskText by rememberSaveable { mutableStateOf("") }
-    var newDescriptionText by rememberSaveable { mutableStateOf("") }
+    var newTaskText by rememberSaveable(stateSaver = androidx.compose.ui.text.input.TextFieldValue.Saver) { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
+    var newDescriptionText by rememberSaveable(stateSaver = androidx.compose.ui.text.input.TextFieldValue.Saver) { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
     var isCreateExpanded by rememberSaveable { mutableStateOf(false) }
     var showExportSourceDialog by remember { mutableStateOf(false) }
     var showExportDestDialog by remember { mutableStateOf(false) }
@@ -439,13 +439,13 @@ fun HomeScreen(
             val tag = text.removePrefix("#")
             filterTags = api.resolveSelectionAliases(tag, false).toSet()
             sidebarTab = 1
-            newTaskText = ""
+            newTaskText = androidx.compose.ui.text.input.TextFieldValue("")
             updateTaskList()
         } else if ((text.startsWith("@@") || text.startsWith("loc:")) && !text.contains(" ") && !isAliasDef) {
             val loc = if (text.startsWith("@@")) text.removePrefix("@@") else text.removePrefix("loc:")
             filterLocations = api.resolveSelectionAliases(loc.replace("\"", ""), true).toSet()
             sidebarTab = 2
-            newTaskText = ""
+            newTaskText = androidx.compose.ui.text.input.TextFieldValue("")
             updateTaskList()
         } else {
             val currentChildUid = creatingChildUid
@@ -464,8 +464,8 @@ fun HomeScreen(
                     val newUid = api.addTaskWithDescription(text, desc)
                     
                     // Clear inputs ONLY on success to prevent data loss
-                    newTaskText = ""
-                    newDescriptionText = ""
+                    newTaskText = androidx.compose.ui.text.input.TextFieldValue("")
+                    newDescriptionText = androidx.compose.ui.text.input.TextFieldValue("")
                     isCreateExpanded = false
                     if (!childLockActive) {
                         creatingChildUid = null
@@ -640,7 +640,7 @@ fun HomeScreen(
             }
             task.categories.forEach { cat -> sb.append("#${quote(cat)} ") }
             task.location?.let { loc -> sb.append("@@${quote(loc)} ") }
-            newTaskText = sb.toString()
+            newTaskText = androidx.compose.ui.text.input.TextFieldValue(sb.toString())
             return
         }
 
@@ -1958,37 +1958,41 @@ fun HomeScreen(
                                             textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
                                             visualTransformation = remember(isDark) { MarkdownTransformation(isDark, api) },
                                         )
+                                        CursorContextBanner(api, newDescriptionText)
                                         Spacer(Modifier.height(8.dp))
                                     }
                                 }
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    OutlinedTextField(
-                                        value = newTaskText, onValueChange = { newTaskText = it },
-                                        placeholder = { Text("${stringResource(R.string.example_buy_cat_food)} !1 @tomorrow") },
-                                        modifier = Modifier.weight(1f), singleLine = true,
-                                        visualTransformation = remember(isDark) {
-                                            SmartSyntaxTransformation(
-                                                api,
-                                                isDark
-                                            )
-                                        },
-                                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
-                                        keyboardActions = KeyboardActions(onSend = {
-                                            if (newTaskText.isNotBlank()) handleAddTaskWithGeo(
-                                                newTaskText, newDescriptionText
-                                            )
-                                        }),
-                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        OutlinedTextField(
+                                            value = newTaskText, onValueChange = { newTaskText = it },
+                                            placeholder = { Text("${stringResource(R.string.example_buy_cat_food)} !1 @tomorrow") },
+                                            modifier = Modifier.fillMaxWidth(), singleLine = true,
+                                            visualTransformation = remember(isDark) {
+                                                SmartSyntaxTransformation(
+                                                    api,
+                                                    isDark
+                                                )
+                                            },
+                                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
+                                            keyboardActions = KeyboardActions(onSend = {
+                                                if (newTaskText.text.isNotBlank()) handleAddTaskWithGeo(
+                                                    newTaskText.text, newDescriptionText.text
+                                                )
+                                            }),
+                                        )
+                                        CursorContextBanner(api, newTaskText)
+                                    }
 
                                     AnimatedVisibility(visible = isCreateExpanded) {
-                                        val canSave = newTaskText.isNotBlank()
+                                        val canSave = newTaskText.text.isNotBlank()
                                         Row {
                                             Spacer(Modifier.width(8.dp))
                                             IconButton(
                                                 onClick = {
                                                     if (canSave) {
-                                                        handleAddTaskWithGeo(newTaskText, newDescriptionText)
+                                                        handleAddTaskWithGeo(newTaskText.text, newDescriptionText.text)
                                                     }
                                                 },
                                                 enabled = canSave,

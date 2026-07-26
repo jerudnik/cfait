@@ -55,8 +55,8 @@ fun TaskDetailScreen(
 ) {
     var task by remember { mutableStateOf<MobileTask?>(null) }
     val scope = rememberCoroutineScope()
-    var smartInput by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
+    var smartInput by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
+    var description by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
     var showMoveDialog by remember { mutableStateOf(false) }
     val isDark = isSystemInDarkTheme()
     val uriHandler = LocalUriHandler.current
@@ -109,8 +109,8 @@ fun TaskDetailScreen(
             // This ensures completed/hidden tasks can still be opened and edited.
             task = api.getTaskByUid(uid)
             task?.let {
-                smartInput = it.smartString
-                description = it.description
+                smartInput = androidx.compose.ui.text.input.TextFieldValue(it.smartString)
+                description = androidx.compose.ui.text.input.TextFieldValue(it.description)
             }
         }
     }
@@ -259,7 +259,7 @@ fun TaskDetailScreen(
                             // Optimistic Save:
                             // We delegate the actual async work to the parent (MainActivity)
                             // so we can leave this screen immediately without killing the save process.
-                            handleSaveWithGeo(smartInput, description)
+                            handleSaveWithGeo(smartInput.text, description.text)
                         },
                     ) { 
                         Text(
@@ -282,7 +282,7 @@ fun TaskDetailScreen(
         ) {
             OutlinedTextField(
                 value = smartInput,
-                onValueChange = { smartInput = it.replace("\n", "") }, // Manually block newlines
+                onValueChange = { smartInput = it.copy(text = it.text.replace("\n", "")) }, // Manually block newlines
                 label = { Text(stringResource(R.string.task_smart_syntax_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = remember(isDark) { SmartSyntaxTransformation(api, isDark) },
@@ -290,9 +290,10 @@ fun TaskDetailScreen(
                 maxLines = 5,
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
-                    handleSaveWithGeo(smartInput, description)
+                    handleSaveWithGeo(smartInput.text, description.text)
                 }),
             )
+            com.trougnouf.cfait.ui.CursorContextBanner(api, smartInput)
             Text(
                 stringResource(R.string.help_syntax_short),
                 style = MaterialTheme.typography.bodySmall,
@@ -846,6 +847,7 @@ fun TaskDetailScreen(
                 textStyle = TextStyle(textAlign = androidx.compose.ui.text.style.TextAlign.Start),
                 visualTransformation = remember(isDark) { MarkdownTransformation(isDark, api) },
             )
+            com.trougnouf.cfait.ui.CursorContextBanner(api, description)
 
             if (task!!.createdDateIso != null || task!!.lastModifiedDateIso != null) {
                 val dateStrs = mutableListOf<String>()

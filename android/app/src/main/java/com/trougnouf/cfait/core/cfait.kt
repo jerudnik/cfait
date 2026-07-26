@@ -881,6 +881,8 @@ internal object IntegrityCheckingUniffiLib {
 
     external fun uniffi_cfait_checksum_method_cfaitmobile_get_tasks_related_to(): Int
 
+    external fun uniffi_cfait_checksum_method_cfaitmobile_get_token_context(): Int
+
     external fun uniffi_cfait_checksum_method_cfaitmobile_get_version_info(): Int
 
     external fun uniffi_cfait_checksum_method_cfaitmobile_get_view_tasks(): Int
@@ -1189,6 +1191,13 @@ internal object UniffiLib {
         `ptr`: Long,
         `uid`: RustBuffer.ByValue,
     ): Long
+
+    external fun uniffi_cfait_fn_method_cfaitmobile_get_token_context(
+        `ptr`: Long,
+        `rawWord`: RustBuffer.ByValue,
+        `kind`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): RustBuffer.ByValue
 
     external fun uniffi_cfait_fn_method_cfaitmobile_get_version_info(
         `ptr`: Long,
@@ -1770,6 +1779,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_tasks_related_to() != 37777) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_token_context() != 57765) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_cfait_checksum_method_cfaitmobile_get_version_info() != 23909) {
@@ -2553,6 +2565,11 @@ public interface CfaitMobileInterface {
     fun `getTaskTreeMarkdown`(`uid`: kotlin.String): kotlin.String
 
     suspend fun `getTasksRelatedTo`(`uid`: kotlin.String): List<MobileRelatedTask>
+
+    fun `getTokenContext`(
+        `rawWord`: kotlin.String,
+        `kind`: MobileSyntaxType,
+    ): MobileResolvedDependency?
 
     fun `getVersionInfo`(): MobileVersionInfo
 
@@ -3497,6 +3514,23 @@ open class CfaitMobile :
             { FfiConverterSequenceTypeMobileRelatedTask.lift(it) },
             // Error FFI converter
             UniffiNullRustCallStatusErrorHandler,
+        )
+
+    override fun `getTokenContext`(
+        `rawWord`: kotlin.String,
+        `kind`: MobileSyntaxType,
+    ): MobileResolvedDependency? =
+        FfiConverterOptionalTypeMobileResolvedDependency.lift(
+            callWithHandle {
+                uniffiRustCall { _status ->
+                    UniffiLib.uniffi_cfait_fn_method_cfaitmobile_get_token_context(
+                        it,
+                        FfiConverterString.lower(`rawWord`),
+                        FfiConverterTypeMobileSyntaxType.lower(`kind`),
+                        _status,
+                    )
+                }
+            },
         )
 
     override fun `getVersionInfo`(): MobileVersionInfo =
@@ -4898,6 +4932,42 @@ public object FfiConverterTypeMobileRelatedTask : FfiConverterRustBuffer<MobileR
     ) {
         FfiConverterString.write(value.`uid`, buf)
         FfiConverterString.write(value.`summary`, buf)
+    }
+}
+
+data class MobileResolvedDependency(
+    var `uid`: kotlin.String,
+    var `summary`: kotlin.String,
+    var `isFound`: kotlin.Boolean,
+) {
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeMobileResolvedDependency : FfiConverterRustBuffer<MobileResolvedDependency> {
+    override fun read(buf: ByteBuffer): MobileResolvedDependency =
+        MobileResolvedDependency(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+
+    override fun allocationSize(value: MobileResolvedDependency) =
+        (
+            FfiConverterString.allocationSize(value.`uid`) +
+                FfiConverterString.allocationSize(value.`summary`) +
+                FfiConverterBoolean.allocationSize(value.`isFound`)
+        )
+
+    override fun write(
+        value: MobileResolvedDependency,
+        buf: ByteBuffer,
+    ) {
+        FfiConverterString.write(value.`uid`, buf)
+        FfiConverterString.write(value.`summary`, buf)
+        FfiConverterBoolean.write(value.`isFound`, buf)
     }
 }
 
@@ -6641,6 +6711,38 @@ public object FfiConverterOptionalString : FfiConverterRustBuffer<kotlin.String?
         } else {
             buf.put(1)
             FfiConverterString.write(value, buf)
+        }
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeMobileResolvedDependency : FfiConverterRustBuffer<MobileResolvedDependency?> {
+    override fun read(buf: ByteBuffer): MobileResolvedDependency? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeMobileResolvedDependency.read(buf)
+    }
+
+    override fun allocationSize(value: MobileResolvedDependency?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeMobileResolvedDependency.allocationSize(value)
+        }
+    }
+
+    override fun write(
+        value: MobileResolvedDependency?,
+        buf: ByteBuffer,
+    ) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeMobileResolvedDependency.write(value, buf)
         }
     }
 }
