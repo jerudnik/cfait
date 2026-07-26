@@ -415,7 +415,7 @@ impl keyring_core::api::CredentialApi for Oo7Cred {
 pub fn spawn_alarm_actor(
     ui_sender: Option<mpsc::Sender<AlarmMessage>>,
 ) -> mpsc::Sender<SystemEvent> {
-    let (tx, mut rx) = mpsc::channel(100);
+    let (tx, mut rx) = mpsc::channel(1000);
 
     // Load config once at startup using a fresh standard context (no global state)
     let ctx = StandardContext::new(None);

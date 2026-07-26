@@ -130,7 +130,7 @@ pub fn spawn_background_worker(
     ui_tx: mpsc::Sender<crate::gui::message::Message>,
     ctx: Arc<dyn AppContext>,
 ) -> mpsc::Sender<WorkerCommand> {
-    let (tx, mut rx) = mpsc::channel::<WorkerCommand>(100);
+    let (tx, mut rx) = mpsc::channel::<WorkerCommand>(1000);
 
     tokio::spawn(async move {
         // Initialize an isolated TaskController for background persistence handling
@@ -209,11 +209,11 @@ pub fn worker_subscription(
     iced::Subscription::run_with(WorkerData(ctx), |data| {
         let ctx = data.0.clone();
         iced_stream::channel(
-            100,
+            1000,
             move |mut output: IcedSender<crate::gui::message::Message>| {
                 let ctx = ctx.clone();
                 async move {
-                    let (gui_tx, mut gui_rx) = tokio::sync::mpsc::channel(100);
+                    let (gui_tx, mut gui_rx) = tokio::sync::mpsc::channel(1000);
                     let worker_tx = spawn_background_worker(gui_tx, ctx);
 
                     let _ = output

@@ -85,8 +85,8 @@ pub fn run_with_ics_file(
 
 // Helper function to satisfy Subscription::run fn pointer requirement
 fn alarm_stream() -> impl iced::futures::Stream<Item = Message> {
-    stream::channel(100, |mut output: Sender<Message>| async move {
-        let (gui_tx, mut gui_rx) = tokio::sync::mpsc::channel(100);
+    stream::channel(1000, |mut output: Sender<Message>| async move {
+        let (gui_tx, mut gui_rx) = tokio::sync::mpsc::channel(1000);
         let actor_tx = spawn_alarm_actor(Some(gui_tx));
         let _ = output.send(Message::InitAlarmActor(actor_tx)).await;
 
