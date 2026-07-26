@@ -566,9 +566,15 @@ impl CfaitMobile {
             .collect()
     }
 
-    pub fn get_token_context(&self, raw_word: String, kind: MobileSyntaxType) -> Option<MobileResolvedDependency> {
+    pub fn get_token_context(
+        &self,
+        raw_word: String,
+        kind: MobileSyntaxType,
+    ) -> Option<MobileResolvedDependency> {
         let clean_uid = if matches!(kind, MobileSyntaxType::WikiLink) {
-            crate::model::parser::strip_quotes(raw_word.trim_start_matches("[[").trim_end_matches("]]"))
+            crate::model::parser::strip_quotes(
+                raw_word.trim_start_matches("[[").trim_end_matches("]]"),
+            )
         } else {
             let lex_guard = crate::model::parser::LEXICON.read().unwrap();
             let lower = raw_word.to_lowercase();
@@ -586,20 +592,20 @@ impl CfaitMobile {
         let store = self.controller.store.blocking_lock();
         match store.resolve_dependency_ref(&clean_uid) {
             Ok(uid) => {
-                let summary = store.get_summary(&uid).unwrap_or_else(|| "Resolving...".to_string());
+                let summary = store
+                    .get_summary(&uid)
+                    .unwrap_or_else(|| "Resolving...".to_string());
                 Some(MobileResolvedDependency {
                     uid,
                     summary,
                     is_found: true,
                 })
             }
-            Err(_) => {
-                Some(MobileResolvedDependency {
-                    uid: "".to_string(),
-                    summary: format!("Unknown: {}", clean_uid),
-                    is_found: false,
-                })
-            }
+            Err(_) => Some(MobileResolvedDependency {
+                uid: "".to_string(),
+                summary: format!("Unknown: {}", clean_uid),
+                is_found: false,
+            }),
         }
     }
 
