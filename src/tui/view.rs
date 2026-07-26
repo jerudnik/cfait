@@ -1789,11 +1789,21 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             rust_i18n::t!("move_task_title")
         };
 
+        let has_subtasks = state
+            .get_selected_task()
+            .map(|t| t.has_subtasks)
+            .unwrap_or(false);
+        let title_with_hint = if has_subtasks {
+            format!("{} ({})", title_text, rust_i18n::t!("tui_move_toggle"))
+        } else {
+            title_text.to_string()
+        };
+
         let popup = List::new(items)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(format!(" {} ", title_text)),
+                    .title(format!(" {} ", title_with_hint)),
             )
             .highlight_style(Style::default().bg(Color::Blue));
         f.render_widget(Clear, area);
