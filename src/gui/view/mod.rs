@@ -889,7 +889,7 @@ pub fn root_view(app: &GuiApp) -> Element<'_, Message> {
         let modal_card = container(modal_content)
             .padding(20)
             .width(Length::Fixed(350.0))
-            .max_height(450.0)
+            .max_height(500.0)
             .style(|theme: &Theme| {
                 let palette = theme.extended_palette();
                 container::Style {
