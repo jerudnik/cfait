@@ -86,6 +86,7 @@ pub fn three_way_merge(base: &Task, local: &Task, server: &Task) -> Option<Task>
         has_related_tasks: _,
         is_future_start: _,
         is_overdue: _,
+        is_due_today: _,
         tree_location_count: _,
         target_collection: _,
         is_search_context: _,

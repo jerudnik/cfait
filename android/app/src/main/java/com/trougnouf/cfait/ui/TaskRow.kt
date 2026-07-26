@@ -271,6 +271,8 @@ fun TaskRow(
 
                         val dueColor = if (isOverdue) {
                             MaterialTheme.colorScheme.error // Red
+                        } else if (task.isDueToday) {
+                            Color(0xFFFFA726) // Orange
                         } else {
                             Color.Gray
                         };

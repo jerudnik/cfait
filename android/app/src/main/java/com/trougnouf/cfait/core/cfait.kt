@@ -5003,6 +5003,7 @@ data class MobileTask(
     var `isAlldayStart`: kotlin.Boolean,
     var `hasAlarms`: kotlin.Boolean,
     var `isFutureStart`: kotlin.Boolean,
+    var `isDueToday`: kotlin.Boolean,
     var `durationMins`: kotlin.UInt?,
     var `durationMaxMins`: kotlin.UInt?,
     var `calendarHref`: kotlin.String,
@@ -5071,6 +5072,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
             FfiConverterOptionalUInt.read(buf),
             FfiConverterOptionalUInt.read(buf),
             FfiConverterString.read(buf),
@@ -5133,6 +5135,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
                 FfiConverterBoolean.allocationSize(value.`isAlldayStart`) +
                 FfiConverterBoolean.allocationSize(value.`hasAlarms`) +
                 FfiConverterBoolean.allocationSize(value.`isFutureStart`) +
+                FfiConverterBoolean.allocationSize(value.`isDueToday`) +
                 FfiConverterOptionalUInt.allocationSize(value.`durationMins`) +
                 FfiConverterOptionalUInt.allocationSize(value.`durationMaxMins`) +
                 FfiConverterString.allocationSize(value.`calendarHref`) +
@@ -5197,6 +5200,7 @@ public object FfiConverterTypeMobileTask : FfiConverterRustBuffer<MobileTask> {
         FfiConverterBoolean.write(value.`isAlldayStart`, buf)
         FfiConverterBoolean.write(value.`hasAlarms`, buf)
         FfiConverterBoolean.write(value.`isFutureStart`, buf)
+        FfiConverterBoolean.write(value.`isDueToday`, buf)
         FfiConverterOptionalUInt.write(value.`durationMins`, buf)
         FfiConverterOptionalUInt.write(value.`durationMaxMins`, buf)
         FfiConverterString.write(value.`calendarHref`, buf)

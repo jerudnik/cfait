@@ -399,6 +399,8 @@ pub fn view_task_row<'a>(
 
                 let due_color = if is_overdue {
                     Color::from_rgba(0.8, 0.2, 0.2, dim_factor)
+                } else if task.is_due_today {
+                    Color::from_rgba(0.8, 0.6, 0.1, dim_factor) // Orange/Yellow
                 } else {
                     Color::from_rgba(0.5, 0.5, 0.5, dim_factor)
                 };

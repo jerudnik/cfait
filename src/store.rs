@@ -3096,6 +3096,13 @@ impl TaskStore {
                 .map(|d| !t.status.is_done() && d.to_comparison_time() < now)
                 .unwrap_or(false);
 
+            let now_local_date = chrono::Local::now().date_naive();
+            t.is_due_today = t
+                .effective_due
+                .as_ref()
+                .map(|d| !t.status.is_done() && d.to_date_naive() == now_local_date)
+                .unwrap_or(false);
+
             t.tree_location_count = *tree_loc_counts.get(&t.uid).unwrap_or(&0);
 
             let (p_tags, p_loc) = if let Some(p_uid) = &t.parent_uid {
@@ -3682,6 +3689,7 @@ mod tests {
             has_related_tasks: false,
             is_future_start: false,
             is_overdue: false,
+            is_due_today: false,
             tree_location_count: 0,
             is_search_context: false,
         }

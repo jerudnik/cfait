@@ -376,6 +376,8 @@ pub struct Task {
     #[serde(skip)]
     pub is_overdue: bool,
     #[serde(skip)]
+    pub is_due_today: bool,
+    #[serde(skip)]
     pub tree_location_count: usize,
     #[serde(skip)]
     pub is_search_context: bool,
@@ -675,6 +677,7 @@ impl Task {
             has_related_tasks: false,
             is_future_start: false,
             is_overdue: false,
+            is_due_today: false,
             tree_location_count: 0,
             is_search_context: false,
         };

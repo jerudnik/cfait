@@ -845,6 +845,10 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                     } else if let Some(d) = &t.due {
                         let style = if t.is_overdue {
                             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+                        } else if t.is_due_today {
+                            Style::default()
+                                .fg(Color::Yellow)
+                                .add_modifier(Modifier::BOLD)
                         } else {
                             Style::default().fg(if is_dark_theme {
                                 Color::LightBlue
