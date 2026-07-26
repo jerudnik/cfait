@@ -2214,17 +2214,15 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
             let line_idx = cursor_pos.line;
             let col_idx = cursor_pos.column;
             let text = content.text();
-            let mut current_line = 0;
             let mut byte_offset = 0;
 
-            for line_str in text.split('\n') {
+            for (current_line, line_str) in text.split('\n').enumerate() {
                 if current_line == line_idx {
                     let col_bytes: usize =
                         line_str.chars().take(col_idx).map(|c| c.len_utf8()).sum();
                     return byte_offset + col_bytes;
                 }
                 byte_offset += line_str.len() + 1; // +1 for '\n'
-                current_line += 1;
             }
             byte_offset
         };
