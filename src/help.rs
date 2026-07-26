@@ -82,6 +82,14 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
     let is_done = get_first("search_is_done");
     let is_status = rust_i18n::t!("help_keys_search_status");
 
+    let val_date = rust_i18n::t!("help_value_date");
+    let val_loc = rust_i18n::t!("help_value_location");
+    let val_dur = rust_i18n::t!("help_value_duration");
+    let val_uid_text = rust_i18n::t!("help_value_uid_or_text");
+    let val_text = rust_i18n::t!("help_value_text");
+    let val_period = rust_i18n::t!("help_value_val_period");
+    let val_indent = rust_i18n::t!("help_md_indent");
+
     let mut sections = vec![
         HelpSection {
             title: rust_i18n::t!("help_quick_start").to_string(),
@@ -92,7 +100,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: format!("{} !1", rust_i18n::t!("example_buy_cat_food")),
                 },
                 HelpItem {
-                    keys: format!("{p_due}date"),
+                    keys: format!("{p_due}{val_date}"),
                     desc: rust_i18n::t!("help_timeline_due_date").to_string(),
                     example: format!(
                         "{} {p_due}{e_tomorrow}, {p_due}2025-01-01",
@@ -100,12 +108,12 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     ),
                 },
                 HelpItem {
-                    keys: format!("{p_start}date"),
+                    keys: format!("{p_start}{val_date}"),
                     desc: rust_i18n::t!("help_timeline_start_date").to_string(),
                     example: format!("{p_start}{e_next} {u_w}, {p_start}{e_tomorrow}"),
                 },
                 HelpItem {
-                    keys: format!("{p_start_due}date"),
+                    keys: format!("{p_start_due}{val_date}"),
                     desc: rust_i18n::t!("help_timeline_set_both_dates").to_string(),
                     example: format!(
                         "{p_start_due}{e_tomorrow}, {p_start_due}2{u_d}, {p_start_due}2026-06-06 15:00-18:30"
@@ -125,7 +133,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: "#gaming{solo,genre=rpg}".to_string(),
                 },
                 HelpItem {
-                    keys: format!("{p_loc}location"),
+                    keys: format!("{p_loc}{val_loc}"),
                     desc: rust_i18n::t!("help_org_location_hierarchy").to_string(),
                     example: format!("{} {p_loc}aldi", rust_i18n::t!("example_buy_cookies")),
                 },
@@ -135,7 +143,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: rust_i18n::t!("example_apply_inline_tags").to_string(),
                 },
                 HelpItem {
-                    keys: format!("{p_duration}duration"),
+                    keys: format!("{p_duration}{val_dur}"),
                     desc: rust_i18n::t!("help_org_estimated_duration").to_string(),
                     example: format!(
                         "{} {p_duration}30{u_m}, {} {p_duration}1{u_h}-2{u_h}",
@@ -221,7 +229,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: format!("{p_rem}{e_in} 2{u_h}"),
                 },
                 HelpItem {
-                    keys: format!("{p_rem}date"),
+                    keys: format!("{p_rem}{val_date}"),
                     desc: rust_i18n::t!("help_metadata_absolute_reminder").to_string(),
                     example: format!("{p_rem}2025-01-20 9am, {p_rem}friday"),
                 },
@@ -231,7 +239,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
             title: rust_i18n::t!("metadata").to_string(),
             items: vec![
                 HelpItem {
-                    keys: format!("{p_dep}uid / text"),
+                    keys: format!("{p_dep}{val_uid_text}"),
                     desc: rust_i18n::t!("help_metadata_dependency").to_string(),
                     example: format!(
                         "{p_dep}\"{}\" {}",
@@ -240,12 +248,12 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     ),
                 },
                 HelpItem {
-                    keys: format!("{p_rel}uid / text"),
+                    keys: format!("{p_rel}{val_uid_text}"),
                     desc: rust_i18n::t!("help_metadata_relation").to_string(),
                     example: format!("{p_rel}\"{}\"", rust_i18n::t!("example_meeting")),
                 },
                 HelpItem {
-                    keys: format!("{p_url} or [[ ]]"),
+                    keys: format!("{} {} [[ ]]", p_url, rust_i18n::t!("or")),
                     desc: rust_i18n::t!("help_metadata_attach_link").to_string(),
                     example: format!("{p_url}https://perdu.com or [[https://perdu.com]]"),
                 },
@@ -280,7 +288,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
             title: rust_i18n::t!("search_and_filtering").to_string(),
             items: vec![
                 HelpItem {
-                    keys: "text".to_string(),
+                    keys: val_text.to_string(),
                     desc: rust_i18n::t!("help_search_matches").to_string(),
                     example: rust_i18n::t!("example_buy_cat_food").to_string(),
                 },
@@ -300,7 +308,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: format!("{p_duration}<20{u_m}, !<4"),
                 },
                 HelpItem {
-                    keys: "Dates".to_string(),
+                    keys: rust_i18n::t!("help_key_dates").to_string(),
                     desc: rust_i18n::t!("help_search_dates").to_string(),
                     example: format!("{p_due}<{e_today}, {p_start}>1{u_w}"),
                 },
@@ -325,7 +333,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: format!("{p_loc}aldi:=#groceries,{p_loc}shops:supermarkets"),
                 },
                 HelpItem {
-                    keys: "\\#text".to_string(),
+                    keys: format!("\\#{}", val_text),
                     desc: rust_i18n::t!("help_org_escape_special").to_string(),
                     example: "\\#not-a-tag".to_string(),
                 },
@@ -335,7 +343,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: format!("- {}", rust_i18n::t!("example_pantry")),
                 },
                 HelpItem {
-                    keys: format!("{p_done}date"),
+                    keys: format!("{p_done}{val_date}"),
                     desc: rust_i18n::t!("help_org_done").to_string(),
                     example: format!(
                         "{p_done}{e_now}, {p_done}{e_yesterday}, {p_done}2024-01-01 15:30"
@@ -347,7 +355,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     example: format!("{p_done}25%"),
                 },
                 HelpItem {
-                    keys: format!("{p_spent} ({} t / Shift+T)", rust_i18n::t!("or")),
+                    keys: format!("{p_spent} ({} t)", rust_i18n::t!("or")),
                     desc: rust_i18n::t!("help_log_time_syntax").to_string(),
                     example: format!(
                         "{p_spent}30{u_m}, {p_spent}thursday 1{u_h}, {p_spent}14:00-15:30"
@@ -367,7 +375,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
             title: rust_i18n::t!("help_goals").to_string(),
             items: vec![
                 HelpItem {
-                    keys: format!("{p_goal}val/period"),
+                    keys: format!("{p_goal}{val_period}"),
                     desc: rust_i18n::t!("help_goals_task").to_string(),
                     example: format!(
                         "{} {p_goal}4/{u_mo}, {} {p_duration}1{u_h} {p_goal}2{u_h}/{u_w}",
@@ -376,7 +384,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     ),
                 },
                 HelpItem {
-                    keys: format!("#tag:={p_goal}val/period"),
+                    keys: format!("#tag:={p_goal}{val_period}"),
                     desc: rust_i18n::t!("help_goals_global").to_string(),
                     example: format!(
                         "#read:book:={p_goal}5/{u_y}, {p_loc}outside:={p_goal}2{u_h}/{u_d}"
@@ -407,7 +415,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
             ),
             items: vec![
                 HelpItem {
-                    keys: "text".to_string(),
+                    keys: val_text.to_string(),
                     desc: rust_i18n::t!("help_md_text_desc").to_string(),
                     example: rust_i18n::t!("example_remember_cat").to_string(),
                 },
@@ -429,7 +437,7 @@ pub fn get_syntax_help() -> Vec<HelpSection> {
                     ),
                 },
                 HelpItem {
-                    keys: "  (indent)".to_string(),
+                    keys: format!("  {}", val_indent),
                     desc: rust_i18n::t!("help_md_notes_desc").to_string(),
                     example: format!("  {}", rust_i18n::t!("example_notes_cookies")),
                 },
@@ -512,7 +520,7 @@ pub fn get_shortcuts_help(is_gui: bool) -> Vec<HelpSection> {
 
     nav_items.push(HelpItem {
         keys: "z".to_string(),
-        desc: "Fold / Unfold Task Tree".to_string(),
+        desc: rust_i18n::t!("help_shortcut_fold_tree").to_string(),
         example: "".to_string(),
     });
     nav_items.push(HelpItem {
@@ -531,7 +539,7 @@ pub fn get_shortcuts_help(is_gui: bool) -> Vec<HelpSection> {
 
     vec![
         HelpSection {
-            title: "Navigation & general".to_string(),
+            title: rust_i18n::t!("help_section_navigation").to_string(),
             items: nav_items,
         },
         HelpSection {
@@ -549,12 +557,12 @@ pub fn get_shortcuts_help(is_gui: bool) -> Vec<HelpSection> {
                 },
                 HelpItem {
                     keys: "e / E".to_string(),
-                    desc: "Edit Title / Edit Description".to_string(),
+                    desc: rust_i18n::t!("help_shortcut_edit_title_desc").to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {
                     keys: "Ctrl + e".to_string(),
-                    desc: "Edit tree (Markdown)".to_string(),
+                    desc: rust_i18n::t!("help_shortcut_edit_tree").to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {
@@ -564,7 +572,7 @@ pub fn get_shortcuts_help(is_gui: bool) -> Vec<HelpSection> {
                 },
                 HelpItem {
                     keys: "Shift + Space".to_string(),
-                    desc: "Complete & shift schedule to today".to_string(),
+                    desc: rust_i18n::t!("help_shortcut_complete_shift").to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {
@@ -638,32 +646,32 @@ pub fn get_shortcuts_help(is_gui: bool) -> Vec<HelpSection> {
                 },
                 HelpItem {
                     keys: "b / c / l".to_string(),
-                    desc: "Selected is Blocked by / Child of / Related to Yanked".to_string(),
+                    desc: rust_i18n::t!("help_shortcut_yank_relations").to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {
                     keys: "C".to_string(),
-                    desc: "Create Subtask".to_string(),
+                    desc: rust_i18n::t!("create_subtask").to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {
                     keys: "Y".to_string(),
-                    desc: "Toggle Yank Lock (keep yanked task)".to_string(),
+                    desc: rust_i18n::t!("help_shortcut_toggle_yank_lock").to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {
                     keys: "> / <".to_string(),
-                    desc: "Indent / Outdent Task".to_string(),
+                    desc: rust_i18n::t!("help_shortcut_indent_outdent").to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {
                     keys: "L".to_string(),
-                    desc: "Browse relationships / Toggle details".to_string(),
+                    desc: rust_i18n::t!("help_shortcut_browse_relations_details").to_string(),
                     example: "".to_string(),
                 },
                 HelpItem {
                     keys: "Enter".to_string(),
-                    desc: "Action Menu / Context Menu".to_string(),
+                    desc: rust_i18n::t!("help_shortcut_action_context_menu").to_string(),
                     example: "".to_string(),
                 },
             ],
@@ -703,7 +711,7 @@ pub fn get_shortcuts_help(is_gui: bool) -> Vec<HelpSection> {
                 },
                 HelpItem {
                     keys: "w".to_string(),
-                    desc: "Toggle Quick Filter (is:ready)".to_string(),
+                    desc: rust_i18n::t!("help_shortcut_toggle_quick_filter").to_string(),
                     example: "".to_string(),
                 },
             ],
