@@ -880,10 +880,10 @@ class MarkdownTransformation(val isDark: Boolean, val api: CfaitMobile? = null) 
         try {
             val inlinePatterns = listOf(
                 Pair(Regex("""<!-- uid:.*?-->"""), SpanStyle(color = dimColor, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)),
-                Pair(Regex("""\\[\[.*?\]\]"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
-                Pair(Regex("""\\[.*?\]\\(.*?\\)"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
-                Pair(Regex("""[a-zA-Z][a-zA-Z0-9+.-]*://[^\s)\]\]+"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
-                Pair(Regex("""mailto:[^\s)\]\]+"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
+                Pair(Regex("""\[\[.*?\]\]"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
+                Pair(Regex("""\[.*?\]\\(.*?\\)"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
+                Pair(Regex("""[a-zA-Z][a-zA-Z0-9+.-]*://[^\s)]+"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
+                Pair(Regex("""mailto:[^\s)]+"""), SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)),
                 Pair(Regex("""\*\*.*?\*\*"""), SpanStyle(fontWeight = FontWeight.Bold)),
                 Pair(Regex("""__.*?__"""), SpanStyle(fontWeight = FontWeight.Bold)),
                 Pair(Regex("""~~.*?~~"""), SpanStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)),
