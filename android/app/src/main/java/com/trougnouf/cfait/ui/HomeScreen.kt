@@ -922,14 +922,15 @@ fun HomeScreen(
     }
 
     if (taskToMove != null) {
-        var moveTree by remember { mutableStateOf(taskToMove!!.hasSubtasks) }
+        var moveTree by remember(taskToMove) { mutableStateOf(taskToMove?.hasSubtasks ?: false) }
         val targetCals =
-            remember(calendars, taskToMove, moveTree) { 
-                calendars.filter { (moveTree || it.href != taskToMove!!.calendarHref) && !it.isDisabled && it.href != "local://trash" && it.href != "local://recovery" }
+            remember(calendars, taskToMove, moveTree) {
+                val taskCalHref = taskToMove?.calendarHref ?: return@remember emptyList<MobileCalendar>()
+                calendars.filter { (moveTree || it.href != taskCalHref) && !it.isDisabled && it.href != "local://trash" && it.href != "local://recovery" }
             }
         AlertDialog(
             onDismissRequest = { taskToMove = null },
-            title = { Text(stringResource(if (moveTree && taskToMove!!.hasSubtasks) R.string.move_task_tree else R.string.move_task_title)) },
+            title = { Text(stringResource(if (moveTree && taskToMove?.hasSubtasks == true) R.string.move_task_tree else R.string.move_task_title)) },
             text = {
                 Column {
                     LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
@@ -959,7 +960,7 @@ fun HomeScreen(
                             )
                         }
                     }
-                    if (taskToMove!!.hasSubtasks) {
+                    if (taskToMove?.hasSubtasks == true) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth().clickable { moveTree = !moveTree }.padding(top = 8.dp)
