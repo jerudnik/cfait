@@ -607,7 +607,7 @@
     "search_is_blocked": "está:bloqueado",
     "search_is_done": "está:hecho",
     "search_is_note": "is:nota,is:apunte",
-    "search_is_ongoing": "is:en curso,is:vigente,is:en proceso",
+    "search_is_ongoing": "is:encurso,is:vigente,is:enproceso",
     "search_is_permanent": "is:permanente,is:eterno",
     "search_is_prefix": "es:",
     "search_is_ready": "es:listo",

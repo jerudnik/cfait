@@ -3767,8 +3767,8 @@ mod i18n_tests {
 
                     for part in parts {
                         assert!(
-                            !part.starts_with(' '),
-                            "Syntax tokens should not have spaces after commas! Locale '{}', key '{}', found: '{}'",
+                            !part.contains(' '),
+                            "Syntax tokens should not contain spaces! The parser relies on spaces to separate arguments. Locale '{}', key '{}', found: '{}'",
                             lang,
                             key,
                             part
