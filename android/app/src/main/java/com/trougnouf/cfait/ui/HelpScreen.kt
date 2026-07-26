@@ -108,7 +108,7 @@ fun HelpScreen(api: CfaitMobile, onBack: () -> Unit) {
 
                                     section.items.forEach { item ->
                                         HelpRow(item)
-                                        if (item != section.items.last()) Spacer(Modifier.height(16.dp))
+                                        if (item != section.items.last()) Spacer(Modifier.height(8.dp))
                                     }
                                 }
                             }
@@ -122,30 +122,29 @@ fun HelpScreen(api: CfaitMobile, onBack: () -> Unit) {
 
 @Composable
 fun HelpRow(item: com.trougnouf.cfait.core.MobileHelpItem) {
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-            ) {
-                Text(
-                    item.keys,
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Text(item.desc, fontSize = 15.sp, modifier = Modifier.weight(1f))
-        }
-        if (item.example.isNotEmpty()) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Box(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(6.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
             Text(
-                "e.g. ${item.example}",
+                item.keys,
+                fontSize = 14.sp,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(item.desc, fontSize = 15.sp, modifier = Modifier.padding(start = 4.dp))
+        if (item.example.isNotEmpty()) {
+            val eg = stringResource(R.string.eg)
+            Text(
+                "$eg ${item.example}",
                 fontSize = 13.sp,
                 color = Color.Gray,
                 fontFamily = FontFamily.Monospace,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp),
             )
         }
     }

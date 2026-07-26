@@ -941,7 +941,7 @@ fun SettingsScreen(
                     ) {
                         NfIcon(NfIcons.ADD, 16.sp)
                         Spacer(Modifier.width(4.dp))
-                        Text("Remote")
+                        Text(stringResource(R.string.remote_label))
                     }
                 }
             }
@@ -1117,7 +1117,7 @@ fun SettingsScreen(
                             singleLine = true
                         )
                         DropdownPicker(
-                            label = "Type",
+                            label = stringResource(R.string.goal_input_type),
                             selected = goalInputType,
                             options = listOf(
                                 MobileGoalType.COUNT to stringResource(R.string.goal_type_count),
@@ -1131,20 +1131,20 @@ fun SettingsScreen(
                         OutlinedTextField(
                             value = goalInputTarget,
                             onValueChange = { goalInputTarget = it },
-                            label = { Text("Target") },
+                            label = { Text(stringResource(R.string.goal_input_target)) },
                             modifier = Modifier.weight(1.5f),
                             singleLine = true
                         )
                         OutlinedTextField(
                             value = goalInputAmount,
                             onValueChange = { goalInputAmount = it },
-                            label = { Text("Amount") },
+                            label = { Text(stringResource(R.string.goal_input_amount)) },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true
                         )
                         DropdownPicker(
-                            label = "Unit",
+                            label = stringResource(R.string.goal_input_unit),
                             selected = goalInputUnit,
                             options = listOf(
                                 MobileIntervalUnit.DAYS to stringResource(R.string.interval_unit_days),

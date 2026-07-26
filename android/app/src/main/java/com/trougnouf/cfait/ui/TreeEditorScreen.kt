@@ -44,7 +44,7 @@ fun TreeEditorScreen(
             try {
                 markdownText = api.getTaskTreeMarkdown(uid)
             } catch (e: Exception) {
-                markdownText = "Error loading tree: ${e.message}"
+                markdownText = context.getString(R.string.error_general, e.message ?: "")
             } finally {
                 isLoading = false
             }

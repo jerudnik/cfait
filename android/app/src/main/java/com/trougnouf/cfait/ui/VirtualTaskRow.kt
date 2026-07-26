@@ -54,7 +54,7 @@ fun VirtualTaskRow(task: MobileTask, onClick: () -> Unit) {
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
         )
         Text(
-            text = if (task.virtualType == "expand") "Expand completed tasks" else "Collapse completed tasks",
+            text = if (task.virtualType == "expand") androidx.compose.ui.res.stringResource(com.trougnouf.cfait.R.string.expand_completed_tasks) else androidx.compose.ui.res.stringResource(com.trougnouf.cfait.R.string.collapse_completed_tasks),
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
             modifier = Modifier.padding(start = 8.dp)

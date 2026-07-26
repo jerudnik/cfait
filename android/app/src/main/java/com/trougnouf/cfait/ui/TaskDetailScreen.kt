@@ -545,13 +545,13 @@ fun TaskDetailScreen(
                 }
 
                 if (task!!.goalTargetStr != null) {
-                    Text("- Target: ${task!!.goalTargetStr}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("- Progress: ${task!!.goalProgressStr}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("- ${stringResource(R.string.goal_target_label)}: ${task!!.goalTargetStr}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("- ${stringResource(R.string.goal_progress_label)}: ${task!!.goalProgressStr}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 if (task!!.goalHistory.isNotEmpty()) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
-                        Text("- Past: ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("- ${stringResource(R.string.goal_past_label)}: ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         HeatmapRow(task!!.goalHistory)
                     }
                 }

@@ -1731,7 +1731,7 @@ fun HomeScreen(
                             title = {
                                 if (focusedTaskUid != null) {
                                     val focusedTask = tasks.find { it.uid == focusedTaskUid }
-                                    val titleText = focusedTask?.summary ?: "Focused"
+                                    val titleText = focusedTask?.summary ?: stringResource(R.string.focus_hide_others)
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         NfIcon(NfIcons.FOCUS_FIELD, 20.sp, MaterialTheme.colorScheme.primary)
                                         Spacer(Modifier.width(8.dp))
@@ -1950,7 +1950,7 @@ fun HomeScreen(
                                             onValueChange = { newDescriptionText = it },
                                             placeholder = {
                                                 Text(
-                                                    "Write notes here, or create subtasks:\n- [ ] Subtask 1 @tomorrow\n- [x] Completed task done:today\n\nUse numbers for dependencies:\n1. [ ] First step\n2. [ ] Second step (blocked by 1)",
+                                                    stringResource(R.string.notes_create_subtasks_placeholder),
                                                     fontSize = 14.sp
                                                 )
                                             },

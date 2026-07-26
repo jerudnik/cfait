@@ -1143,7 +1143,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             meta.push(format!("- **Geo:** {}", geo));
         }
         if let Some(loc) = &task.location {
-            meta.push(format!("- **Location:** {}", loc));
+            meta.push(format!(
+                "- **{}:** {}",
+                rust_i18n::t!("cli_view_location").trim_end_matches(':'),
+                loc
+            ));
         }
         let mut date_infos = Vec::new();
         let created_opt = task.created_date();
@@ -1178,12 +1182,15 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         }
 
         if !task.dependencies.is_empty() {
-            details_md.push_str("### Blocked By (Predecessors)\n");
+            details_md.push_str(&format!(
+                "### {}\n",
+                rust_i18n::t!("blocked_by").trim_end_matches(':')
+            ));
             for dep_uid in &task.dependencies {
                 let name = state
                     .store
                     .get_summary(dep_uid)
-                    .unwrap_or_else(|| "Unknown".to_string());
+                    .unwrap_or_else(|| rust_i18n::t!("unknown_task").to_string());
                 // FIXED: Use is_task_done instead of get_task_status
                 let is_done = state.store.is_task_done(dep_uid).unwrap_or(false);
                 let check = if is_done { "[x]" } else { "[ ]" };
@@ -1195,7 +1202,10 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         // Blocking Section (Successors) - tasks that are blocked BY this task
         let blocking_tasks = state.store.get_tasks_blocking(&task.uid);
         if !blocking_tasks.is_empty() {
-            details_md.push_str("### Blocking (Successors)\n");
+            details_md.push_str(&format!(
+                "### {}\n",
+                rust_i18n::t!("blocking_label").trim_end_matches(':')
+            ));
             for (_uid, name) in blocking_tasks {
                 details_md.push_str(&format!("- ⬇ {}\n", name));
             }
@@ -1203,9 +1213,12 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         }
 
         if !task.related_to.is_empty() {
-            details_md.push_str("### Related To\n");
+            details_md.push_str(&format!(
+                "### {}\n",
+                rust_i18n::t!("related_to_label").trim_end_matches(':')
+            ));
             for related_uid in &task.related_to {
-                let mut name = "Unknown".to_string();
+                let mut name = rust_i18n::t!("unknown_task").to_string();
                 if let Some(rel_task) = state.store.get_task_ref(related_uid) {
                     name = rel_task.summary.clone();
                     if rel_task.status.is_done() {
@@ -1224,7 +1237,10 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
 
         let incoming_related = state.store.get_tasks_related_to(&task.uid);
         if !incoming_related.is_empty() {
-            details_md.push_str("### Related From\n");
+            details_md.push_str(&format!(
+                "### {}\n",
+                rust_i18n::t!("related_from_label").trim_end_matches(':')
+            ));
             for (related_uid, mut related_name) in incoming_related {
                 if let Some(rel_task) = state.store.get_task_ref(&related_uid)
                     && rel_task.status.is_done()
@@ -1279,8 +1295,16 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                 };
 
                 let target_display = goal.format_target_display(&tar_str);
-                details_md.push_str(&format!("- Target: {}\n", target_display));
-                details_md.push_str(&format!("- Progress: {}\n", cur_str));
+                details_md.push_str(&format!(
+                    "- {}: {}\n",
+                    rust_i18n::t!("goal_target_label"),
+                    target_display
+                ));
+                details_md.push_str(&format!(
+                    "- {}: {}\n",
+                    rust_i18n::t!("goal_progress_label"),
+                    cur_str
+                ));
             }
 
             if let Some(goal) = &effective_goal {
@@ -1298,7 +1322,11 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
                         heatmap_str.push('⬛');
                     }
                 }
-                details_md.push_str(&format!("- Past: {}\n", heatmap_str));
+                details_md.push_str(&format!(
+                    "- {}: {}\n",
+                    rust_i18n::t!("goal_past_label"),
+                    heatmap_str
+                ));
             }
 
             details_md.push('\n');

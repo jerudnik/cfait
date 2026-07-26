@@ -1928,16 +1928,21 @@ pub fn view_task_row<'a>(
 
                         details_col = details_col.push(
                             text(format!(
-                                "- Target: {}",
+                                "- {}: {}",
+                                rust_i18n::t!("goal_target_label"),
                                 goal.format_target_display(&tar_str)
                             ))
                             .size(12)
                             .color(Color::from_rgb(0.7, 0.7, 0.7)),
                         );
                         details_col = details_col.push(
-                            text(format!("- Progress: {}", cur_str))
-                                .size(12)
-                                .color(Color::from_rgb(0.7, 0.7, 0.7)),
+                            text(format!(
+                                "- {}: {}",
+                                rust_i18n::t!("goal_progress_label"),
+                                cur_str
+                            ))
+                            .size(12)
+                            .color(Color::from_rgb(0.7, 0.7, 0.7)),
                         );
                     }
 
@@ -1959,9 +1964,13 @@ pub fn view_task_row<'a>(
                         }
 
                         details_col = details_col.push(
-                            text(format!("- Past: {}", heatmap_str))
-                                .size(12)
-                                .color(Color::from_rgb(0.7, 0.7, 0.7)),
+                            text(format!(
+                                "- {}: {}",
+                                rust_i18n::t!("goal_past_label"),
+                                heatmap_str
+                            ))
+                            .size(12)
+                            .color(Color::from_rgb(0.7, 0.7, 0.7)),
                         );
                     }
                 }
