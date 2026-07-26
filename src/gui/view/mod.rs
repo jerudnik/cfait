@@ -2209,17 +2209,160 @@ fn view_input_area(app: &GuiApp) -> Element<'_, Message> {
             .align_y(iced::Alignment::Center)
             .spacing(10);
 
-        if app.editing_tree_uid.is_some() {
+        let get_byte_offset = |content: &iced::widget::text_editor::Content| -> usize {
+            let cursor_pos = content.cursor().position;
+            let line_idx = cursor_pos.line;
+            let col_idx = cursor_pos.column;
+            let text = content.text();
+            let mut current_line = 0;
+            let mut byte_offset = 0;
+
+            for line_str in text.split('\n') {
+                if current_line == line_idx {
+                    let col_bytes: usize =
+                        line_str.chars().take(col_idx).map(|c| c.len_utf8()).sum();
+                    return byte_offset + col_bytes;
+                }
+                byte_offset += line_str.len() + 1; // +1 for '\n'
+                current_line += 1;
+            }
+            byte_offset
+        };
+
+        let mut active_context: Option<(crate::model::parser::SyntaxType, String)> = None;
+
+        let desc_text = app.description_value.text();
+        let desc_cursor = get_byte_offset(&app.description_value);
+        let desc_tokens = crate::model::parser::tokenize_smart_input(&desc_text, false);
+
+        for t in desc_tokens {
+            if desc_cursor >= t.start && desc_cursor <= t.end {
+                if matches!(
+                    t.kind,
+                    crate::model::parser::SyntaxType::Dependency
+                        | crate::model::parser::SyntaxType::Relation
+                        | crate::model::parser::SyntaxType::WikiLink
+                ) {
+                    active_context = Some((t.kind, desc_text[t.start..t.end].to_string()));
+                }
+                break;
+            }
+        }
+
+        if active_context.is_none() && app.editing_tree_uid.is_none() {
+            let inp_text = app.input_value.text();
+            let inp_cursor = get_byte_offset(&app.input_value);
+            let inp_tokens = crate::model::parser::tokenize_smart_input(&inp_text, false);
+            for t in inp_tokens {
+                if inp_cursor >= t.start && inp_cursor <= t.end {
+                    if matches!(
+                        t.kind,
+                        crate::model::parser::SyntaxType::Dependency
+                            | crate::model::parser::SyntaxType::Relation
+                            | crate::model::parser::SyntaxType::WikiLink
+                    ) {
+                        active_context = Some((t.kind, inp_text[t.start..t.end].to_string()));
+                    }
+                    break;
+                }
+            }
+        }
+
+        let context_banner: Option<Element<'_, Message>> = if let Some((kind, raw_word)) =
+            active_context
+        {
+            let clean_uid = if kind == crate::model::parser::SyntaxType::WikiLink {
+                crate::model::parser::strip_quotes(
+                    raw_word.trim_start_matches("[[").trim_end_matches("]]"),
+                )
+            } else {
+                let lex_guard = crate::model::parser::LEXICON.read().unwrap();
+                let lower = raw_word.to_lowercase();
+                if let Some((p_str, _, _)) = lex_guard.match_prefix(&lower) {
+                    crate::model::parser::strip_quotes(&raw_word[p_str.len()..])
+                } else {
+                    crate::model::parser::strip_quotes(&raw_word)
+                }
+            };
+
+            if !clean_uid.is_empty() {
+                let (icon_char, color, text_str) =
+                    match app.store.resolve_dependency_ref(&clean_uid) {
+                        Ok(resolved_uid) => {
+                            if let Some(summary) = app.store.get_summary(&resolved_uid) {
+                                let icon = if kind == crate::model::parser::SyntaxType::Dependency {
+                                    icon::BLOCKED
+                                } else {
+                                    icon::LINK
+                                };
+                                let color = if kind == crate::model::parser::SyntaxType::Dependency
+                                {
+                                    Color::from_rgb(0.9, 0.6, 0.2)
+                                } else {
+                                    Color::from_rgb(0.4, 0.6, 0.9)
+                                };
+                                (icon, color, summary)
+                            } else {
+                                (
+                                    icon::INFO,
+                                    Color::from_rgb(0.5, 0.5, 0.5),
+                                    "Resolving...".to_string(),
+                                )
+                            }
+                        }
+                        Err(_) => (
+                            icon::SYNC_ALERT,
+                            Color::from_rgb(0.9, 0.2, 0.2),
+                            format!("Unknown: {}", clean_uid),
+                        ),
+                    };
+
+                Some(
+                    container(
+                        row![
+                            icon::icon(icon_char).size(14).color(color),
+                            text(format!("{} ➔ {}", raw_word, text_str))
+                                .size(14)
+                                .font(iced::Font {
+                                    weight: iced::font::Weight::Bold,
+                                    ..Default::default()
+                                })
+                                .color(color)
+                        ]
+                        .spacing(8)
+                        .align_y(iced::Alignment::Center),
+                    )
+                    .padding([6, 12])
+                    .width(Length::Fill)
+                    .style(move |_theme: &Theme| container::Style {
+                        background: Some(Color { a: 0.1, ..color }.into()),
+                        border: iced::Border {
+                            color: Color { a: 0.5, ..color },
+                            width: 1.0,
+                            radius: 6.0.into(),
+                        },
+                        ..Default::default()
+                    })
+                    .into(),
+                )
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let mut col = if app.editing_tree_uid.is_some() {
             column![top_bar, desc_container]
-                .spacing(10)
-                .height(Length::Shrink)
-                .into()
         } else {
             column![top_bar, title_row, desc_container]
-                .spacing(10)
-                .height(Length::Shrink)
-                .into()
+        };
+
+        if let Some(banner) = context_banner {
+            col = col.push(banner);
         }
+
+        col.spacing(10).height(Length::Shrink).into()
     } else {
         column![title_row].spacing(5).into()
     };
