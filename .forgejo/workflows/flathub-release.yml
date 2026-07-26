@@ -6,13 +6,13 @@ on:
 
 jobs:
   flathub_update:
-    runs-on: codeberg-tiny
+    runs-on: self-hosted-ubuntu
     container:
-      image: python:3.11-bookworm
+      image: local/ubuntu-builder
     steps:
       - name: Install System Dependencies
         run: |
-          apt-get update && apt-get install -y git wget curl jq
+          apt-get update && apt-get install -y git wget curl jq python3 python3-pip
           # We don't need 'nodejs' if we clone manually
 
       - name: Checkout Source (Manual)
@@ -34,7 +34,7 @@ jobs:
 
       - name: Generate cargo-sources.yml
         run: |
-          # Generate sources from the Codeberg Cargo.lock
+          # Generate sources from the Cargo.lock
           python3 flatpak-cargo-generator.py Cargo.lock -o cargo-sources.yml
 
           # Save variables for next steps
@@ -86,5 +86,5 @@ jobs:
               \"title\": \"Update to ${{ env.TAG_NAME }}\",
               \"head\": \"$BRANCH_NAME\",
               \"base\": \"master\",
-              \"body\": \"Automated update triggered by release ${{ env.TAG_NAME }} from Codeberg.\"
+              \"body\": \"Automated update triggered by release ${{ env.TAG_NAME }}.\"
             }"

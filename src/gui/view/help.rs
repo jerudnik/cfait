@@ -246,7 +246,7 @@ pub fn view_help<'a>(tab: HelpTab, app: &'a GuiApp) -> Element<'a, Message> {
                     text(
                         rust_i18n::t!(
                             "about_repository",
-                            url = "https://codeberg.org/trougnouf/cfait"
+                            url = "https://git.disroot.org/trougnouf/cfait"
                         )
                         .to_string()
                     )
@@ -262,7 +262,7 @@ pub fn view_help<'a>(tab: HelpTab, app: &'a GuiApp) -> Element<'a, Message> {
                 .padding(0)
                 .style(iced::widget::button::text)
                 .on_press(Message::OpenUrl(
-                    "https://codeberg.org/trougnouf/cfait".to_string()
+                    "https://git.disroot.org/trougnouf/cfait".to_string()
                 )),
                 button(
                     text(rust_i18n::t!("about_chat", url = "#Cfait:matrix.org").to_string())

@@ -248,7 +248,7 @@ pub fn print_help(binary_name: &str) {
     println!();
     println!("MORE INFO:");
     println!(
-        "    {:<15} https://codeberg.org/trougnouf/cfait",
+        "    {:<15} https://git.disroot.org/trougnouf/cfait",
         rust_i18n::t!("cli_repo_label")
     );
     println!("    {:<15} GPL-3.0", rust_i18n::t!("cli_license_label"));

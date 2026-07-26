@@ -2135,7 +2135,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
             lines.push(Line::from(
                 rust_i18n::t!(
                     "about_repository",
-                    url = "https://codeberg.org/trougnouf/cfait"
+                    url = "https://git.disroot.org/trougnouf/cfait"
                 )
                 .to_string(),
             ));

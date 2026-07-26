@@ -7,8 +7,8 @@
 <p align="center">
   <a href="https://codeberg.org/trougnouf/cfait/releases"><img src="https://codeberg.org/trougnouf/cfait/badges/release.svg" alt="Releases"></a>
   <a href="https://f-droid.org/packages/com.trougnouf.cfait/"><img src="https://img.shields.io/f-droid/v/com.trougnouf.cfait.svg" alt="F-Droid"></a>
-  <a href="https://codeberg.org/trougnouf/cfait/actions"><img src="https://codeberg.org/trougnouf/cfait/badges/workflows/test_roll.yml/badge.svg" alt="Test status"></a>
-  <a href="https://codeberg.org/trougnouf/cfait/src/branch/main/LICENSE"><img src="https://img.shields.io/badge/license-GPLv3-gray.svg" alt="License"></a>
+  <a href="https://git.disroot.org/trougnouf/cfait/actions"><img src="https://git.disroot.org/trougnouf/cfait/badges/workflows/test_roll.yml/badge.svg" alt="Test status"></a>
+  <a href="https://git.disroot.org/trougnouf/cfait/src/branch/main/LICENSE"><img src="https://img.shields.io/badge/license-GPLv3-gray.svg" alt="License"></a>
   <a href="https://liberapay.com/trougnouf/donate"><img src="https://img.shields.io/liberapay/patrons/trougnouf?label=donate" alt="Donate through Liberapay" /></a>
 </p>
 
@@ -45,7 +45,7 @@ Cfait is designed to keep you in flow. Instead of a massive wiki, **the app is e
 
 We offer both **Stable** and **Rolling** releases. We highly encourage users to try the rolling release to get the latest features and report bugs! 
 
-*(Note: On our Codeberg releases page, the "Rolling" tag stays pinned at the very top. To find the latest stable version, scroll past it and click "Downloads" on the numbered release).*
+*(Note: On our releases page, the "Rolling" tag stays pinned at the very top. To find the latest stable version, scroll past it and click "Downloads" on the numbered release).*
 
 * **🐧 Linux:** Available on [Flathub](https://flathub.org/apps/com.trougnouf.Cfait), the AUR (`yay -S cfait`), or via `.deb` / `.tar.gz` on our [Releases page](https://codeberg.org/trougnouf/cfait/releases).
 * **👺 FreeBSD:** Available in [Ports/Packages](https://www.freshports.org/deskutils/cfait/), install with `pkg install cfait`
@@ -68,7 +68,7 @@ Cfait does not collect data; data is stored on your device and on your CalDAV se
 
 Have a question, found a bug, or want to contribute?
 * **🗨️ Chat:** Join us on Matrix at [#Cfait:matrix.org](https://matrix.to/#/#Cfait:matrix.org).
-* **🐛 Bugs / ✨ Features:** [Open an issue on Codeberg](https://codeberg.org/trougnouf/cfait/issues).
+* **🐛 Bugs / ✨ Features:** [Open an issue](https://git.disroot.org/trougnouf/cfait/issues).
 * **🛠️ Contribute code:** Check out our [CONTRIBUTING.md](./CONTRIBUTING.md) to get started!
 * **🌐 Translate:** Help translate Cfait into your language on [Codeberg Translate](https://translate.codeberg.org/projects/cfait/).
 

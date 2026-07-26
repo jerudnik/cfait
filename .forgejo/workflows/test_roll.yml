@@ -209,12 +209,12 @@ jobs:
         with:
           path: dist
 
-      - name: Update Rolling Release on Codeberg
+      - name: Update Rolling Release on git.disroot.org
         env:
           TEA_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         shell: bash
         run: |
-          tea login add --name codeberg --url ${{ github.server_url }} --token ${{ secrets.RELEASE_TOKEN }}
+          tea login add --name disroot --url ${{ github.server_url }} --token ${{ secrets.RELEASE_TOKEN }}
           REPO="${{ github.repository }}"
           TAG_NAME="rolling"
 

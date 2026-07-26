@@ -41,11 +41,11 @@ modules:
     sources:
       # Application source
       - type: git
-        url: https://codeberg.org/trougnouf/cfait
+        url: https://git.disroot.org/trougnouf/cfait
         commit: 35544b1cfc1712dd3d3d37c6af723d5be3e5efc0
         x-checker-data:
           type: git
-          url: https://codeberg.org/trougnouf/cfait
+          url: https://git.disroot.org/trougnouf/cfait
           tag-pattern: ^v([\d.]+)$
       # Cargo dependencies
       - cargo-sources.yml
