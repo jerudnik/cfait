@@ -3152,31 +3152,74 @@ impl TaskStore {
             let is_suppressed = t.status.is_done() || t.is_blocked || t.is_implicitly_blocked;
 
             if !is_suppressed && let Some(children) = map.get(&t.uid) {
+                let mut best_child_opt: Option<Task> = None;
                 for &child_idx in children {
                     let child_eff = resolve(child_idx, tasks, map, cache, visiting, options);
-                    let a = crate::model::item::SortKey {
-                        rank: child_eff.sort_rank,
-                        prio: child_eff.effective_priority,
-                        due: child_eff.effective_due.clone(),
-                        start: child_eff.effective_dtstart.clone(),
-                        is_overdue: child_eff.is_overdue,
-                    };
-                    let b = crate::model::item::SortKey {
-                        rank: best.sort_rank,
-                        prio: best.effective_priority,
-                        due: best.effective_due.clone(),
-                        start: best.effective_dtstart.clone(),
-                        is_overdue: best.is_overdue,
-                    };
-                    let ordering = crate::model::item::compare_sortkeys(
-                        &a,
-                        &b,
-                        options.default_priority,
-                        options.sort_standard_by_priority,
-                        options.sort_preset,
-                    );
-                    if ordering == std::cmp::Ordering::Less {
-                        best = child_eff;
+
+                    if let Some(ref mut best_child) = best_child_opt {
+                        let a = crate::model::item::SortKey {
+                            rank: child_eff.sort_rank,
+                            prio: child_eff.effective_priority,
+                            due: child_eff.effective_due.clone(),
+                            start: child_eff.effective_dtstart.clone(),
+                            is_overdue: child_eff.is_overdue,
+                        };
+                        let b = crate::model::item::SortKey {
+                            rank: best_child.sort_rank,
+                            prio: best_child.effective_priority,
+                            due: best_child.effective_due.clone(),
+                            start: best_child.effective_dtstart.clone(),
+                            is_overdue: best_child.is_overdue,
+                        };
+                        let ordering = crate::model::item::compare_sortkeys(
+                            &a,
+                            &b,
+                            options.default_priority,
+                            options.sort_standard_by_priority,
+                            options.sort_preset,
+                        );
+                        if ordering == std::cmp::Ordering::Less {
+                            *best_child = child_eff;
+                        }
+                    } else {
+                        best_child_opt = Some(child_eff);
+                    }
+                }
+
+                if let Some(bc) = best_child_opt {
+                    if t.is_note {
+                        best.sort_rank = bc.sort_rank;
+                        best.effective_priority = bc.effective_priority;
+                        best.effective_due = bc.effective_due.clone();
+                        best.effective_dtstart = bc.effective_dtstart.clone();
+                    } else {
+                        let a = crate::model::item::SortKey {
+                            rank: bc.sort_rank,
+                            prio: bc.effective_priority,
+                            due: bc.effective_due.clone(),
+                            start: bc.effective_dtstart.clone(),
+                            is_overdue: bc.is_overdue,
+                        };
+                        let b = crate::model::item::SortKey {
+                            rank: best.sort_rank,
+                            prio: best.effective_priority,
+                            due: best.effective_due.clone(),
+                            start: best.effective_dtstart.clone(),
+                            is_overdue: best.is_overdue,
+                        };
+                        let ordering = crate::model::item::compare_sortkeys(
+                            &a,
+                            &b,
+                            options.default_priority,
+                            options.sort_standard_by_priority,
+                            options.sort_preset,
+                        );
+                        if ordering == std::cmp::Ordering::Less {
+                            best.sort_rank = bc.sort_rank;
+                            best.effective_priority = bc.effective_priority;
+                            best.effective_due = bc.effective_due.clone();
+                            best.effective_dtstart = bc.effective_dtstart.clone();
+                        }
                     }
                 }
             }
